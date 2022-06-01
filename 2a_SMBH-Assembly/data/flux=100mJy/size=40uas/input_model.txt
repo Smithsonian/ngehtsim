@@ -1,7 +1,0 @@
-# SRC: SgrA 
-# RA: 12 h 30 m 49.4234 s
-# DEC: 12 deg 23 m 28.0437 s
-# MJD: 51544.000000 
-# RF: 230.0000 GHz
-stretched_thick_mring
-{'F0': 0.1, 'd': 1.9392547244376543e-10, 'beta_list': np.array([0.30142469+0.24946824j]), 'beta_list_pol': np.array([ 0.09611558+0.01639134j,  0.09611558+0.01639134j,       -0.25851244-0.14904986j, -0.07083496-0.08142737j,        0.43872943+0.35316898j]), 'beta_list_cpol': np.array([], dtype=np.complex128), 'alpha': 6.464182414792182e-11, 'x0': 0.0, 'y0': 0.0, 'stretch': 1.0, 'stretch_PA': 0.0}
