@@ -6,7 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import ehtim as eh
 
-import siteselect.compute_metrics as cm
+import utils.compute_metrics as cm
 from . import const_def as const
 
 ###################################################
