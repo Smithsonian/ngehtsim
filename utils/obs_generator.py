@@ -293,7 +293,7 @@ class obs_generator(object):
 
         # observe the source
         obs = im.observe_same_nonoise(obs_temp,ttype=self.settings['ttype'],fft_pad_factor=fft_pad_factor)
-
+        
         # make sure we're in a circular basis
         obs = obs.switch_polrep(polrep_out='circ')
 

@@ -29,7 +29,7 @@ SNR_cutoff: ['adhoc', [10., 10., 1., 10.]]
 ############################################################
 # array specs
 
-D_new: 10.          # new dish diameter, in meters
+D_new: 8.          # new dish diameter, in meters
 tech_readiness: 1.0 # derating for technical readiness
 RMS_point_err: 2.   # RMS pointinng error at the new sites, in arcseconds
 ref_station: 'ALMA' # reference station for ad hoc phasing
