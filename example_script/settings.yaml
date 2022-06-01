@@ -42,3 +42,4 @@ sites: ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT
 
 ttype: 'fast'                   # type of Fourier transform ('direct', 'nfft', or 'fast')
 weather_randomness: 'random'    # can be 'random' or 'mean'
+random_seed: 12345              # random number seed; if blank, will be auto-generated

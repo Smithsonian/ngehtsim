@@ -11,6 +11,7 @@ import glob
 import sys
 from collections import defaultdict
 from astropy.time import Time
+import time
 
 from . import const_def as const
 
@@ -38,6 +39,11 @@ class obs_generator(object):
             raise Exception('Input rf_offset must be greater than or equal to input bandwidth when nbands > 1.')
         if (self.settings['path_to_weather'][-1] != '/'):
             self.settings['path_to_weather'] += '/'
+
+        if self.settings['random_seed'] is None:
+            np.random.seed(int(time.time()))
+        else:
+            np.random.seed(self.settings['random_seed'])
 
         # extract commonly-used settings
         self.sites = self.settings['sites']
