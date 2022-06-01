@@ -8,7 +8,7 @@ path_to_weather: './utils/weather_data/'
 # observation specs
 
 source: 'M87'       # name of science target
-frequency: '230'    # observing frequency, in GHz; options are 86, 230, 345
+frequency: '345'    # observing frequency, in GHz; options are 86, 230, 345
 bandwidth: 2.0      # fringe-finding bandwidth, in GHz
 nbands: 1           # number of bands
 rf_offset: 0.0      # rf offset, in GHz; should be larger than bandwidth for nbands > 1
@@ -24,7 +24,7 @@ t_rest: 1200.       # time interval between consecutive integrations, in seconds
 # SNR thresholding scheme
 # options are ['naive',threshold], or
 # ['adhoc',[reference station threshold, reference station tint, non-reference station threshold, backup threshold SNR on t_int]]
-SNR_cutoff: ['adhoc', [10., 10., 1., 10.]]
+SNR_cutoff: ['adhoc', [10., 10., 3., 10.]]
 
 ############################################################
 # array specs

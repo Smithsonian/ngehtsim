@@ -108,6 +108,7 @@ for iarr, array in enumerate(arrays):
             obsgen.sites = array
             obsgen.make_array()
             obsgen.load_image()
+            obsgen.tabulate_weather()
 
             # generate the observation
             obs = obsgen.make_obs()
@@ -120,4 +121,3 @@ for iarr, array in enumerate(arrays):
                 # save some plots
                 op.plot_uv(obs,filename=outdir+'/coverage.png')
                 op.plot_amp(obs,filename=outdir+'/radplot.png',ylim=(0.001,2))
-
