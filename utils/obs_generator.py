@@ -603,6 +603,85 @@ class obs_generator(object):
                     data_copy = obs_seg.data.copy()
                     obs_seg.data = data_copy[master_index]
 
+            elif (snr_algo == 'fringegroups'):
+
+                # parse SNR_cutoff arguments
+                snr_ref = snr_args[0]
+                tint_ref = snr_args[1]
+
+                # get the timestamps
+                time = obs_seg.data['time']
+                timestamps = np.unique(obs_seg.data['time'])
+
+                # create a running index list of baselines to flag
+                master_index = np.zeros(len(obs_seg.data),dtype='bool')
+                count = 0
+
+                # create blank dummy obsdata objects
+                obs_here = obs_seg.copy()
+                obs_here.data = None
+                obs_search = obs_here.copy()
+
+                # check all timestamps
+                for itime, timestamp in enumerate(timestamps):
+
+                    ind_t = (time == timestamp)
+                    obs_here.data = obs_seg.data[ind_t]
+
+                    # scale effective SNR to the actual integration time
+                    snr_scaled = snr_ref*np.sqrt(obs_here.data['tint'] / tint_ref)
+
+                    # determine which baselines are "strong"
+                    index = (np.abs(obs_here.data['vis'])/obs_here.data['sigma']) >= snr_scaled
+
+                    # limit the searched baselines to those that are strong
+                    obs_search.data = obs_here.data[index]
+
+                    # group stations that are connected by strong baselines
+                    groups = []
+                    for datum in obs_search.data:
+                        newgroup = True
+                        for g in groups:
+                            if ((datum['t1'] in g) | (datum['t2'] in g)):
+                                newgroup = False
+                                g.add(datum['t1'])
+                                g.add(datum['t2'])
+                        if newgroup:
+                            groups.append(set([datum['t1'],datum['t2']]))
+                    
+                    # merge groups that share a station
+                    for station in obs_here.tarr["site"]:
+                        ingroups = []
+                        for ig, g in enumerate(groups):
+                            if (station in g):
+                                ingroups.append(g.copy())
+                        newgroup = set()
+                        for g in ingroups:
+                            newgroup |= g.copy()
+                        for g in ingroups:
+                            groups.remove(g)
+                        if (newgroup != set()):
+                            groups.append(newgroup)
+                            
+                    # print(len(groups),groups)
+
+                    # assign stations to groups
+                    site_dict = {}
+                    for ig, group in enumerate(groups):
+                        for station in group:
+                            site_dict[station] = ig
+
+                    # check whether both stations on each baseline are in the same group
+                    for datum in obs_here.data:
+                        if ((datum['t1'] in site_dict.keys()) & (datum['t2'] in site_dict.keys())):
+                            if (site_dict[datum['t1']] == site_dict[datum['t2']]):
+                                master_index[count] = True
+                        count += 1
+
+                # apply the flagging
+                data_copy = obs_seg.data.copy()
+                obs_seg.data = data_copy[master_index]
+
             # unrecognized SNR thresholding scheme
             else:
                 raise ValueError('unknown algorithm for SNR_cutoff')

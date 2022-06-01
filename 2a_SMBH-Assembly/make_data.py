@@ -74,7 +74,7 @@ for iarr, array in enumerate(arrays):
             bpol1 = np.random.uniform(-0.1,0.1) + (1.0j)*np.random.uniform(-0.1,0.1)
             bpoln2 = np.random.uniform(-0.1,0.1) + (1.0j)*np.random.uniform(-0.1,0.1)
             bpol2 = np.random.uniform(-1.0,1.0) + (1.0j)*np.random.uniform(-1.0,1.0)
-            beta_list_pol = [bpoln2,bpoln2,bpol0,bpol1,bpol2]
+            beta_list_pol = [bpoln2,bpoln1,bpol0,bpol1,bpol2]
 
             mod = eh.model.Model()
             mod = mod.add_stretched_thick_mring(F0=F0,
