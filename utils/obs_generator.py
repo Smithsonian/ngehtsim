@@ -40,10 +40,7 @@ class obs_generator(object):
         if (self.settings['path_to_weather'][-1] != '/'):
             self.settings['path_to_weather'] += '/'
 
-        if self.settings['random_seed'] is None:
-            np.random.seed(int(time.time()))
-        else:
-            np.random.seed(self.settings['random_seed'])
+        self.set_seed()
 
         # extract commonly-used settings
         self.sites = self.settings['sites']
@@ -58,6 +55,13 @@ class obs_generator(object):
 
         # other
         self.python_version = sys.version_info.major
+
+    # set random number seed
+    def set_seed(self):
+        if self.settings['random_seed'] is None:
+            np.random.seed(int(time.time()))
+        else:
+            np.random.seed(self.settings['random_seed'])
 
     # load and store settings
     def load_settings(self):

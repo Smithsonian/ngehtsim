@@ -106,6 +106,7 @@ for iarr, array in enumerate(arrays):
             # re-specify and load the appropriate settings
             obsgen.model_file = path_to_im
             obsgen.sites = array
+            obsgen.set_seed()
             obsgen.make_array()
             obsgen.load_image()
             obsgen.tabulate_weather()
