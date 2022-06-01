@@ -73,7 +73,7 @@ class obs_generator(object):
 
     # store ngeht-util and ehtim array objects
     def make_array(self):
-        sitelist = self.settings['sites']
+        sitelist = self.sites
         stations = list()
         for site in sitelist:
             stationhere = ng.Station.from_name(site)
