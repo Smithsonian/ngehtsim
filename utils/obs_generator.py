@@ -77,7 +77,11 @@ class obs_generator(object):
         stations = list()
         for site in sitelist:
             stationhere = ng.Station.from_name(site)
-            if (stationhere.existing_dish == False):
+            if stationhere.name in ['BAJA','CNI','LAS']:
+                stationhere.dishes = [ng.station.Dish(diameter=6.1)]
+            elif stationhere.name in ['OVRO']:
+                stationhere.dishes = [ng.station.Dish(diameter=10.4)]
+            elif (stationhere.existing_dish == False):
                 stationhere.dishes = [ng.station.Dish(diameter=self.settings['D_new'])]
             stations.append(stationhere)
         self.array = ng.Array('test_array',stations)
