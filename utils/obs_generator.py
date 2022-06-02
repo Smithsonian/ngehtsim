@@ -638,31 +638,17 @@ class obs_generator(object):
                     obs_search.data = obs_here.data[index]
 
                     # group stations that are connected by strong baselines
-                    groups = []
+                    groups = list()
                     for datum in obs_search.data:
-                        newgroup = True
+                        bl = [datum['t1'],datum['t2']]
+                        (merged, remaining) = (set(bl), [])
                         for g in groups:
-                            if ((datum['t1'] in g) | (datum['t2'] in g)):
-                                newgroup = False
-                                g.add(datum['t1'])
-                                g.add(datum['t2'])
-                        if newgroup:
-                            groups.append(set([datum['t1'],datum['t2']]))
-                    
-                    # merge groups that share a station
-                    for station in obs_here.tarr["site"]:
-                        ingroups = []
-                        for ig, g in enumerate(groups):
-                            if (station in g):
-                                ingroups.append(g.copy())
-                        newgroup = set()
-                        for g in ingroups:
-                            newgroup |= g.copy()
-                        for g in ingroups:
-                            groups.remove(g)
-                        if (newgroup != set()):
-                            groups.append(newgroup)
-                            
+                            if bl[0] in g or bl[1] in g:
+                                merged |= g
+                            else:
+                                remaining.append(g)
+                        groups = remaining + [merged]
+                        
                     # print(len(groups),groups)
 
                     # assign stations to groups
