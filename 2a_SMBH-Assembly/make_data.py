@@ -10,32 +10,14 @@ import utils.obs_plotter as op
 ##################################################
 # inputs
 
-ring_flux_grid = [10.0,30.0,100.0,300.0,1000.0]     # mJy
-ring_size_grid = [2.5,5.0,10.0,20.0,40.0]           # uas
+ring_flux_grid = [1.0,3.0,10.0,30.0,100.0,300.0,1000.0]     # mJy
+ring_size_grid = [2.0,5.0,10.0,20.0,40.0]                   # uas
 
 RA = 12.5137287172
 DEC = 12.3911232392
 MJD = 51544
 
-# settings file
-yamlfile = '2a_SMBH-Assembly/settings.yaml'
-
 # arrays
-EHT2017 = ['ALMA','APEX','JCMT','LMT','IRAM','SMA','SMT','SPT']
-EHT2022 = ['ALMA','APEX','JCMT','LMT','IRAM','SMA','SMT','SPT','KP','NOEMA','GLT']
-phase1 = ['BAJA','CNI','HAY','LAS','OVRO']
-phase2 = phase1 + ['GARS','GAM','CAT','SGO','KILI','BAR']
-minimal = ['LMT']
-partial = minimal + ['JCMT','SMT','GLT','APEX']
-full = EHT2022
-arrays = [EHT2017,
-          EHT2022,
-          phase1 + minimal,
-          phase1 + partial,
-          phase1 + full,
-          phase2 + minimal,
-          phase2 + partial,
-          phase2 + full]
 arraynames = ['EHT2017',
               'EHT2022',
               'ngEHT1_minimal',
@@ -48,10 +30,7 @@ arraynames = ['EHT2017',
 ##################################################
 # create synthetic data
 
-# initialize the observation generator
-obsgen = og.obs_generator(yamlfile)
-
-for iarr, array in enumerate(arrays):
+for iarr, arrayname in enumerate(arraynames):
     for ring_flux in ring_flux_grid:
         for ring_size in ring_size_grid:
 
@@ -69,11 +48,11 @@ for iarr, array in enumerate(arrays):
             stretch_PA = 0.0
             beta_list = np.random.uniform(-0.5,0.5,size=1) + (1.0j)*np.random.uniform(-0.5,0.5,size=1)
 
-            bpol0 = np.random.uniform(-0.3,0.3) + (1.0j)*np.random.uniform(-0.3,0.3)
-            bpoln1 = np.random.uniform(-0.1,0.1) + (1.0j)*np.random.uniform(-0.1,0.1)
-            bpol1 = np.random.uniform(-0.1,0.1) + (1.0j)*np.random.uniform(-0.1,0.1)
+            bpol0 = np.random.uniform(-0.1,0.1) + (1.0j)*np.random.uniform(-0.1,0.1)
+            bpoln1 = np.random.uniform(-0.05,0.05) + (1.0j)*np.random.uniform(-0.05,0.05)
+            bpol1 = np.random.uniform(-0.05,0.05) + (1.0j)*np.random.uniform(-0.05,0.05)
             bpoln2 = np.random.uniform(-0.1,0.1) + (1.0j)*np.random.uniform(-0.1,0.1)
-            bpol2 = np.random.uniform(-1.0,1.0) + (1.0j)*np.random.uniform(-1.0,1.0)
+            bpol2 = np.random.uniform(-0.3,0.3) + (1.0j)*np.random.uniform(-0.3,0.3)
             beta_list_pol = [bpoln2,bpoln1,bpol0,bpol1,bpol2]
 
             mod = eh.model.Model()
@@ -103,9 +82,12 @@ for iarr, array in enumerate(arrays):
             ##################################################
             # generate observation
 
+            # initialize the observation generator
+            yamlfile = '2a_SMBH-Assembly/settings_'+arrayname+'.yaml'
+            obsgen = og.obs_generator(yamlfile)
+
             # re-specify and load the appropriate settings
             obsgen.model_file = path_to_im
-            obsgen.sites = array
             obsgen.set_seed()
             obsgen.make_array()
             obsgen.load_image()
@@ -120,5 +102,5 @@ for iarr, array in enumerate(arrays):
                 obs.save_uvfits(outdir+'/synthetic_data.uvfits')
 
                 # save some plots
-                op.plot_uv(obs,filename=outdir+'/coverage.png')
-                op.plot_amp(obs,filename=outdir+'/radplot.png',ylim=(0.001,2))
+                op.plot_uv(obs,filename=outdir+'/coverage.png',umax=15)
+                op.plot_amp(obs,filename=outdir+'/radplot.png',ylim=(0.0001,2))
