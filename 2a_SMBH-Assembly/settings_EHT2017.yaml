@@ -9,7 +9,7 @@ path_to_weather: './utils/weather_data/'
 
 source: 'M87'       # name of science target
 frequency: '230'    # observing frequency, in GHz; options are 86, 230, 345
-bandwidth: 8.0      # fringe-finding bandwidth, in GHz
+bandwidth: 2.0      # fringe-finding bandwidth, in GHz
 nbands: 1           # number of bands
 rf_offset: 0.0      # rf offset, in GHz; should be larger than bandwidth for nbands > 1
 
@@ -37,7 +37,7 @@ RMS_point_err: 2.   # RMS pointinng error at the new sites, in arcseconds
 ref_station: 'ALMA' # reference station for ad hoc phasing
 
 # list containing the array site names
-sites: ['ALMA','APEX','GLT','JCMT','KP','LMT','NOEMA','IRAM','SMA','SMT','SPT','BAJA','CNI','HAY','LAS','OVRO']
+sites: ['ALMA','APEX','JCMT','LMT','IRAM','SMA','SMT','SPT']
 
 ############################################################
 # other settings

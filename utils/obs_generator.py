@@ -409,13 +409,13 @@ class obs_generator(object):
             obs.data['lrsigma'] = sigma
 
         else:
-
+            
             # apply opacity attenuation
             obs.data['rrvis'] *= np.exp(-tau1)*np.exp(-tau2)
             obs.data['llvis'] *= np.exp(-tau1)*np.exp(-tau2)
             obs.data['rlvis'] *= np.exp(-tau1)*np.exp(-tau2)
             obs.data['lrvis'] *= np.exp(-tau1)*np.exp(-tau2)
-
+            
             # determine baseline thermal noise levels
             tint = obs.data['tint']
             sigma = np.sqrt((SEFD1*SEFD2)/(2.0*obs.bw*tint)) / const.quant_eff

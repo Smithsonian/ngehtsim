@@ -37,7 +37,7 @@ RMS_point_err: 2.   # RMS pointinng error at the new sites, in arcseconds
 ref_station: 'ALMA' # reference station for ad hoc phasing
 
 # list containing the array site names
-sites: ['ALMA','APEX','GLT','JCMT','KP','LMT','NOEMA','IRAM','SMA','SMT','SPT','BAJA','CNI','HAY','LAS','OVRO']
+sites: ['BAJA','CNI','HAY','LAS','OVRO','ALMA','APEX','JCMT','LMT','IRAM','SMA','SMT','SPT','KP','NOEMA','GLT','GARS','GAM','CAT','BOL','BRZ','PIKE']
 
 ############################################################
 # other settings
