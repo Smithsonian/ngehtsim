@@ -100,6 +100,8 @@ class obs_generator(object):
 
     # store receiver temperature
     def set_TR(self):
+        if (self.settings['frequency'] == '86'):
+            self.T_R = const.T_R_86
         if (self.settings['frequency'] == '230'):
             self.T_R = const.T_R_230
         if (self.settings['frequency'] == '345'):
@@ -667,6 +669,28 @@ class obs_generator(object):
                 # apply the flagging
                 data_copy = obs_seg.data.copy()
                 obs_seg.data = data_copy[master_index]
+
+            # apply an FPT phasing proxy for SNR thresholding
+            elif (snr_algo == 'fpt'):
+
+                # parse SNR_cutoff arguments
+                snr_ref = snr_args[0]
+                tint_ref = snr_args[1]
+                freq_ref = snr_args[2]
+                model_path_ref = snr_args[3]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             # unrecognized SNR thresholding scheme
             else:
