@@ -678,24 +678,24 @@ class obs_generator(object):
                 model_path_ref = snr_args[3]
 
                 # create dummy obsgen object
-                obsgendum = obs_generator(self.settings_file)
-                obsgendum.model_file = model_path_ref
-                obsgendum.settings['frequency'] = str(int(np.round(freq_ref)))
-                obsgendum.freq = freq_ref*(1.0e9)
-                obsgendum.settings['bandwidth'] = (obsgendum.freq / self.freq) * float(self.settings['bandwidth'])
-                obsgendum.set_seed()
-                obsgendum.determine_mjd()
-                obsgendum.make_array()
-                obsgendum.tabulate_weather()
-                obsgendum.load_image()
+                obsgen_ref = obs_generator(self.settings_file)
+                obsgen_ref.model_file = model_path_ref
+                obsgen_ref.settings['frequency'] = str(int(np.round(freq_ref)))
+                obsgen_ref.freq = freq_ref*(1.0e9)
+                obsgen_ref.settings['bandwidth'] = (obsgen_ref.freq / self.freq) * float(self.settings['bandwidth'])
+                obsgen_ref.set_seed()
+                obsgen_ref.determine_mjd()
+                obsgen_ref.make_array()
+                obsgen_ref.tabulate_weather()
+                obsgen_ref.load_image()
 
                 # generate observation at reference frequency
-                im_ref = obsgendum.im
-                im_ref.rf = obsgendum.freq
-                obsgendum.initialize_dicts()
-                obsgendum.set_TR()
-                obsgendum.get_obs_times()
-                obs_ref = obsgendum.observe(im_ref,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,fft_pad_factor=fft_pad_factor,apply_pointing_errors=apply_pointing_errors)
+                im_ref = obsgen_ref.im
+                im_ref.rf = obsgen_ref.freq
+                obsgen_ref.initialize_dicts()
+                obsgen_ref.set_TR()
+                obsgen_ref.get_obs_times()
+                obs_ref = obsgen_ref.observe(im_ref,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,fft_pad_factor=fft_pad_factor,apply_pointing_errors=apply_pointing_errors)
 
                 # get the timestamps
                 time = obs_ref.data['time']
