@@ -651,8 +651,6 @@ class obs_generator(object):
                                 remaining.append(g)
                         groups = remaining + [merged]
                         
-                    # print(len(groups),groups)
-
                     # assign stations to groups
                     site_dict = {}
                     for ig, group in enumerate(groups):
@@ -670,7 +668,7 @@ class obs_generator(object):
                 data_copy = obs_seg.data.copy()
                 obs_seg.data = data_copy[master_index]
 
-            # apply an FPT phasing proxy for SNR thresholding
+            # apply an FPT proxy for SNR thresholding
             elif (snr_algo == 'fpt'):
 
                 # parse SNR_cutoff arguments
@@ -679,18 +677,82 @@ class obs_generator(object):
                 freq_ref = snr_args[2]
                 model_path_ref = snr_args[3]
 
+                # create dummy obsgen object
+                obsgendum = obs_generator(self.settings_file)
+                obsgendum.model_file = model_path_ref
+                obsgendum.settings['frequency'] = str(int(np.round(freq_ref)))
+                obsgendum.freq = freq_ref*(1.0e9)
+                obsgendum.settings['bandwidth'] = (obsgendum.freq / self.freq) * float(self.settings['bandwidth'])
+                obsgendum.set_seed()
+                obsgendum.determine_mjd()
+                obsgendum.make_array()
+                obsgendum.tabulate_weather()
+                obsgendum.load_image()
 
+                # generate observation at reference frequency
+                im_ref = obsgendum.im
+                im_ref.rf = obsgendum.freq
+                obsgendum.initialize_dicts()
+                obsgendum.set_TR()
+                obsgendum.get_obs_times()
+                obs_ref = obsgendum.observe(im_ref,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,fft_pad_factor=fft_pad_factor,apply_pointing_errors=apply_pointing_errors)
 
+                # get the timestamps
+                time = obs_ref.data['time']
+                timestamps = np.unique(obs_ref.data['time'])
 
+                # create a running index list of baselines to flag
+                master_index = np.zeros(len(obs_ref.data),dtype='bool')
+                count = 0
 
+                # create blank dummy obsdata objects
+                obs_here = obs_ref.copy()
+                obs_here.data = None
+                obs_search = obs_here.copy()
 
+                # check all timestamps
+                for itime, timestamp in enumerate(timestamps):
 
+                    ind_t = (time == timestamp)
+                    obs_here.data = obs_ref.data[ind_t]
 
+                    # scale effective SNR to the actual integration time
+                    snr_scaled = snr_ref*np.sqrt(obs_here.data['tint'] / tint_ref)
 
+                    # determine which baselines are "strong"
+                    index = (np.abs(obs_here.data['vis'])/obs_here.data['sigma']) >= snr_scaled
 
+                    # limit the searched baselines to those that are strong
+                    obs_search.data = obs_here.data[index]
 
+                    # group stations that are connected by strong baselines
+                    groups = list()
+                    for datum in obs_search.data:
+                        bl = [datum['t1'],datum['t2']]
+                        (merged, remaining) = (set(bl), [])
+                        for g in groups:
+                            if bl[0] in g or bl[1] in g:
+                                merged |= g
+                            else:
+                                remaining.append(g)
+                        groups = remaining + [merged]
+                        
+                    # assign stations to groups
+                    site_dict = {}
+                    for ig, group in enumerate(groups):
+                        for station in group:
+                            site_dict[station] = ig
 
+                    # check whether both stations on each baseline are in the same group
+                    for datum in obs_here.data:
+                        if ((datum['t1'] in site_dict.keys()) & (datum['t2'] in site_dict.keys())):
+                            if (site_dict[datum['t1']] == site_dict[datum['t2']]):
+                                master_index[count] = True
+                        count += 1
 
+                # apply the flagging
+                data_copy = obs_seg.data.copy()
+                obs_seg.data = data_copy[master_index]
 
             # unrecognized SNR thresholding scheme
             else:
