@@ -679,7 +679,9 @@ class obs_generator(object):
 
                 # create dummy obsgen object
                 obsgen_ref = obs_generator(self.settings_file)
+                obsgen_ref.settings = self.settings
                 obsgen_ref.model_file = model_path_ref
+                obsgen_ref.sites = obsgen_ref.settings['sites']
                 obsgen_ref.settings['frequency'] = str(int(np.round(freq_ref)))
                 obsgen_ref.freq = freq_ref*(1.0e9)
                 obsgen_ref.settings['bandwidth'] = (obsgen_ref.freq / self.freq) * float(self.settings['bandwidth'])
@@ -688,7 +690,7 @@ class obs_generator(object):
                 obsgen_ref.make_array()
                 obsgen_ref.tabulate_weather()
                 obsgen_ref.load_image()
-
+                
                 # generate observation at reference frequency
                 im_ref = obsgen_ref.im
                 im_ref.rf = obsgen_ref.freq
@@ -696,7 +698,7 @@ class obs_generator(object):
                 obsgen_ref.set_TR()
                 obsgen_ref.get_obs_times()
                 obs_ref = obsgen_ref.observe(im_ref,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,fft_pad_factor=fft_pad_factor,apply_pointing_errors=apply_pointing_errors)
-
+                
                 # get the timestamps
                 time = obs_ref.data['time']
                 timestamps = np.unique(obs_ref.data['time'])
