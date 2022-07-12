@@ -278,7 +278,7 @@ class obs_generator(object):
         # generate empty obsdata object
         obs_temp = self.arr.obsdata(im.ra,
                                     im.dec,
-                                    self.freq,
+                                    im.rf,
                                     (1.0e9)*float(self.settings['bandwidth']),
                                     self.settings['t_int'],
                                     self.settings['t_rest'],
@@ -293,12 +293,14 @@ class obs_generator(object):
                                     fix_theta_GMST = False)
 
         # ensure that some relevant image properties are properly set
-        im.rf = self.freq
         im.mjd = self.mjd
         im.source = self.settings['source']
 
         # observe the source
-        obs = im.observe_same_nonoise(obs_temp,ttype=self.settings['ttype'],fft_pad_factor=fft_pad_factor)
+        try:
+            obs = im.observe_same_nonoise(obs_temp,ttype=self.settings['ttype'],fft_pad_factor=fft_pad_factor,repeat=True)
+        except:
+            obs = im.observe_same_nonoise(obs_temp,ttype=self.settings['ttype'],fft_pad_factor=fft_pad_factor)
         
         # make sure we're in a circular basis
         obs = obs.switch_polrep(polrep_out='circ')
