@@ -71,7 +71,11 @@ class obs_generator(object):
 
     # load and store image
     def load_image(self):
-        im_tmp = eh.image.load_image(self.model_file)
+        try:
+            im_tmp = eh.image.load_image(self.model_file)
+        except:
+            print('Source file does not appear to be an image; assuming HDF5 instead!')
+            im_tmp = eh.image.load_hdf5(self.model_file)
         im_tmp.rf = np.float(np.round(im_tmp.rf))
         self.im = im_tmp
 
