@@ -73,10 +73,11 @@ class obs_generator(object):
     def load_image(self):
         try:
             im_tmp = eh.image.load_image(self.model_file)
+            im_tmp.rf = np.float(np.round(im_tmp.rf))
         except:
             print('Source file does not appear to be an image; assuming HDF5 instead!')
-            im_tmp = eh.image.load_hdf5(self.model_file)
-        im_tmp.rf = np.float(np.round(im_tmp.rf))
+            im_tmp = eh.movie.load_hdf5(self.model_file)
+            im_tmp.rf = np.float(self.freq)
         self.im = im_tmp
 
     # store ngeht-util and ehtim array objects
