@@ -771,6 +771,7 @@ class obs_generator(object):
             if obs == []:
                 obs = obs_seg.copy()
             else:
+                obs_seg.data['time'] += i_band*0.00001
                 obs.data = np.concatenate([obs.data,obs_seg.data])
 
         # Retrieve technincal readiness
