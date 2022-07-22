@@ -18,3 +18,6 @@ __bibtex__ = r"""@Article{TBD,
 __all__=['obs','metrics','const_def']
 from . import *
 
+
+from . import _version
+__version__ = _version.get_versions()['version']
