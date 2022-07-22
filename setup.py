@@ -14,5 +14,5 @@ setup(name='ngehtsim',
                         'matplotlib',
                         'numpy',
                         'scipy',
-                        'ngeht-util']
+                        'ngehtutil']
       )
