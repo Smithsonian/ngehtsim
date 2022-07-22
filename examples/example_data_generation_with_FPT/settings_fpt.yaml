@@ -1,7 +1,7 @@
 ############################################################
 # input files
 
-model_file: './example_script_fpt/M87_345GHz_Chael_modified.fits'
+model_file: './examples/example_data_generation_with_FPT/M87_345GHz_Chael_modified.fits'
 path_to_weather: './weather_data/'
 
 ############################################################
@@ -26,7 +26,7 @@ t_rest: 600.        # time interval between consecutive integrations, in seconds
 # ['adhoc',[reference station threshold, reference station tint, non-reference station threshold, backup threshold SNR on t_int]]; or
 # ['fringegroups', [strong baseline SNR threshold, strong baseline coherence time (in seconds)]
 # ['fpt', [strong baseline SNR threshold, strong baseline coherence time (in seconds), FPT reference frequency (in GHz), path to FPT reference model]
-SNR_cutoff: ['fpt', [5., 10., 86., './example_script_fpt/M87_86GHz_Chael_modified.fits']]
+SNR_cutoff: ['fpt', [5., 10., 86., './examples/example_data_generation_with_FPT/M87_86GHz_Chael_modified.fits']]
 
 ############################################################
 # array specs

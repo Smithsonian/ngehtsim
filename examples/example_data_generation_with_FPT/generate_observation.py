@@ -10,7 +10,7 @@ import ngehtsim.obs.obs_generator as og
 # generate an observation with FPT
 
 # input settings file
-yamlfile = 'example_script_fpt/settings_fpt.yaml'
+yamlfile = 'examples/example_data_generation_with_FPT/settings_fpt.yaml'
 
 # initialize the observation generator
 obsgen_fpt = og.obs_generator(yamlfile)
@@ -19,13 +19,13 @@ obsgen_fpt = og.obs_generator(yamlfile)
 obs_fpt = obsgen_fpt.make_obs()
 
 # save it as a uvfits file
-obs_fpt.save_uvfits('example_script_fpt/example_datafile_with_fpt.uvfits')
+obs_fpt.save_uvfits('examples/example_data_generation_with_FPT/example_datafile_with_fpt.uvfits')
 
 #######################################################
 # generate an observation without FPT
 
 # input settings file
-yamlfile = 'example_script_fpt/settings_no_fpt.yaml'
+yamlfile = 'examples/example_data_generation_with_FPT/settings_no_fpt.yaml'
 
 # initialize the observation generator
 obsgen = og.obs_generator(yamlfile)
@@ -34,7 +34,7 @@ obsgen = og.obs_generator(yamlfile)
 obs = obsgen.make_obs()
 
 # save it as a uvfits file
-obs.save_uvfits('example_script_fpt/example_datafile_no_fpt.uvfits')
+obs.save_uvfits('examples/example_data_generation_with_FPT/example_datafile_no_fpt.uvfits')
 
 #######################################################
 # make a comparison (u,v) coverage plot
@@ -57,7 +57,7 @@ ax.set_ylabel(r'$v$ (G$\lambda$)')
 
 ax.legend(fontsize=10)
 
-plt.savefig('example_script_fpt/uv-coverage.png',dpi=300,bbox_inches='tight')
+plt.savefig('examples/example_data_generation_with_FPT/uv-coverage.png',dpi=300,bbox_inches='tight')
 plt.close()
 
 #######################################################
@@ -81,7 +81,7 @@ ax.set_ylabel(r'Visibility amplitude (Jy)')
 
 ax.legend(fontsize=10)
 
-plt.savefig('example_script_fpt/radplot.png',dpi=300,bbox_inches='tight')
+plt.savefig('examples/example_data_generation_with_FPT/radplot.png',dpi=300,bbox_inches='tight')
 plt.close()
 
 #######################################################
@@ -101,5 +101,5 @@ ax.set_ylabel(r'Number of data points')
 
 ax.legend(fontsize=10)
 
-plt.savefig('example_script_fpt/data_histogram.png',dpi=300,bbox_inches='tight')
+plt.savefig('examples/example_data_generation_with_FPT/data_histogram.png',dpi=300,bbox_inches='tight')
 plt.close()

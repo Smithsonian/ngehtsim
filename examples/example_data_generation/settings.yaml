@@ -1,7 +1,7 @@
 ############################################################
 # input files
 
-model_file: './example_script/M87_230GHz_Chael.fits'
+model_file: './examples/example_data_generation/M87_230GHz_Chael.fits'
 path_to_weather: './weather_data/'
 
 ############################################################
