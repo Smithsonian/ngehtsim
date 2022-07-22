@@ -6,8 +6,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import ehtim as eh
 
-import utils.compute_metrics as cm
-from . import const_def as const
+import ngehtsim.metrics.compute_metrics as cm
+import ngehtsim.const_def as const
 
 ###################################################
 # plotting functions

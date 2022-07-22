@@ -13,7 +13,7 @@ from collections import defaultdict
 from astropy.time import Time
 import time
 
-from . import const_def as const
+import ngehtsim.const_def as const
 
 ###################################################
 # class definition

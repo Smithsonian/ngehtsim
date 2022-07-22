@@ -2,7 +2,7 @@
 # input files
 
 model_file: './example_script/M87_230GHz_Chael.fits'
-path_to_weather: './utils/weather_data/'
+path_to_weather: './weather_data/'
 
 ############################################################
 # observation specs

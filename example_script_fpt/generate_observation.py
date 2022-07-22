@@ -4,7 +4,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import ehtim as eh
-import utils.obs_generator as og
+import ngehtsim.obs.obs_generator as og
 
 #######################################################
 # generate an observation with FPT

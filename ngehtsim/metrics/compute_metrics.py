@@ -5,10 +5,10 @@ import numpy as np
 import ehtim as eh
 import ngehtutil as ng
 
-from .metrics import fill_fracs_v4 as ff
-from .metrics import fill_fracs_v5 as bff
-from .metrics import lcg_metric as lcg
-from . import const_def as const
+import ngehtsim.metrics.fill_fracs as ff
+import ngehtsim.metrics.bfill_fracs as bff
+import ngehtsim.metrics.lcg_metric as lcg
+import ngehtsim.const_def as const
 
 ###################################################
 # fullobs metric computations
