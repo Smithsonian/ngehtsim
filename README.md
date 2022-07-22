@@ -1,2 +1,3 @@
 # ngeht-sims
-A repository of simulation material  for the ngEHT collaboration
+
+A set of tools for generating synthetic data for the next-generation Event Horizon Telescope (ngEHT).
