@@ -7,7 +7,7 @@ SPHINXOPTS    ?=
 SPHINXBUILD   ?= sphinx-build
 SPHINXPROJ    = ngehtsim
 SOURCEDIR     = ../
-BUILDDIR      = build
+BUILDDIR      = ../../ngehtsim_docs/ngeht-sims
 
 # Put it first so that "make" without argument is like "make help".
 help:

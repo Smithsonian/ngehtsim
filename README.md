@@ -1,4 +1,4 @@
-# ngeht-sims
+# ngehtsim
 
 A set of tools for generating synthetic data for the next-generation Event Horizon Telescope ([ngEHT](https://www.ngeht.org)).
 
