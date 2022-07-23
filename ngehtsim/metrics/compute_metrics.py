@@ -15,15 +15,17 @@ import ngehtsim.const_def as const
 
 def calc_ff(obs,longest_BL=None,fov=100.0,fillpix=10):
     """
-    Calculate the (u,v)-filling fraction metric
+    Calculate the :math:`(u,v)`-filling fraction (FF) metric.
     
-    obs : input ehtim obsdata object
-    longest_BL : length of the bounding baseline, dimensionless
-    fov : FOV to consider when computing FF, in uas
-    fillpix : number of resolution elements across a convolving kernel in FF
-    
-    returns : the filling fraction value for this observation
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      longest_BL (float): length of the bounding baseline, dimensionless (i.e., in :math:`\\lambda`)
+      fov (float): field of view for computing FF, in :math:`\\mu\\rm{as}`
+      fillpix (int): number of resolution elements across a convolving kernel in FF
 
+    Returns:
+      (float): the FF value for this observation
+    
     """
 
     # deal with empty observation
@@ -39,18 +41,20 @@ def calc_ff(obs,longest_BL=None,fov=100.0,fillpix=10):
 
 def calc_bff(obs,longest_BL=None,fov=100.0,fillpix=10,logmid=1.5,logwid=0.525,stokes='I'):
     """
-    Calculate the "better" (u,v)-filling fraction metric
+    Calculate the "bolstered" :math:`(u,v)`-filling fraction (BFF) metric.
     
-    obs : input ehtim obsdata object
-    longest_BL : length of the bounding baseline, dimensionless
-    fov : FOV to consider when computing ff, in uas
-    fillpix : number of resolution elements across a convolving kernel in ff
-    logmid : the logarithmic midpoint of the SNR mapping function
-    logwid : the logarithmic width of the SNR mapping function
-    stokes : Stokes parameter for which to compute the BFF
-    
-    returns : the BFF value for this observation
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      longest_BL (float): length of the bounding baseline, dimensionless (i.e., in :math:`\\lambda`)
+      fov (float): field of view for computing FF, in :math:`\\mu\\rm{as}`
+      fillpix (int): number of resolution elements across a convolving kernel in FF
+      logmid (float): the logarithmic midpoint of the BFF SNR mapping function
+      logwid (float): the logarithmic width of the BFF SNR mapping function
+      stokes (str): Stokes parameter for which to compute the BFF metric; can be 'I', 'Q', 'U', 'V'
 
+    Returns:
+      (float): the BFF value for this observation
+    
     """
 
     # deal with empty observation
@@ -66,13 +70,15 @@ def calc_bff(obs,longest_BL=None,fov=100.0,fillpix=10,logmid=1.5,logwid=0.525,st
 
 def calc_lcg(obs,dummy_circ_res=None):
     """
-    Calculate the largest circular gap metric
+    Calculate the largest circular gap (LCG) metric.
     
-    obs : input ehtim obsdata object
-    dummy_circ_res : resolution of "dummy circle", in uas    
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      dummy_circ_res (float): resolution of "dummy circle", in :math:`\\mu\\rm{as}`
 
-    returns : the LCG value for this observation
-
+    Returns:
+      (float): the LCG value for this observation
+    
     """
 
     # deal with empty observation
@@ -88,12 +94,14 @@ def calc_lcg(obs,dummy_circ_res=None):
 
 def calc_pss(obs):
     """
-    Calculate the point source sensitivity metric
+    Calculate the point source sensitivity (PSS) metric.
     
-    obs : input ehtim obsdata object
-    
-    returns : the PSS value for this observation
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
 
+    Returns:
+      (float): the PSS value for this observation
+    
     """
 
     # deal with empty observation
@@ -106,16 +114,18 @@ def calc_pss(obs):
 
 def beam_shape(obs,weighting='natural',robust=0.0):
     """
-    Calculate the beam shape
+    Calculate the beam shape.
     
-    obs : input ehtim obsdata object
-    weighting : (u,v)-weighting; can be 'natural', 'uniform', or 'Briggs' / 'robust'
-    robust : the robust parameter for Briggs weighting
-    
-    returns : the minor and major beam axes (in uas) and the PA measured from the major axis, in degrees East of North
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      weighting (str): :math:`(u,v)`-weighting scheme for AR metric; can be 'natural', 'uniform', 'Briggs', 'robust'
+      robust (float): the robust parameter for Briggs weighting in the AR metric
 
-    """
+    Returns:
+      (float), (float), (float): the minor and major beam axes (in :math:`\\mu\\rm{as}`), and the PA measured from the major axis (in degrees East of North)
     
+    """
+
     # deal with empty observation
     if (len(obs.data) == 0):
         return np.inf, np.inf, np.inf
@@ -159,15 +169,17 @@ def beam_shape(obs,weighting='natural',robust=0.0):
 
 def calc_ar(obs,artype='mean',weighting='natural',robust=0.0):
     """
-    Calculate the angular resolution from the beam shape
+    Calculate the angular resolution (AR) metric.
     
-    obs : input ehtim obsdata object
-    artype : what measure of the beam shape to use; can be 'mean', 'minor', 'major', 'PA'/'angle'
-    weighting : (u,v)-weighting; can be 'natural', 'uniform', 'Briggs' / 'robust'
-    robust : the robust parameter for Briggs weighting
-    
-    returns : the angular resolution, in uas
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      artype (str): what measure of the beam shape to use; can be 'mean', 'minor', 'major', 'PA', 'angle'
+      weighting (str): :math:`(u,v)`-weighting scheme for AR metric; can be 'natural', 'uniform', 'Briggs', 'robust'
+      robust (float): the robust parameter for Briggs weighting in the AR metric
 
+    Returns:
+      (float): the LCG value for this observation, in :math:`\\mu\\rm{as}`
+    
     """
 
     # deal with empty observation
@@ -194,18 +206,20 @@ def calc_ar(obs,artype='mean',weighting='natural',robust=0.0):
 
 def calc_ff_continuous(obs,longest_BL=None,fov=100.0,fillpix=10,start_time=0.0,end_time=24.0,snapshot_interval=600.0):
     """
-    Calculate the (u,v)-filling fraction metric on snapshots
+    Calculate the :math:`(u,v)`-filling fraction (FF) metric on snapshots.
     
-    obs : input ehtim obsdata object
-    fov : FOV to consider when computing ff, in uas
-    fillpix : number of resolution elements across a convolving kernel in ff
-    longest_BL : length of the bounding baseline, dimensionless
-    start_time : starting time of first snapshot, in hours
-    end_time : ending time of last snapshot, in hours
-    snapshot_interval : length of a single snapshot, in seconds
-    
-    returns : the segmentation times and filling fraction values for each snapshot
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      longest_BL (float): length of the bounding baseline, dimensionless (i.e., in :math:`\\lambda`)
+      fov (float): field of view for computing FF, in :math:`\\mu\\rm{as}`
+      fillpix (int): number of resolution elements across a convolving kernel in FF
+      start_time (float): starting time of first snapshot, in hours
+      end_time (float): ending time of last snapshot, in hours
+      snapshot_interval (float): length of a single snapshot, in seconds
 
+    Returns:
+      (numpy.ndarray), (numpy.ndarray): the segmentation times and FF values for each snapshot in this observation
+    
     """
     
     if (longest_BL == None):
@@ -237,21 +251,23 @@ def calc_ff_continuous(obs,longest_BL=None,fov=100.0,fillpix=10,start_time=0.0,e
 
 def calc_bff_continuous(obs,longest_BL=None,fov=100.0,fillpix=10,logmid=1.5,logwid=0.525,stokes='I',start_time=0.0,end_time=24.0,snapshot_interval=600.0):
     """
-    Calculate the "better" (u,v)-filling fraction metric on snapshots
+    Calculate the "bolstered" :math:`(u,v)`-filling fraction (BFF) metric on snapshots.
     
-    obs : input ehtim obsdata object
-    longest_BL : length of the bounding baseline, dimensionless
-    fov : FOV to consider when computing ff, in uas
-    fillpix : number of resolution elements across a convolving kernel in ff
-    logmid : the logarithmic midpoint of the SNR mapping function
-    logwid : the logarithmic width of the SNR mapping function
-    stokes : Stokes parameter for which to compute the BFF
-    start_time : starting time of first snapshot, in hours
-    end_time : ending time of last snapshot, in hours
-    snapshot_interval : length of a single snapshot, in seconds
-    
-    returns : the segmentation times and BFF values for each snapshot
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      longest_BL (float): length of the bounding baseline, dimensionless (i.e., in :math:`\\lambda`)
+      fov (float): field of view for computing FF, in :math:`\\mu\\rm{as}`
+      fillpix (int): number of resolution elements across a convolving kernel in FF
+      logmid (float): the logarithmic midpoint of the BFF SNR mapping function
+      logwid (float): the logarithmic width of the BFF SNR mapping function
+      stokes (str): Stokes parameter for which to compute the BFF metric; can be 'I', 'Q', 'U', 'V'
+      start_time (float): starting time of first snapshot, in hours
+      end_time (float): ending time of last snapshot, in hours
+      snapshot_interval (float): length of a single snapshot, in seconds
 
+    Returns:
+      (numpy.ndarray), (numpy.ndarray): the segmentation times and BFF values for each snapshot in this observation
+    
     """
 
     if (longest_BL == None):
@@ -283,16 +299,18 @@ def calc_bff_continuous(obs,longest_BL=None,fov=100.0,fillpix=10,logmid=1.5,logw
 
 def calc_lcg_continuous(obs,dummy_circ_res=None,start_time=0.0,end_time=24.0,snapshot_interval=600.0):
     """
-    Calculate the largest circular gap metric on snapshots
+    Calculate the largest circular gap (LCG) metric on snapshots.
     
-    obs : input ehtim obsdata object
-    dummy_circ_res : resolution of "dummy circle", in uas
-    start_time : starting time of first snapshot, in hours
-    end_time : ending time of last snapshot, in hours
-    snapshot_interval : length of a single snapshot, in seconds
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      dummy_circ_res (float): resolution of "dummy circle", in :math:`\\mu\\rm{as}`
+      start_time (float): starting time of first snapshot, in hours
+      end_time (float): ending time of last snapshot, in hours
+      snapshot_interval (float): length of a single snapshot, in seconds
 
-    returns : the segmentation times and LCG values for each snapshot
-
+    Returns:
+      (numpy.ndarray), (numpy.ndarray): the segmentation times and LCG values for each snapshot in this observation
+    
     """
     
     if (dummy_circ_res == None):
@@ -328,15 +346,17 @@ def calc_lcg_continuous(obs,dummy_circ_res=None,start_time=0.0,end_time=24.0,sna
 
 def calc_pss_continuous(obs,start_time=0.0,end_time=24.0,snapshot_interval=600.0):
     """
-    Calculate the point source sensitivity metric on snapshots
+    Calculate the point source sensitivity (PSS) metric on snapshots.
     
-    obs : input ehtim obsdata object
-    start_time : starting time of first snapshot, in hours
-    end_time : ending time of last snapshot, in hours
-    snapshot_interval : length of a single snapshot, in seconds
-    
-    returns : the segmentation times and PSS values for each snapshot
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      start_time (float): starting time of first snapshot, in hours
+      end_time (float): ending time of last snapshot, in hours
+      snapshot_interval (float): length of a single snapshot, in seconds
 
+    Returns:
+      (numpy.ndarray), (numpy.ndarray): the segmentation times and PSS values for each snapshot in this observation
+    
     """
     
     # observation info
@@ -369,18 +389,20 @@ def calc_pss_continuous(obs,start_time=0.0,end_time=24.0,snapshot_interval=600.0
 
 def calc_ar_continuous(obs,artype='mean',weighting='natural',robust=0.0,start_time=0.0,end_time=24.0,snapshot_interval=600.0):
     """
-    Calculate the angular resolution on snapshots
+    Calculate the angular resolution (AR) metric on snapshots.
     
-    obs : input ehtim obsdata object
-    artype : what measure of the beam shape to use; can be 'mean', 'minor', 'major', 'PA'/'angle'
-    weighting : (u,v)-weighting; can be 'natural', 'uniform', 'Briggs' / 'robust'
-    robust : the robust parameter for Briggs weighting
-    start_time : starting time of first snapshot, in hours
-    end_time : ending time of last snapshot, in hours
-    snapshot_interval : length of a single snapshot, in seconds
-    
-    returns : the segmentation times and PSS values for each snapshot
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      artype (str): what measure of the beam shape to use; can be 'mean', 'minor', 'major', 'PA', 'angle'
+      weighting (str): :math:`(u,v)`-weighting scheme for AR metric; can be 'natural', 'uniform', 'Briggs', 'robust'
+      robust (float): the robust parameter for Briggs weighting in the AR metric
+      start_time (float): starting time of first snapshot, in hours
+      end_time (float): ending time of last snapshot, in hours
+      snapshot_interval (float): length of a single snapshot, in seconds
 
+    Returns:
+      (numpy.ndarray), (numpy.ndarray): the segmentation times and AR values for each snapshot in this observation
+    
     """
     
     # observation info
@@ -429,15 +451,17 @@ def calc_ar_continuous(obs,artype='mean',weighting='natural',robust=0.0,start_ti
 
 def calc_cost(obs,observations_per_year=1,days_per_observation=1,hours_per_observation=24):
     """
-    Calculate the cost of an array
+    Calculate the cost of an array.
     
-    obs : input ehtim obsdata object
-    observations_per_year : number of observating runs to be carried out per year
-    days_per_observation : number of days per observing run
-    hours_per_observation : number of hours in a single observation
-    
-    returns : the total capital and annual operating costs of the array, in dollars
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      observations_per_year (int): number of observating runs to be carried out per year
+      days_per_observation (int): number of days per observing run
+      hours_per_observation (float): number of hours in a single observation
 
+    Returns:
+      (float), (float): the total capital and annual operating costs of the array, in dollars
+    
     """
 
     # deal with empty observation
@@ -456,6 +480,6 @@ def calc_cost(obs,observations_per_year=1,days_per_observation=1,hours_per_obser
     arr = ng.Array('ngEHT',stations)
 
     costs = ng.cost.calculate_costs(config, arr.stations())
-    
-    return costs['TOTAL CAPEX'], costs['ANNUAL OPEX']
 
+    return costs[0]['TOTAL CAPEX'], costs[0]['ANNUAL OPEX']
+    

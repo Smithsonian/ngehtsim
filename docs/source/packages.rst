@@ -7,4 +7,5 @@ Individual package documentation organized by area.
    :maxdepth: 3
 
    ./obsgen
+   ./metrics
    

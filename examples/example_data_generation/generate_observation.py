@@ -1,6 +1,7 @@
 #######################################################
 # imports
 
+import numpy as np
 import ehtim as eh
 import ngehtsim.obs.obs_generator as og
 import ngehtsim.obs.obs_plotter as op
@@ -54,4 +55,7 @@ for weighting in ['natural','uniform','robust']:
 	ar = cm.calc_ar(obs,artype='mean',weighting=weighting)
 	print('Average beam size (in uas) with ' + weighting + ' weighting is: ',ar)
 
-
+# compute array cost metric
+total_cost, operating_cost = cm.calc_cost(obs)
+print('Total cost to build this array is: $%.2fM' % (total_cost/(1.0e6)))
+print('Annual operating cost of this array is: $%.2fM' % (operating_cost/(1.0e6)))
