@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>metrics.compute_metrics &mdash; ngehtsim 0+untagged.42.g13411cb.dirty documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
+          </a>
+              <div class="version">
+                0+untagged.42.g13411cb.dirty
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/packages.html">Packages</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../docs/source/index.html">ngehtsim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../docs/source/index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>metrics.compute_metrics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for metrics.compute_metrics</h1><div class="highlight"><pre>
+<span></span><span class="c1">###################################################</span>
+<span class="c1"># imports</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">ehtim</span> <span class="k">as</span> <span class="nn">eh</span>
+<span class="kn">import</span> <span class="nn">ngehtutil</span> <span class="k">as</span> <span class="nn">ng</span>
+
+<span class="kn">import</span> <span class="nn">ngehtsim.metrics.fill_fracs</span> <span class="k">as</span> <span class="nn">ff</span>
+<span class="kn">import</span> <span class="nn">ngehtsim.metrics.bfill_fracs</span> <span class="k">as</span> <span class="nn">bff</span>
+<span class="kn">import</span> <span class="nn">ngehtsim.metrics.lcg_metric</span> <span class="k">as</span> <span class="nn">lcg</span>
+<span class="kn">import</span> <span class="nn">ngehtsim.const_def</span> <span class="k">as</span> <span class="nn">const</span>
+
+<span class="c1">###################################################</span>
+<span class="c1"># fullobs metric computations</span>
+
+<div class="viewcode-block" id="calc_ff"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_ff">[docs]</a><span class="k">def</span> <span class="nf">calc_ff</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">longest_BL</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span><span class="n">fillpix</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the :math:`(u,v)`-filling fraction (FF) metric.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      longest_BL (float): length of the bounding baseline, dimensionless (i.e., in :math:`\\lambda`)</span>
+<span class="sd">      fov (float): field of view for computing FF, in :math:`\\mu\\rm{as}`</span>
+<span class="sd">      fillpix (int): number of resolution elements across a convolving kernel in FF</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (float): the FF value for this observation</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># deal with empty observation</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">longest_BL</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">longest_BL</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">D_Earth</span><span class="o">/</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">c</span><span class="o">/</span><span class="n">obs</span><span class="o">.</span><span class="n">rf</span><span class="p">)</span>
+
+    <span class="n">fill</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">obs_fill</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">longest</span><span class="o">=</span><span class="n">longest_BL</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="n">fov</span><span class="p">,</span><span class="n">N</span><span class="o">=</span><span class="n">fillpix</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">fill</span></div>
+
+<div class="viewcode-block" id="calc_bff"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_bff">[docs]</a><span class="k">def</span> <span class="nf">calc_bff</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">longest_BL</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span><span class="n">fillpix</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">logmid</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span><span class="n">logwid</span><span class="o">=</span><span class="mf">0.525</span><span class="p">,</span><span class="n">stokes</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the &quot;bolstered&quot; :math:`(u,v)`-filling fraction (BFF) metric.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      longest_BL (float): length of the bounding baseline, dimensionless (i.e., in :math:`\\lambda`)</span>
+<span class="sd">      fov (float): field of view for computing FF, in :math:`\\mu\\rm{as}`</span>
+<span class="sd">      fillpix (int): number of resolution elements across a convolving kernel in FF</span>
+<span class="sd">      logmid (float): the logarithmic midpoint of the BFF SNR mapping function</span>
+<span class="sd">      logwid (float): the logarithmic width of the BFF SNR mapping function</span>
+<span class="sd">      stokes (str): Stokes parameter for which to compute the BFF metric; can be &#39;I&#39;, &#39;Q&#39;, &#39;U&#39;, &#39;V&#39;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (float): the BFF value for this observation</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># deal with empty observation</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">longest_BL</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">longest_BL</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">D_Earth</span><span class="o">/</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">c</span><span class="o">/</span><span class="n">obs</span><span class="o">.</span><span class="n">rf</span><span class="p">)</span>
+
+    <span class="n">bff_out</span> <span class="o">=</span> <span class="n">bff</span><span class="o">.</span><span class="n">obs_fill</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="n">fov</span><span class="p">,</span><span class="n">longest</span><span class="o">=</span><span class="n">longest_BL</span><span class="p">,</span><span class="n">N</span><span class="o">=</span><span class="n">fillpix</span><span class="p">,</span><span class="n">logmid</span><span class="o">=</span><span class="n">logmid</span><span class="p">,</span><span class="n">logwid</span><span class="o">=</span><span class="n">logwid</span><span class="p">,</span><span class="n">stokes</span><span class="o">=</span><span class="n">stokes</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">bff_out</span></div>
+
+<div class="viewcode-block" id="calc_lcg"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_lcg">[docs]</a><span class="k">def</span> <span class="nf">calc_lcg</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">dummy_circ_res</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the largest circular gap (LCG) metric.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      dummy_circ_res (float): resolution of &quot;dummy circle&quot;, in :math:`\\mu\\rm{as}`</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (float): the LCG value for this observation</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># deal with empty observation</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">dummy_circ_res</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">dummy_circ_res</span> <span class="o">=</span> <span class="p">((</span><span class="n">const</span><span class="o">.</span><span class="n">c</span><span class="o">/</span><span class="n">obs</span><span class="o">.</span><span class="n">rf</span><span class="p">)</span> <span class="o">/</span> <span class="n">const</span><span class="o">.</span><span class="n">D_Earth</span><span class="p">)</span> <span class="o">/</span> <span class="n">eh</span><span class="o">.</span><span class="n">RADPERUAS</span>
+
+    <span class="n">lcg_out</span> <span class="o">=</span> <span class="n">lcg</span><span class="o">.</span><span class="n">LCG_metric</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;analytic&#39;</span><span class="p">,</span><span class="n">tavg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">scan_avg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">dummy_circ</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">dummy_circ_res</span><span class="o">=</span><span class="n">dummy_circ_res</span><span class="p">,</span><span class="n">plot_solution</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">niter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">specify_x0</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">lcg_out</span></div>
+
+<div class="viewcode-block" id="calc_pss"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_pss">[docs]</a><span class="k">def</span> <span class="nf">calc_pss</span><span class="p">(</span><span class="n">obs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the point source sensitivity (PSS) metric.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (float): the PSS value for this observation</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># deal with empty observation</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    
+    <span class="n">pss_out</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">pss_out</span></div>
+
+<div class="viewcode-block" id="beam_shape"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.beam_shape">[docs]</a><span class="k">def</span> <span class="nf">beam_shape</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">weighting</span><span class="o">=</span><span class="s1">&#39;natural&#39;</span><span class="p">,</span><span class="n">robust</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the beam shape.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      weighting (str): :math:`(u,v)`-weighting scheme for AR metric; can be &#39;natural&#39;, &#39;uniform&#39;, &#39;Briggs&#39;, &#39;robust&#39;</span>
+<span class="sd">      robust (float): the robust parameter for Briggs weighting in the AR metric</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (float): the minor beam axis, in :math:`\\mu\\rm{as}`</span>
+<span class="sd">      (float): the major beam axis, in :math:`\\mu\\rm{as}`</span>
+<span class="sd">      (float): the PA measured from the major axis, in degrees East of North</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># deal with empty observation</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="c1"># (u,v) coordinates</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;u&#39;</span><span class="p">]</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;v&#39;</span><span class="p">]</span>
+    
+    <span class="c1"># ehtim conventions</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">weighting</span> <span class="o">==</span> <span class="s1">&#39;natural&#39;</span><span class="p">):</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span><span class="o">**</span><span class="mf">2.0</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">weighting</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">):</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">((</span><span class="n">weighting</span> <span class="o">==</span> <span class="s1">&#39;Briggs&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">weighting</span> <span class="o">==</span> <span class="s1">&#39;robust&#39;</span><span class="p">)):</span>
+        <span class="n">wtav</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="n">S2</span> <span class="o">=</span> <span class="p">((</span><span class="mf">5.0</span><span class="o">*</span><span class="p">(</span><span class="mf">10.0</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="n">robust</span><span class="p">)))</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">wtav</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">S2</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span>
+    
+    <span class="c1"># second moment matrix</span>
+    <span class="n">u2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">u</span><span class="o">**</span><span class="mf">2.0</span><span class="p">,</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">v</span><span class="o">**</span><span class="mf">2.0</span><span class="p">,</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">uv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">u</span><span class="o">*</span><span class="n">v</span><span class="p">,</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="c1"># compute (u,v) eigenvalues</span>
+    <span class="n">minor_uv</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">u2</span> <span class="o">+</span> <span class="n">v2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">u2</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">u2</span><span class="o">*</span><span class="n">v2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">*</span><span class="p">(</span><span class="n">uv</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="n">v2</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)))</span>
+    <span class="n">major_uv</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">u2</span> <span class="o">+</span> <span class="n">v2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">u2</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">u2</span><span class="o">*</span><span class="n">v2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">*</span><span class="p">(</span><span class="n">uv</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="n">v2</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)))</span>
+
+    <span class="c1"># compute (u,v) eigenvectors</span>
+    <span class="n">vec_major_uv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="o">-</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">uv</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="n">v2</span> <span class="o">-</span> <span class="n">u2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">u2</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">u2</span><span class="o">*</span><span class="n">v2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">*</span><span class="p">(</span><span class="n">uv</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span> <span class="o">+</span> <span class="p">(</span><span class="n">v2</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)))),</span><span class="mf">1.0</span><span class="p">])</span>
+    <span class="n">vec_major_uv</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">vec_major_uv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">vec_major_uv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span>
+
+    <span class="c1"># compute (u,v) position angle</span>
+    <span class="n">theta_uv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">vec_major_uv</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">vec_major_uv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c1"># convert to image-domain</span>
+    <span class="n">minor</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">major_uv</span><span class="p">))</span> <span class="o">/</span> <span class="n">eh</span><span class="o">.</span><span class="n">RADPERUAS</span>
+    <span class="n">major</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">minor_uv</span><span class="p">))</span> <span class="o">/</span> <span class="n">eh</span><span class="o">.</span><span class="n">RADPERUAS</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="p">(</span><span class="mf">180.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">theta_uv</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">2.0</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">minor</span><span class="p">,</span> <span class="n">major</span><span class="p">,</span> <span class="n">theta</span></div>
+
+<div class="viewcode-block" id="calc_ar"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_ar">[docs]</a><span class="k">def</span> <span class="nf">calc_ar</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">artype</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span><span class="n">weighting</span><span class="o">=</span><span class="s1">&#39;natural&#39;</span><span class="p">,</span><span class="n">robust</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the angular resolution (AR) metric.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      artype (str): what measure of the beam shape to use; can be &#39;mean&#39;, &#39;minor&#39;, &#39;major&#39;, &#39;PA&#39;, &#39;angle&#39;</span>
+<span class="sd">      weighting (str): :math:`(u,v)`-weighting scheme for AR metric; can be &#39;natural&#39;, &#39;uniform&#39;, &#39;Briggs&#39;, &#39;robust&#39;</span>
+<span class="sd">      robust (float): the robust parameter for Briggs weighting in the AR metric</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (float): the LCG value for this observation, in :math:`\\mu\\rm{as}`</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># deal with empty observation</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+
+    <span class="c1"># get the beam shape parameters</span>
+    <span class="n">ar_list</span> <span class="o">=</span> <span class="n">beam_shape</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">weighting</span><span class="o">=</span><span class="n">weighting</span><span class="p">,</span><span class="n">robust</span><span class="o">=</span><span class="n">robust</span><span class="p">)</span>
+
+    <span class="c1"># compute the desired measure of angular resolution</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;minor&#39;</span><span class="p">):</span>
+        <span class="n">ar_out</span> <span class="o">=</span> <span class="n">ar_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;major&#39;</span><span class="p">):</span>
+        <span class="n">ar_out</span> <span class="o">=</span> <span class="n">ar_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;PA&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;angle&#39;</span><span class="p">)):</span>
+        <span class="n">ar_out</span> <span class="o">=</span> <span class="n">ar_list</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+        <span class="n">ar_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">ar_list</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">ar_out</span></div>
+
+<span class="c1">###################################################</span>
+<span class="c1"># snapshot metric computations</span>
+
+<div class="viewcode-block" id="calc_ff_continuous"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_ff_continuous">[docs]</a><span class="k">def</span> <span class="nf">calc_ff_continuous</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">longest_BL</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span><span class="n">fillpix</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">start_time</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">end_time</span><span class="o">=</span><span class="mf">24.0</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">=</span><span class="mf">600.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the (u,v)-filling fraction metric on snapshots</span>
+<span class="sd">    </span>
+<span class="sd">    obs : input ehtim obsdata object</span>
+<span class="sd">    fov : FOV to consider when computing ff, in uas</span>
+<span class="sd">    fillpix : number of resolution elements across a convolving kernel in ff</span>
+<span class="sd">    longest_BL : length of the bounding baseline, dimensionless</span>
+<span class="sd">    start_time : starting time of first snapshot, in hours</span>
+<span class="sd">    end_time : ending time of last snapshot, in hours</span>
+<span class="sd">    snapshot_interval : length of a single snapshot, in seconds</span>
+<span class="sd">    </span>
+<span class="sd">    returns : the segmentation times and filling fraction values for each snapshot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">longest_BL</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">longest_BL</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">D_Earth</span><span class="o">/</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">c</span><span class="o">/</span><span class="n">obs</span><span class="o">.</span><span class="n">rf</span><span class="p">)</span>
+
+    <span class="c1"># observation info</span>
+    <span class="n">times_obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+    <span class="n">datatable</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># make a small blank copy to use for snapshots</span>
+    <span class="n">obs_blank</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">obs_blank</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># compute fill fractions</span>
+    <span class="n">times_temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span><span class="n">end_time</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">/</span><span class="mf">3600.0</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">times_temp</span><span class="p">,[</span><span class="mf">2.0</span><span class="o">*</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]))</span>
+    <span class="n">fills</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">itime</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">UT_mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">times_obs</span> <span class="o">&gt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">times_obs</span> <span class="o">&lt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">UT_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">obs_snapshot</span> <span class="o">=</span> <span class="n">obs_blank</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">obs_snapshot</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">datatable</span><span class="p">[</span><span class="n">UT_mask</span><span class="p">]</span>
+            <span class="n">fill_snapshot</span> <span class="o">=</span> <span class="n">ff</span><span class="o">.</span><span class="n">obs_fill</span><span class="p">(</span><span class="n">obs_snapshot</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="n">fov</span><span class="p">,</span><span class="n">longest</span><span class="o">=</span><span class="n">longest_BL</span><span class="p">,</span><span class="n">N</span><span class="o">=</span><span class="n">fillpix</span><span class="p">)</span>
+            <span class="n">fills</span><span class="p">[</span><span class="n">itime</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_snapshot</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    
+    <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">fills</span></div>
+
+<div class="viewcode-block" id="calc_bff_continuous"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_bff_continuous">[docs]</a><span class="k">def</span> <span class="nf">calc_bff_continuous</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">longest_BL</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span><span class="n">fillpix</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">logmid</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span><span class="n">logwid</span><span class="o">=</span><span class="mf">0.525</span><span class="p">,</span><span class="n">stokes</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">,</span><span class="n">start_time</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">end_time</span><span class="o">=</span><span class="mf">24.0</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">=</span><span class="mf">600.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the &quot;better&quot; (u,v)-filling fraction metric on snapshots</span>
+<span class="sd">    </span>
+<span class="sd">    obs : input ehtim obsdata object</span>
+<span class="sd">    longest_BL : length of the bounding baseline, dimensionless</span>
+<span class="sd">    fov : FOV to consider when computing ff, in uas</span>
+<span class="sd">    fillpix : number of resolution elements across a convolving kernel in ff</span>
+<span class="sd">    logmid : the logarithmic midpoint of the SNR mapping function</span>
+<span class="sd">    logwid : the logarithmic width of the SNR mapping function</span>
+<span class="sd">    stokes : Stokes parameter for which to compute the BFF</span>
+<span class="sd">    start_time : starting time of first snapshot, in hours</span>
+<span class="sd">    end_time : ending time of last snapshot, in hours</span>
+<span class="sd">    snapshot_interval : length of a single snapshot, in seconds</span>
+<span class="sd">    </span>
+<span class="sd">    returns : the segmentation times and BFF values for each snapshot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">longest_BL</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">longest_BL</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">D_Earth</span><span class="o">/</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">c</span><span class="o">/</span><span class="n">obs</span><span class="o">.</span><span class="n">rf</span><span class="p">)</span>
+
+    <span class="c1"># observation info</span>
+    <span class="n">times_obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+    <span class="n">datatable</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># make a small blank copy to use for snapshots</span>
+    <span class="n">obs_blank</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">obs_blank</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># compute fill fractions</span>
+    <span class="n">times_temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span><span class="n">end_time</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">/</span><span class="mf">3600.0</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">times_temp</span><span class="p">,[</span><span class="mf">2.0</span><span class="o">*</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]))</span>
+    <span class="n">bffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">itime</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">UT_mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">times_obs</span> <span class="o">&gt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">times_obs</span> <span class="o">&lt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">UT_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">obs_snapshot</span> <span class="o">=</span> <span class="n">obs_blank</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">obs_snapshot</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">datatable</span><span class="p">[</span><span class="n">UT_mask</span><span class="p">]</span>
+            <span class="n">bff_snapshot</span> <span class="o">=</span> <span class="n">bff</span><span class="o">.</span><span class="n">obs_fill</span><span class="p">(</span><span class="n">obs_snapshot</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="n">fov</span><span class="p">,</span><span class="n">longest</span><span class="o">=</span><span class="n">longest_BL</span><span class="p">,</span><span class="n">N</span><span class="o">=</span><span class="n">fillpix</span><span class="p">,</span><span class="n">logmid</span><span class="o">=</span><span class="n">logmid</span><span class="p">,</span><span class="n">logwid</span><span class="o">=</span><span class="n">logwid</span><span class="p">,</span><span class="n">stokes</span><span class="o">=</span><span class="n">stokes</span><span class="p">)</span>
+            <span class="n">bffs</span><span class="p">[</span><span class="n">itime</span><span class="p">]</span> <span class="o">=</span> <span class="n">bff_snapshot</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">bffs</span></div>
+
+<div class="viewcode-block" id="calc_lcg_continuous"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_lcg_continuous">[docs]</a><span class="k">def</span> <span class="nf">calc_lcg_continuous</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">dummy_circ_res</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">start_time</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">end_time</span><span class="o">=</span><span class="mf">24.0</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">=</span><span class="mf">600.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the largest circular gap metric on snapshots</span>
+<span class="sd">    </span>
+<span class="sd">    obs : input ehtim obsdata object</span>
+<span class="sd">    dummy_circ_res : resolution of &quot;dummy circle&quot;, in uas</span>
+<span class="sd">    start_time : starting time of first snapshot, in hours</span>
+<span class="sd">    end_time : ending time of last snapshot, in hours</span>
+<span class="sd">    snapshot_interval : length of a single snapshot, in seconds</span>
+
+<span class="sd">    returns : the segmentation times and LCG values for each snapshot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">dummy_circ_res</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">dummy_circ_res</span> <span class="o">=</span> <span class="p">((</span><span class="n">const</span><span class="o">.</span><span class="n">c</span><span class="o">/</span><span class="n">obs</span><span class="o">.</span><span class="n">rf</span><span class="p">)</span> <span class="o">/</span> <span class="n">const</span><span class="o">.</span><span class="n">D_Earth</span><span class="p">)</span> <span class="o">/</span> <span class="n">eh</span><span class="o">.</span><span class="n">RADPERUAS</span>
+    
+    <span class="c1"># observation info</span>
+    <span class="n">times_obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+    <span class="n">datatable</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="c1"># make a small blank copy to use for snapshots</span>
+    <span class="n">obs_blank</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">obs_blank</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># compute LCG in snapshots</span>
+    <span class="n">times_temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span><span class="n">end_time</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">/</span><span class="mf">3600.0</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">times_temp</span><span class="p">,[</span><span class="mf">2.0</span><span class="o">*</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]))</span>
+    <span class="n">lcgs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">itime</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">UT_mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">times_obs</span> <span class="o">&gt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">times_obs</span> <span class="o">&lt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">UT_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">obs_snapshot</span> <span class="o">=</span> <span class="n">obs_blank</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">obs_snapshot</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">datatable</span><span class="p">[</span><span class="n">UT_mask</span><span class="p">]</span>
+            <span class="n">lcg_snapshot</span> <span class="o">=</span> <span class="n">lcg</span><span class="o">.</span><span class="n">LCG_metric</span><span class="p">(</span><span class="n">obs_snapshot</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;analytic&#39;</span><span class="p">,</span><span class="n">tavg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">scan_avg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">dummy_circ</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">dummy_circ_res</span><span class="o">=</span><span class="n">dummy_circ_res</span><span class="p">,</span><span class="n">plot_solution</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">niter</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">specify_x0</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">lcgs</span><span class="p">[</span><span class="n">itime</span><span class="p">]</span> <span class="o">=</span> <span class="n">lcg_snapshot</span>
+
+    <span class="c1"># remove zero-valued points</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="p">(</span><span class="n">lcgs</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">lcgs</span> <span class="o">=</span> <span class="n">lcgs</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">lcgs</span></div>
+
+<div class="viewcode-block" id="calc_pss_continuous"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_pss_continuous">[docs]</a><span class="k">def</span> <span class="nf">calc_pss_continuous</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">start_time</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">end_time</span><span class="o">=</span><span class="mf">24.0</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">=</span><span class="mf">600.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the point source sensitivity metric on snapshots</span>
+<span class="sd">    </span>
+<span class="sd">    obs : input ehtim obsdata object</span>
+<span class="sd">    start_time : starting time of first snapshot, in hours</span>
+<span class="sd">    end_time : ending time of last snapshot, in hours</span>
+<span class="sd">    snapshot_interval : length of a single snapshot, in seconds</span>
+<span class="sd">    </span>
+<span class="sd">    returns : the segmentation times and PSS values for each snapshot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># observation info</span>
+    <span class="n">times_obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+    <span class="n">datatable</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="c1"># make a small blank copy to use for snapshots</span>
+    <span class="n">obs_blank</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">obs_blank</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># compute PSS in snapshots</span>
+    <span class="n">times_temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span><span class="n">end_time</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">/</span><span class="mf">3600.0</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">times_temp</span><span class="p">,[</span><span class="mf">2.0</span><span class="o">*</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]))</span>
+    <span class="n">psss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">itime</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">UT_mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">times_obs</span> <span class="o">&gt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">times_obs</span> <span class="o">&lt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">UT_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">obs_snapshot</span> <span class="o">=</span> <span class="n">obs_blank</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">obs_snapshot</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">datatable</span><span class="p">[</span><span class="n">UT_mask</span><span class="p">]</span>
+            <span class="n">pss_snapshot</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">obs_snapshot</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span>
+            <span class="n">psss</span><span class="p">[</span><span class="n">itime</span><span class="p">]</span> <span class="o">=</span> <span class="n">pss_snapshot</span>
+
+    <span class="c1"># remove zero-valued points</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="p">(</span><span class="n">psss</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">psss</span> <span class="o">=</span> <span class="n">psss</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">psss</span></div>
+
+<div class="viewcode-block" id="calc_ar_continuous"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_ar_continuous">[docs]</a><span class="k">def</span> <span class="nf">calc_ar_continuous</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">artype</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span><span class="n">weighting</span><span class="o">=</span><span class="s1">&#39;natural&#39;</span><span class="p">,</span><span class="n">robust</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">start_time</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">end_time</span><span class="o">=</span><span class="mf">24.0</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">=</span><span class="mf">600.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the angular resolution on snapshots</span>
+<span class="sd">    </span>
+<span class="sd">    obs : input ehtim obsdata object</span>
+<span class="sd">    artype : what measure of the beam shape to use; can be &#39;mean&#39;, &#39;minor&#39;, &#39;major&#39;, &#39;PA&#39;/&#39;angle&#39;</span>
+<span class="sd">    weighting : (u,v)-weighting; can be &#39;natural&#39;, &#39;uniform&#39;, &#39;Briggs&#39; / &#39;robust&#39;</span>
+<span class="sd">    robust : the robust parameter for Briggs weighting</span>
+<span class="sd">    start_time : starting time of first snapshot, in hours</span>
+<span class="sd">    end_time : ending time of last snapshot, in hours</span>
+<span class="sd">    snapshot_interval : length of a single snapshot, in seconds</span>
+<span class="sd">    </span>
+<span class="sd">    returns : the segmentation times and PSS values for each snapshot</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># observation info</span>
+    <span class="n">times_obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+    <span class="n">datatable</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="c1"># make a small blank copy to use for snapshots</span>
+    <span class="n">obs_blank</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">obs_blank</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># compute angular resolution in snapshots</span>
+    <span class="n">times_temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span><span class="n">end_time</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">/</span><span class="mf">3600.0</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">times_temp</span><span class="p">,[</span><span class="mf">2.0</span><span class="o">*</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">times_temp</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]]))</span>
+    <span class="n">ars</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">itime</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">UT_mask</span> <span class="o">=</span> <span class="p">((</span><span class="n">times_obs</span> <span class="o">&gt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">times_obs</span> <span class="o">&lt;=</span> <span class="n">times</span><span class="p">[</span><span class="n">itime</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">UT_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">obs_snapshot</span> <span class="o">=</span> <span class="n">obs_blank</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">obs_snapshot</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">datatable</span><span class="p">[</span><span class="n">UT_mask</span><span class="p">]</span>
+
+            <span class="c1"># get the beam shape parameters</span>
+            <span class="n">ar_list_snapshot</span> <span class="o">=</span> <span class="n">beam_shape</span><span class="p">(</span><span class="n">obs_snapshot</span><span class="p">,</span><span class="n">weighting</span><span class="o">=</span><span class="n">weighting</span><span class="p">,</span><span class="n">robust</span><span class="o">=</span><span class="n">robust</span><span class="p">)</span>
+
+            <span class="c1"># compute the desired measure of angular resolution</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;minor&#39;</span><span class="p">):</span>
+                <span class="n">ar_snapshot</span> <span class="o">=</span> <span class="n">ar_list_snapshot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;major&#39;</span><span class="p">):</span>
+                <span class="n">ar_snapshot</span> <span class="o">=</span> <span class="n">ar_list_snapshot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;PA&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;angle&#39;</span><span class="p">)):</span>
+                <span class="n">ar_snapshot</span> <span class="o">=</span> <span class="n">ar_list_snapshot</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">artype</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+                <span class="n">ar_snapshot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ar_list_snapshot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">ar_list_snapshot</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="n">ars</span><span class="p">[</span><span class="n">itime</span><span class="p">]</span> <span class="o">=</span> <span class="n">ar_snapshot</span>
+
+    <span class="c1"># remove zero-valued points</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="p">(</span><span class="n">ars</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    <span class="n">ars</span> <span class="o">=</span> <span class="n">ars</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">t</span><span class="p">,</span> <span class="n">ars</span></div>
+
+<span class="c1">###################################################</span>
+<span class="c1"># other metrics</span>
+
+<div class="viewcode-block" id="calc_cost"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_cost">[docs]</a><span class="k">def</span> <span class="nf">calc_cost</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">observations_per_year</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">days_per_observation</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">hours_per_observation</span><span class="o">=</span><span class="mi">24</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the cost of an array</span>
+<span class="sd">    </span>
+<span class="sd">    obs : input ehtim obsdata object</span>
+<span class="sd">    observations_per_year : number of observating runs to be carried out per year</span>
+<span class="sd">    days_per_observation : number of days per observing run</span>
+<span class="sd">    hours_per_observation : number of hours in a single observation</span>
+<span class="sd">    </span>
+<span class="sd">    returns : the total capital and annual operating costs of the array, in dollars</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># deal with empty observation</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+
+    <span class="c1"># set configuration</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">ng</span><span class="o">.</span><span class="n">cost</span><span class="o">.</span><span class="n">CostConfig</span><span class="p">(</span><span class="n">observations_per_year</span><span class="o">=</span><span class="n">observations_per_year</span><span class="p">,</span><span class="n">days_per_observation</span><span class="o">=</span><span class="n">days_per_observation</span><span class="p">,</span><span class="n">hours_per_observation</span><span class="o">=</span><span class="n">hours_per_observation</span><span class="p">)</span>
+
+    <span class="c1"># make list of stations</span>
+    <span class="n">stations</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">obs</span><span class="o">.</span><span class="n">tarr</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]:</span>
+        <span class="n">stations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ng</span><span class="o">.</span><span class="n">Station</span><span class="o">.</span><span class="n">from_name</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+
+    <span class="c1"># populate array object</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="n">ng</span><span class="o">.</span><span class="n">Array</span><span class="p">(</span><span class="s1">&#39;ngEHT&#39;</span><span class="p">,</span><span class="n">stations</span><span class="p">)</span>
+
+    <span class="n">costs</span> <span class="o">=</span> <span class="n">ng</span><span class="o">.</span><span class="n">cost</span><span class="o">.</span><span class="n">calculate_costs</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">stations</span><span class="p">())</span>
+    
+    <span class="k">return</span> <span class="n">costs</span><span class="p">[</span><span class="s1">&#39;TOTAL CAPEX&#39;</span><span class="p">],</span> <span class="n">costs</span><span class="p">[</span><span class="s1">&#39;ANNUAL OPEX&#39;</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Dom Pesce.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

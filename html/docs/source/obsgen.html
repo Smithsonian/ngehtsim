@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Observation generation &mdash; ngehtsim 0+untagged.41.g00404cc.dirty documentation</title>
+  <title>Observation utilities &mdash; ngehtsim 0+untagged.42.g13411cb.dirty documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -20,6 +20,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Observation quality metrics" href="metrics.html" />
     <link rel="prev" title="Packages" href="packages.html" /> 
 </head>
 
@@ -31,7 +32,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.41.g00404cc.dirty
+                0+untagged.42.g13411cb.dirty
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -44,8 +45,12 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="packages.html">Packages</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Observation generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#observation-plotting">Observation plotting</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Observation utilities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#observation-generation">Observation generation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#observation-plotting">Observation plotting</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="metrics.html">Observation quality metrics</a></li>
 </ul>
 </li>
 </ul>
@@ -65,7 +70,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="packages.html">Packages</a> &raquo;</li>
-      <li>Observation generation</li>
+      <li>Observation utilities</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/docs/source/obsgen.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -75,8 +80,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <span class="target" id="module-obs"></span><section id="observation-generation">
-<h1>Observation generation<a class="headerlink" href="#observation-generation" title="Permalink to this heading"></a></h1>
+  <span class="target" id="module-obs"></span><section id="observation-utilities">
+<h1>Observation utilities<a class="headerlink" href="#observation-utilities" title="Permalink to this heading"></a></h1>
+<section id="observation-generation">
+<h2>Observation generation<a class="headerlink" href="#observation-generation" title="Permalink to this heading"></a></h2>
 <p>Definition of the obs_generator interface.</p>
 <span class="target" id="module-obs.obs_generator"></span><dl class="py class">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator">
@@ -229,8 +236,8 @@ Note, no SNR thresholding is applied in this function.</p>
 
 </section>
 <section id="observation-plotting">
-<h1>Observation plotting<a class="headerlink" href="#observation-plotting" title="Permalink to this heading"></a></h1>
-<p>Definition of the obs_generator interface.</p>
+<h2>Observation plotting<a class="headerlink" href="#observation-plotting" title="Permalink to this heading"></a></h2>
+<p>Definition of the obs_plotter interface.</p>
 <span class="target" id="module-obs.obs_plotter"></span><dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_plotter.plot_amp">
 <span class="sig-prename descclassname"><span class="pre">obs.obs_plotter.</span></span><span class="sig-name descname"><span class="pre">plot_amp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ampplot.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.01,</span> <span class="pre">3)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_plotter.html#plot_amp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_plotter.plot_amp" title="Permalink to this definition"></a></dt>
@@ -320,12 +327,14 @@ Note, no SNR thresholding is applied in this function.</p>
 </dd></dl>
 
 </section>
+</section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="packages.html" class="btn btn-neutral float-left" title="Packages" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="metrics.html" class="btn btn-neutral float-right" title="Observation quality metrics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
