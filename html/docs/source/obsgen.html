@@ -18,7 +18,8 @@
         <script src="../../_static/doctools.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" /> 
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="Packages" href="packages.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -39,8 +40,12 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="packages.html">Packages</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Observation generation</a></li>
+</ul>
+</li>
 </ul>
 
         </div>
@@ -57,6 +62,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="packages.html">Packages</a> &raquo;</li>
       <li>Observation generation</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/docs/source/obsgen.rst.txt" rel="nofollow"> View page source</a>
@@ -69,8 +75,6 @@
              
   <span class="target" id="module-obs"></span><section id="observation-generation">
 <h1>Observation generation<a class="headerlink" href="#observation-generation" title="Permalink to this heading"></a></h1>
-<section id="base-class">
-<h2>Base Class<a class="headerlink" href="#base-class" title="Permalink to this heading"></a></h2>
 <p>Definition of the obs_generator interface.</p>
 <span class="target" id="module-obs.obs_generator"></span><dl class="py class">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator">
@@ -83,7 +87,7 @@ passing a settings file.</p>
 <dd><p>Dictionary of information contained in the settings file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>dict</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -94,7 +98,7 @@ passing a settings file.</p>
 <dd><p>Path to the input settings file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -105,7 +109,7 @@ passing a settings file.</p>
 <dd><p>List of sites to use for generating observations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>list</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -116,7 +120,7 @@ passing a settings file.</p>
 <dd><p>Path to the input model file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>str</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -127,7 +131,7 @@ passing a settings file.</p>
 <dd><p>Observing frequency (Hz).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>float</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -139,15 +143,15 @@ passing a settings file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>sigma</strong> (<em>float</em>) – surface RMS, in meters</p></li>
-<li><p><strong>offset</strong> (<em>float</em>) – focus offset, in meters.</p></li>
+<li><p><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – surface RMS, in meters</p></li>
+<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – focus offset, in meters.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>aperture efficiency</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(float)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -158,13 +162,13 @@ passing a settings file.</p>
 <dd><p>Function to determine which sites will randomly fail technical readiness.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>sites_in_observ</strong> (<em>list</em>) – list of sites to use in the observation</p>
+<dd class="field-odd"><p><strong>sites_in_observ</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – list of sites to use in the observation</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>sites to drop</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(list)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -177,19 +181,19 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>addgains</strong> (<em>bool</em>) – flag for whether or not to add station gain corruptions</p></li>
-<li><p><strong>gainamp</strong> (<em>float</em>) – standard deviation of amplitude log-gains</p></li>
-<li><p><strong>opacitycal</strong> (<em>bool</em>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
-<li><p><strong>fft_pad_factor</strong> (<em>float</em>) – zero pad the image to fft_pad_factor * image size in FFT</p></li>
-<li><p><strong>verbose</strong> (<em>bool</em>) – flag to turn on verbose function evaluation</p></li>
-<li><p><strong>apply_pointing_errors</strong> (<em>bool</em>) – flag for whether or not to add pointing-based gain corruptions</p></li>
+<li><p><strong>addgains</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – flag for whether or not to add station gain corruptions</p></li>
+<li><p><strong>gainamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – standard deviation of amplitude log-gains</p></li>
+<li><p><strong>opacitycal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
+<li><p><strong>fft_pad_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – zero pad the image to fft_pad_factor * image size in FFT</p></li>
+<li><p><strong>verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – flag to turn on verbose function evaluation</p></li>
+<li><p><strong>apply_pointing_errors</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – flag for whether or not to add pointing-based gain corruptions</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>eht-imaging Obsdata object containing the generated observation</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(ehtim.obsdata.Obsdata)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)">ehtim.obsdata.Obsdata</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -202,19 +206,19 @@ Note, no SNR thresholding is applied in this function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>im</strong> (<em>ehtim.obsdata.Obsdata</em>) – eht-imaging Image object containing the source model</p></li>
-<li><p><strong>addgains</strong> (<em>bool</em>) – flag for whether or not to add station gain corruptions</p></li>
-<li><p><strong>gainamp</strong> (<em>float</em>) – standard deviation of amplitude log-gains</p></li>
-<li><p><strong>opacitycal</strong> (<em>bool</em>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
-<li><p><strong>fft_pad_factor</strong> (<em>float</em>) – zero pad the image to fft_pad_factor * image size in FFT</p></li>
-<li><p><strong>apply_pointing_errors</strong> (<em>bool</em>) – flag for whether or not to add pointing-based gain corruptions</p></li>
+<li><p><strong>im</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Image object containing the source model</p></li>
+<li><p><strong>addgains</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – flag for whether or not to add station gain corruptions</p></li>
+<li><p><strong>gainamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – standard deviation of amplitude log-gains</p></li>
+<li><p><strong>opacitycal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
+<li><p><strong>fft_pad_factor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – zero pad the image to fft_pad_factor * image size in FFT</p></li>
+<li><p><strong>apply_pointing_errors</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – flag for whether or not to add pointing-based gain corruptions</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>eht-imaging Obsdata object containing the generated observation</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(ehtim.obsdata.Obsdata)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)">ehtim.obsdata.Obsdata</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -222,12 +226,13 @@ Note, no SNR thresholding is applied in this function.</p>
 </dd></dl>
 
 </section>
-</section>
 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="packages.html" class="btn btn-neutral float-left" title="Packages" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
 
   <hr/>
 
