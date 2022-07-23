@@ -192,9 +192,7 @@
 <span class="sd">      robust (float): the robust parameter for Briggs weighting in the AR metric</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">      (float): the minor beam axis, in :math:`\\mu\\rm{as}`</span>
-<span class="sd">      (float): the major beam axis, in :math:`\\mu\\rm{as}`</span>
-<span class="sd">      (float): the PA measured from the major axis, in degrees East of North</span>
+<span class="sd">      (float), (float), (float): the minor and major beam axes (in :math:`\\mu\\rm{as}`), and the PA measured from the major axis (in degrees East of North)</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -253,7 +251,7 @@
 <span class="sd">      (float): the LCG value for this observation, in :math:`\\mu\\rm{as}`</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    
+
     <span class="c1"># deal with empty observation</span>
     <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
@@ -278,18 +276,20 @@
 
 <div class="viewcode-block" id="calc_ff_continuous"><a class="viewcode-back" href="../../docs/source/metrics.html#metrics.compute_metrics.calc_ff_continuous">[docs]</a><span class="k">def</span> <span class="nf">calc_ff_continuous</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">longest_BL</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span><span class="n">fillpix</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">start_time</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">end_time</span><span class="o">=</span><span class="mf">24.0</span><span class="p">,</span><span class="n">snapshot_interval</span><span class="o">=</span><span class="mf">600.0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Calculate the (u,v)-filling fraction metric on snapshots</span>
+<span class="sd">    Calculate the :math:`(u,v)`-filling fraction (FF) metric on snapshots.</span>
 <span class="sd">    </span>
-<span class="sd">    obs : input ehtim obsdata object</span>
-<span class="sd">    fov : FOV to consider when computing ff, in uas</span>
-<span class="sd">    fillpix : number of resolution elements across a convolving kernel in ff</span>
-<span class="sd">    longest_BL : length of the bounding baseline, dimensionless</span>
-<span class="sd">    start_time : starting time of first snapshot, in hours</span>
-<span class="sd">    end_time : ending time of last snapshot, in hours</span>
-<span class="sd">    snapshot_interval : length of a single snapshot, in seconds</span>
-<span class="sd">    </span>
-<span class="sd">    returns : the segmentation times and filling fraction values for each snapshot</span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      longest_BL (float): length of the bounding baseline, dimensionless (i.e., in :math:`\\lambda`)</span>
+<span class="sd">      fov (float): field of view for computing FF, in :math:`\\mu\\rm{as}`</span>
+<span class="sd">      fillpix (int): number of resolution elements across a convolving kernel in FF</span>
+<span class="sd">      start_time (float): starting time of first snapshot, in hours</span>
+<span class="sd">      end_time (float): ending time of last snapshot, in hours</span>
+<span class="sd">      snapshot_interval (float): length of a single snapshot, in seconds</span>
 
+<span class="sd">    Returns:</span>
+<span class="sd">      (numpy.ndarray), (numpy.ndarray): the segmentation times and FF values for each snapshot in this observation</span>
+<span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="k">if</span> <span class="p">(</span><span class="n">longest_BL</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>

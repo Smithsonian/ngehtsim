@@ -91,12 +91,10 @@
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the minor beam axis, in <span class="math notranslate nohighlight">\(\mu\rm{as}\)</span>
-(float): the major beam axis, in <span class="math notranslate nohighlight">\(\mu\rm{as}\)</span>
-(float): the PA measured from the major axis, in degrees East of North</p>
+<dd class="field-even"><p>the minor and major beam axes (in <span class="math notranslate nohighlight">\(\mu\rm{as}\)</span>), and the PA measured from the major axis (in degrees East of North)</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a>), (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a>), (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -215,15 +213,26 @@ hours_per_observation : number of hours in a single observation</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="metrics.compute_metrics.calc_ff_continuous">
 <span class="sig-prename descclassname"><span class="pre">metrics.compute_metrics.</span></span><span class="sig-name descname"><span class="pre">calc_ff_continuous</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longest_BL</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillpix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">24.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapshot_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/metrics/compute_metrics.html#calc_ff_continuous"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metrics.compute_metrics.calc_ff_continuous" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the (u,v)-filling fraction metric on snapshots</p>
-<p>obs : input ehtim obsdata object
-fov : FOV to consider when computing ff, in uas
-fillpix : number of resolution elements across a convolving kernel in ff
-longest_BL : length of the bounding baseline, dimensionless
-start_time : starting time of first snapshot, in hours
-end_time : ending time of last snapshot, in hours
-snapshot_interval : length of a single snapshot, in seconds</p>
-<p>returns : the segmentation times and filling fraction values for each snapshot</p>
+<dd><p>Calculate the <span class="math notranslate nohighlight">\((u,v)\)</span>-filling fraction (FF) metric on snapshots.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>longest_BL</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – length of the bounding baseline, dimensionless (i.e., in <span class="math notranslate nohighlight">\(\lambda\)</span>)</p></li>
+<li><p><strong>fov</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – field of view for computing FF, in <span class="math notranslate nohighlight">\(\mu\rm{as}\)</span></p></li>
+<li><p><strong>fillpix</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of resolution elements across a convolving kernel in FF</p></li>
+<li><p><strong>start_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – starting time of first snapshot, in hours</p></li>
+<li><p><strong>end_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – ending time of last snapshot, in hours</p></li>
+<li><p><strong>snapshot_interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – length of a single snapshot, in seconds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the segmentation times and FF values for each snapshot in this observation</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>), (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
