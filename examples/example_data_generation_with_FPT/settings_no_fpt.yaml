@@ -1,0 +1,47 @@
+############################################################
+# input files
+
+model_file: './examples/example_data_generation_with_FPT/M87_345GHz_Chael_modified.fits'
+path_to_weather: './weather_data/'
+
+############################################################
+# observation specs
+
+source: 'M87'       # name of science target
+frequency: '345'    # observing frequency, in GHz; options are 86, 230, 345
+bandwidth: 2.0      # fringe-finding bandwidth, in GHz
+nbands: 1           # number of bands
+rf_offset: 4.0      # rf offset, in GHz; should be larger than bandwidth for nbands > 1
+
+month: 'Jan'        # month of observation; uses three-letter abbreviations
+year: '2025'        # year of observation
+
+t_start: 0.         # start time of observation, in hours
+dt: 24.             # total duration of observation, in hours
+t_int: 100.         # integration time, in seconds
+t_rest: 600.        # time interval between consecutive integrations, in seconds
+
+# SNR thresholding scheme
+# options are ['naive',threshold]; or
+# ['adhoc',[reference station threshold, reference station tint, non-reference station threshold, backup threshold SNR on t_int]]; or
+# ['fringegroups', [strong baseline SNR threshold, strong baseline coherence time (in seconds)]
+# ['fpt', [strong baseline SNR threshold, strong baseline coherence time (in seconds), FPT reference frequency (in GHz), path to FPT reference model]
+SNR_cutoff: ['fringegroups', [5., 10.]]
+
+############################################################
+# array specs
+
+D_new: 10.          # new dish diameter, in meters
+tech_readiness: 1.0 # derating for technical readiness
+RMS_point_err: 2.   # RMS pointinng error at the new sites, in arcseconds
+ref_station: 'ALMA' # reference station for ad hoc phasing
+
+# list containing the array site names
+sites: ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT', 'SPT', 'BAJA', 'BAR', 'CNI', 'HAY', 'LAS', 'OVRO']
+
+############################################################
+# other settings
+
+ttype: 'fast'                   # type of Fourier transform ('direct', 'nfft', or 'fast')
+weather_randomness: 'random'    # can be 'random' or 'mean'
+random_seed: 12345              # random number seed; if blank, will be auto-generated
