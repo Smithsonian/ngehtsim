@@ -117,10 +117,10 @@
 <span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
 <span class="sd">      filename (str): file name for output plot</span>
 <span class="sd">      xlim (tuple): x-axis range, in :math:`\\rm{G}\\lambda`</span>
-<span class="sd">      ylim (tuple): x-axis range, in Jy</span>
+<span class="sd">      ylim (tuple): y-axis range, in Jy</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    
+
     <span class="c1"># unpack data</span>
     <span class="n">u</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;u&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0e9</span><span class="p">)</span>
     <span class="n">v</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;v&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0e9</span><span class="p">)</span>
@@ -141,13 +141,14 @@
 
 <div class="viewcode-block" id="plot_phase"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_plotter.plot_phase">[docs]</a><span class="k">def</span> <span class="nf">plot_phase</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;ampplot.png&#39;</span><span class="p">,</span><span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">),</span><span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span><span class="mi">180</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Make a plot of visibility phase vs (u,v)-distance</span>
+<span class="sd">    Create and save a plot of visibility phase vs :math:`(u,v)`-distance.</span>
 <span class="sd">    </span>
-<span class="sd">    obs : ehtim obsdata object</span>
-<span class="sd">    filename : output filename</span>
-<span class="sd">    xlim : x-axis range, in Glambda</span>
-<span class="sd">    ylim : y-axis range, in degrees</span>
-<span class="sd">     </span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      filename (str): file name for output plot</span>
+<span class="sd">      xlim (tuple): x-axis range, in :math:`\\rm{G}\\lambda`</span>
+<span class="sd">      ylim (tuple): y-axis range, in degrees</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># unpack data</span>
@@ -169,13 +170,14 @@
 
 <div class="viewcode-block" id="plot_snr"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_plotter.plot_snr">[docs]</a><span class="k">def</span> <span class="nf">plot_snr</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;snrplot.png&#39;</span><span class="p">,</span><span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">),</span><span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">1e0</span><span class="p">,</span><span class="mf">1e4</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Make a plot of SNR vs (u,v)-distance</span>
+<span class="sd">    Create and save a plot of SNR vs :math:`(u,v)`-distance.</span>
 <span class="sd">    </span>
-<span class="sd">    obs : ehtim obsdata object</span>
-<span class="sd">    filename : output filename</span>
-<span class="sd">    xlim : x-axis range, in Glambda</span>
-<span class="sd">    ylim : y-axis range, in degrees</span>
-<span class="sd">     </span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      filename (str): file name for output plot</span>
+<span class="sd">      xlim (tuple): x-axis range, in :math:`\\rm{G}\\lambda`</span>
+<span class="sd">      ylim (tuple): y-axis range</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># unpack data</span>
@@ -198,25 +200,22 @@
 
 <div class="viewcode-block" id="plot_snapshot"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_plotter.plot_snapshot">[docs]</a><span class="k">def</span> <span class="nf">plot_snapshot</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">obsgen</span><span class="p">,</span><span class="n">metric</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;metric.png&#39;</span><span class="p">,</span><span class="n">timetype</span><span class="o">=</span><span class="s1">&#39;UTC&#39;</span><span class="p">,</span><span class="n">fov</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span><span class="n">fillpix</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">logmid</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span><span class="n">logwid</span><span class="o">=</span><span class="mf">0.525</span><span class="p">,</span><span class="n">stokes</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">,</span><span class="n">artype</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span><span class="n">weighting</span><span class="o">=</span><span class="s1">&#39;natural&#39;</span><span class="p">,</span><span class="n">robust</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">ylim</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Plot the chosen metric on snapshots</span>
+<span class="sd">    Create and save a plot of the chosen metric on snapshots.</span>
 <span class="sd">    </span>
-<span class="sd">    obs : input ehtim obsdata object</span>
-<span class="sd">    obsgen : an input siteselection obs_generator object</span>
-<span class="sd">    metric : selected metric to plot, can be &#39;ff&#39;, &#39;bff&#39;, lcg&#39;, &#39;ar&#39;</span>
-<span class="sd">    start_time : starting time of first snapshot, in hours</span>
-<span class="sd">    end_time : ending time of last snapshot, in hours</span>
-<span class="sd">    snapshot_interval : length of a single snapshot, in seconds</span>
-<span class="sd">    fov : FOV to consider when computing FF, in uas</span>
-<span class="sd">    fillpix : number of resolution elements across a convolving kernel in FF</span>
-<span class="sd">    logmid : the logarithmic midpoint of the BFF SNR mapping function</span>
-<span class="sd">    logwid : the logarithmic width of the BFF SNR mapping function</span>
-<span class="sd">    stokes : Stokes parameter for which to compute the BFF</span>
-<span class="sd">    artype : what measure of the beam shape to use; can be &#39;mean&#39;, &#39;minor&#39;, &#39;major&#39;, &#39;PA&#39;/&#39;angle&#39;</span>
-<span class="sd">    weighting : (u,v)-weighting; can be &#39;natural&#39;, &#39;uniform&#39;, &#39;Briggs&#39; / &#39;robust&#39;</span>
-<span class="sd">    robust : the robust parameter for Briggs weighting</span>
-<span class="sd">    ylim : y-axis range</span>
-<span class="sd">    </span>
-<span class="sd">    returns : a figure containin the plot</span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      obsgen (ngehtsim.obs.obs_generator): an input obs_generator object</span>
+<span class="sd">      metric (str): selected metric to plot; can be &#39;ff&#39;, &#39;bff&#39;, lcg&#39;, &#39;ar&#39;</span>
+<span class="sd">      filename (str): file name for output plot</span>
+<span class="sd">      timetype (str): eht-imaging recognized timetype; can be &#39;UTC&#39; or &#39;GMST&#39;</span>
+<span class="sd">      fov (float): field of view for computing FF, in :math:`\\mu\\rm{as}`</span>
+<span class="sd">      logmid (float): the logarithmic midpoint of the BFF SNR mapping function</span>
+<span class="sd">      logwid (float): the logarithmic width of the BFF SNR mapping function</span>
+<span class="sd">      stokes (str): Stokes parameter for which to compute the BFF metric; can be &#39;I&#39;, &#39;Q&#39;, &#39;U&#39;, &#39;V&#39;</span>
+<span class="sd">      artype (str): what measure of the beam shape to use for AR metric; can be &#39;mean&#39;, &#39;minor&#39;, &#39;major&#39;, &#39;PA&#39;, &#39;angle&#39;</span>
+<span class="sd">      weighting (str): :math:`(u,v)`-weighting scheme for AR metric; can be &#39;natural&#39;, &#39;uniform&#39;, &#39;Briggs&#39;, &#39;robust&#39;</span>
+<span class="sd">      robust (float): the robust parameter for Briggs weighting in the AR metric</span>
+<span class="sd">      ylim (tuple): y-axis range</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
