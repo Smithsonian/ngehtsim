@@ -19,6 +19,17 @@ import ngehtsim.const_def as const
 # class definition
 
 class obs_generator(object):
+    """
+    Class that organizes information for generating synthetic observations.  Typically initialized by
+    passing a settings file.
+
+    Attributes:
+      settings (dict): Dictionary of information contained in the settings file.
+      settings_file (str): Path to the input settings file.
+      sites (list): List of sites to use for generating observations.
+      model_file (str): Path to the input model file.
+      freq (float): Observing frequency (Hz).
+    """
 
     # initialize class instantiation
     def __init__(self,settings_file):
@@ -98,6 +109,17 @@ class obs_generator(object):
 
     # compute aperture efficiency
     def eta_dish(self,sigma,offset):
+        """
+        Function for computing aperture efficiency.
+        
+        Args:
+          sigma (float): surface RMS, in meters
+          offset (float): focus offset, in meters.
+        
+        Returns:
+          (float): aperture efficiency
+        """
+
         # sigma : surface RMS, in meters
         # offset : focus offset, in meters
         eta_dish = np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/(const.c/self.freq))**2)
@@ -114,43 +136,6 @@ class obs_generator(object):
 
     # generate dictionaries of telescope properties
     def initialize_dicts(self):
-
-        # eta_new = self.eta_dish(const.sigma_surface,const.focus_offset)
-        
-        # # aperture efficiencies of existing telescopes
-        # eta_existing_dict = {'ALMA': self.eta_dish(const.sigma_existing_dict['ALMA'],0.),
-        #                      'APEX': self.eta_dish(const.sigma_existing_dict['APEX'],0.),
-        #                      'GAM':  self.eta_dish(const.sigma_existing_dict['GAM'],const.focus_offset),
-        #                      'GLT':  self.eta_dish(const.sigma_existing_dict['GLT'],0.),
-        #                      'HAY':  self.eta_dish(const.sigma_existing_dict['HAY'],const.focus_offset)*0.5,
-        #                      'JCMT': self.eta_dish(const.sigma_existing_dict['JCMT'],0.),
-        #                      'KP':   self.eta_dish(const.sigma_existing_dict['KP'],0.),
-        #                      'KVNYS':self.eta_dish(const.sigma_existing_dict['KVNYS'],0.),
-        #                      'LAS':  self.eta_dish(const.sigma_existing_dict['LAS'],const.focus_offset),
-        #                      'LMT':  self.eta_dish(const.sigma_existing_dict['LMT'],0.),
-        #                      'NOB':  self.eta_dish(const.sigma_existing_dict['NOB'],const.focus_offset),
-        #                      'NOEMA':self.eta_dish(const.sigma_existing_dict['NOEMA'],0.),
-        #                      'OVRO': self.eta_dish(const.sigma_existing_dict['OVRO'],const.focus_offset),
-        #                      'PV':   self.eta_dish(const.sigma_existing_dict['PV'],0.),
-        #                      'SMA':  self.eta_dish(const.sigma_existing_dict['SMA'],0.),
-        #                      'SMT':  self.eta_dish(const.sigma_existing_dict['SMT'],0.),
-        #                      'SPT':  self.eta_dish(const.sigma_existing_dict['SPT'],0.),
-        #                      'SUF':  self.eta_dish(const.sigma_existing_dict['SUF'],const.focus_offset)}
-
-        # D_dict = {}
-        # FWHM_beam = {}
-        # eta_dict = {}
-        # for site in sites:
-        #     if site in const.D_existing_dict.keys():
-        #         D_dict[site] = const.D_existing_dict[site]
-        #     else:
-        #         D_dict[site] = self.settings['D_new']
-        #     FWHM_beam[site] = (const.c/self.freq)/D_dict[site]*(60.*60.*180./np.pi)    #arc-seconds
-
-        #     if site in eta_existing_dict.keys():
-        #         eta_dict[site] = eta_existing_dict[site]
-        #     else:
-        #         eta_dict[site] = eta_new
 
         # aperture efficiency of new dishes
         eta_new = self.eta_dish(const.sigma_surface,const.focus_offset)
@@ -180,10 +165,20 @@ class obs_generator(object):
 
     # determine which sites will randomly fail technical readiness
     def get_unready_sites(self,sites_in_observ):
+        """
+        Function to determine which sites will randomly fail technical readiness.
+        
+        Args:
+          sites_in_observ (list): list of sites to use in the observation
+                
+        Returns:
+          (list): sites to drop
+        """
+
         p = self.settings['tech_readiness']
         index = np.random.choice([0, 1], size=(len(sites_in_observ)), p=[p,1-p]).astype(bool)
         sites_to_drop = sites_in_observ[index]
-        return(sites_to_drop)
+        return sites_to_drop
 
     # defines a specific MJD associated with an observing month
     def determine_mjd(self):
@@ -279,6 +274,21 @@ class obs_generator(object):
 
     # generate an observation that folds in opacity effects
     def observe(self,im,addgains=True,gainamp=0.04,opacitycal=True,fft_pad_factor=2,apply_pointing_errors=False):
+        """
+        Generate a single-band observation that folds in weather-based opacity effects.
+        Note, no SNR thresholding is applied in this function.
+        
+        Args:
+          im (ehtim.obsdata.Obsdata): eht-imaging Image object containing the source model
+          addgains (bool): flag for whether or not to add station gain corruptions
+          gainamp (float): standard deviation of amplitude log-gains
+          opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
+          fft_pad_factor (float): zero pad the image to fft_pad_factor * image size in FFT
+          apply_pointing_errors (bool): flag for whether or not to add pointing-based gain corruptions
+        
+        Returns:
+          (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation
+        """
 
         # generate empty obsdata object
         obs_temp = self.arr.obsdata(im.ra,
@@ -434,10 +444,10 @@ class obs_generator(object):
             obs.data['lrsigma'] = sigma
 
         # add thermal noise to observations
-        obs.data['rrvis'] += sigma*np.random.normal(0.0,1.0,len(obs.data['rrsigma']))
-        obs.data['llvis'] += sigma*np.random.normal(0.0,1.0,len(obs.data['llsigma']))
-        obs.data['rlvis'] += sigma*np.random.normal(0.0,1.0,len(obs.data['rlsigma']))
-        obs.data['lrvis'] += sigma*np.random.normal(0.0,1.0,len(obs.data['lrsigma']))
+        obs.data['rrvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['rrsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['rrsigma']))))
+        obs.data['llvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['llsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['llsigma']))))
+        obs.data['rlvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['rlsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['rlsigma']))))
+        obs.data['lrvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['lrsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['lrsigma']))))
 
         # apply pointing errors, if desired
         if apply_pointing_errors:
@@ -468,6 +478,21 @@ class obs_generator(object):
 
     # generate observation
     def make_obs(self,addgains=True,gainamp=0.04,opacitycal=True,fft_pad_factor=2,verbose=False,apply_pointing_errors=False):
+        """
+        Generate an observation (possibly multi-band) that folds in weather-based opacity effects
+        and applies a specified SNR thresholding scheme to mimic fringe-finding.
+        
+        Args:
+          addgains (bool): flag for whether or not to add station gain corruptions
+          gainamp (float): standard deviation of amplitude log-gains
+          opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
+          fft_pad_factor (float): zero pad the image to fft_pad_factor * image size in FFT
+          verbose (bool): flag to turn on verbose function evaluation
+          apply_pointing_errors (bool): flag for whether or not to add pointing-based gain corruptions
+        
+        Returns:
+          (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation
+        """
 
         # determine SNR thresholding scheme and values
         snr_algo, snr_args = self.settings['SNR_cutoff']
