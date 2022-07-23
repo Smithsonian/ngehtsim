@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Observation quality metrics &mdash; ngehtsim 0+untagged.42.g13411cb.dirty documentation</title>
+  <title>Observation quality metrics &mdash; ngehtsim 0+untagged.43.gfe8c78b documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.42.g13411cb.dirty
+                0+untagged.43.gfe8c78b
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -124,15 +124,26 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="metrics.compute_metrics.calc_ar_continuous">
 <span class="sig-prename descclassname"><span class="pre">metrics.compute_metrics.</span></span><span class="sig-name descname"><span class="pre">calc_ar_continuous</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'natural'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">robust</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">24.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapshot_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/metrics/compute_metrics.html#calc_ar_continuous"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metrics.compute_metrics.calc_ar_continuous" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the angular resolution on snapshots</p>
-<p>obs : input ehtim obsdata object
-artype : what measure of the beam shape to use; can be ‘mean’, ‘minor’, ‘major’, ‘PA’/’angle’
-weighting : (u,v)-weighting; can be ‘natural’, ‘uniform’, ‘Briggs’ / ‘robust’
-robust : the robust parameter for Briggs weighting
-start_time : starting time of first snapshot, in hours
-end_time : ending time of last snapshot, in hours
-snapshot_interval : length of a single snapshot, in seconds</p>
-<p>returns : the segmentation times and PSS values for each snapshot</p>
+<dd><p>Calculate the angular resolution (AR) metric on snapshots.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>artype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – what measure of the beam shape to use; can be ‘mean’, ‘minor’, ‘major’, ‘PA’, ‘angle’</p></li>
+<li><p><strong>weighting</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – <span class="math notranslate nohighlight">\((u,v)\)</span>-weighting scheme for AR metric; can be ‘natural’, ‘uniform’, ‘Briggs’, ‘robust’</p></li>
+<li><p><strong>robust</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – the robust parameter for Briggs weighting in the AR metric</p></li>
+<li><p><strong>start_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – starting time of first snapshot, in hours</p></li>
+<li><p><strong>end_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – ending time of last snapshot, in hours</p></li>
+<li><p><strong>snapshot_interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – length of a single snapshot, in seconds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the segmentation times and AR values for each snapshot in this observation</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>), (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -163,29 +174,51 @@ snapshot_interval : length of a single snapshot, in seconds</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="metrics.compute_metrics.calc_bff_continuous">
 <span class="sig-prename descclassname"><span class="pre">metrics.compute_metrics.</span></span><span class="sig-name descname"><span class="pre">calc_bff_continuous</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longest_BL</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillpix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logmid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logwid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.525</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stokes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'I'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">24.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapshot_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/metrics/compute_metrics.html#calc_bff_continuous"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metrics.compute_metrics.calc_bff_continuous" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the “better” (u,v)-filling fraction metric on snapshots</p>
-<p>obs : input ehtim obsdata object
-longest_BL : length of the bounding baseline, dimensionless
-fov : FOV to consider when computing ff, in uas
-fillpix : number of resolution elements across a convolving kernel in ff
-logmid : the logarithmic midpoint of the SNR mapping function
-logwid : the logarithmic width of the SNR mapping function
-stokes : Stokes parameter for which to compute the BFF
-start_time : starting time of first snapshot, in hours
-end_time : ending time of last snapshot, in hours
-snapshot_interval : length of a single snapshot, in seconds</p>
-<p>returns : the segmentation times and BFF values for each snapshot</p>
+<dd><p>Calculate the “bolstered” <span class="math notranslate nohighlight">\((u,v)\)</span>-filling fraction (BFF) metric on snapshots.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>longest_BL</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – length of the bounding baseline, dimensionless (i.e., in <span class="math notranslate nohighlight">\(\lambda\)</span>)</p></li>
+<li><p><strong>fov</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – field of view for computing FF, in <span class="math notranslate nohighlight">\(\mu\rm{as}\)</span></p></li>
+<li><p><strong>fillpix</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of resolution elements across a convolving kernel in FF</p></li>
+<li><p><strong>logmid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – the logarithmic midpoint of the BFF SNR mapping function</p></li>
+<li><p><strong>logwid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – the logarithmic width of the BFF SNR mapping function</p></li>
+<li><p><strong>stokes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Stokes parameter for which to compute the BFF metric; can be ‘I’, ‘Q’, ‘U’, ‘V’</p></li>
+<li><p><strong>start_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – starting time of first snapshot, in hours</p></li>
+<li><p><strong>end_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – ending time of last snapshot, in hours</p></li>
+<li><p><strong>snapshot_interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – length of a single snapshot, in seconds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the segmentation times and BFF values for each snapshot in this observation</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>), (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="metrics.compute_metrics.calc_cost">
 <span class="sig-prename descclassname"><span class="pre">metrics.compute_metrics.</span></span><span class="sig-name descname"><span class="pre">calc_cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations_per_year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">days_per_observation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hours_per_observation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">24</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/metrics/compute_metrics.html#calc_cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metrics.compute_metrics.calc_cost" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the cost of an array</p>
-<p>obs : input ehtim obsdata object
-observations_per_year : number of observating runs to be carried out per year
-days_per_observation : number of days per observing run
-hours_per_observation : number of hours in a single observation</p>
-<p>returns : the total capital and annual operating costs of the array, in dollars</p>
+<dd><p>Calculate the cost of an array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>observations_per_year</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of observating runs to be carried out per year</p></li>
+<li><p><strong>days_per_observation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of days per observing run</p></li>
+<li><p><strong>hours_per_observation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – number of hours in a single observation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the total capital and annual operating costs of the array, in dollars</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a>), (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a>)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -258,13 +291,24 @@ hours_per_observation : number of hours in a single observation</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="metrics.compute_metrics.calc_lcg_continuous">
 <span class="sig-prename descclassname"><span class="pre">metrics.compute_metrics.</span></span><span class="sig-name descname"><span class="pre">calc_lcg_continuous</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dummy_circ_res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">24.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapshot_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/metrics/compute_metrics.html#calc_lcg_continuous"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metrics.compute_metrics.calc_lcg_continuous" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the largest circular gap metric on snapshots</p>
-<p>obs : input ehtim obsdata object
-dummy_circ_res : resolution of “dummy circle”, in uas
-start_time : starting time of first snapshot, in hours
-end_time : ending time of last snapshot, in hours
-snapshot_interval : length of a single snapshot, in seconds</p>
-<p>returns : the segmentation times and LCG values for each snapshot</p>
+<dd><p>Calculate the largest circular gap (LCG) metric on snapshots.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>dummy_circ_res</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – resolution of “dummy circle”, in <span class="math notranslate nohighlight">\(\mu\rm{as}\)</span></p></li>
+<li><p><strong>start_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – starting time of first snapshot, in hours</p></li>
+<li><p><strong>end_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – ending time of last snapshot, in hours</p></li>
+<li><p><strong>snapshot_interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – length of a single snapshot, in seconds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the segmentation times and LCG values for each snapshot in this observation</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>), (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -287,12 +331,23 @@ snapshot_interval : length of a single snapshot, in seconds</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="metrics.compute_metrics.calc_pss_continuous">
 <span class="sig-prename descclassname"><span class="pre">metrics.compute_metrics.</span></span><span class="sig-name descname"><span class="pre">calc_pss_continuous</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">24.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapshot_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/metrics/compute_metrics.html#calc_pss_continuous"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#metrics.compute_metrics.calc_pss_continuous" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the point source sensitivity metric on snapshots</p>
-<p>obs : input ehtim obsdata object
-start_time : starting time of first snapshot, in hours
-end_time : ending time of last snapshot, in hours
-snapshot_interval : length of a single snapshot, in seconds</p>
-<p>returns : the segmentation times and PSS values for each snapshot</p>
+<dd><p>Calculate the point source sensitivity (PSS) metric on snapshots.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>start_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – starting time of first snapshot, in hours</p></li>
+<li><p><strong>end_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – ending time of last snapshot, in hours</p></li>
+<li><p><strong>snapshot_interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – length of a single snapshot, in seconds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the segmentation times and PSS values for each snapshot in this observation</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>), (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.23)">numpy.ndarray</a>)</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
