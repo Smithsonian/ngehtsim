@@ -1,0 +1,13 @@
+.. module:: obs
+
+
+Observation generation
+=========================
+
+Base Class
+-------------------------
+Definition of the obs_generator interface.
+
+
+.. automodule:: obs.obs_generator
+   :members:
