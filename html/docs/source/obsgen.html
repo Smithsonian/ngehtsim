@@ -234,11 +234,17 @@ Note, no SNR thresholding is applied in this function.</p>
 <span class="target" id="module-obs.obs_plotter"></span><dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_plotter.plot_amp">
 <span class="sig-prename descclassname"><span class="pre">obs.obs_plotter.</span></span><span class="sig-name descname"><span class="pre">plot_amp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ampplot.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">10)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.01,</span> <span class="pre">3)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_plotter.html#plot_amp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_plotter.plot_amp" title="Permalink to this definition"></a></dt>
-<dd><p>Make a plot of visibility amplitude vs (u,v)-distance</p>
-<p>obs : ehtim obsdata object
-filename : output filename
-xlim : x-axis range, in Glambda
-ylim : y-axis range, in Jy</p>
+<dd><p>Create and save a plot of visibility amplitude vs <span class="math notranslate nohighlight">\((u,v)\)</span>-distance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – file name for output plot</p></li>
+<li><p><strong>xlim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><em>tuple</em></a>) – x-axis range, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
+<li><p><strong>ylim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><em>tuple</em></a>) – x-axis range, in Jy</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -286,13 +292,13 @@ ylim : y-axis range, in degrees</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_plotter.plot_uv">
 <span class="sig-prename descclassname"><span class="pre">obs.obs_plotter.</span></span><span class="sig-name descname"><span class="pre">plot_uv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'uvplot.png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">umax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_plotter.html#plot_uv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_plotter.plot_uv" title="Permalink to this definition"></a></dt>
-<dd><p>Make a <span class="math notranslate nohighlight">\((u,v)\)</span>-coverage plot.</p>
+<dd><p>Create and save a <span class="math notranslate nohighlight">\((u,v)\)</span>-coverage plot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
 <li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – file name for output plot</p></li>
-<li><p><strong>umax</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – maximum baseline length for plot axes; in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
+<li><p><strong>umax</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – maximum baseline length for plot axes, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
 </ul>
 </dd>
 </dl>

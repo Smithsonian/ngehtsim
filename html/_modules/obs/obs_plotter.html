@@ -84,12 +84,12 @@
 
 <div class="viewcode-block" id="plot_uv"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_plotter.plot_uv">[docs]</a><span class="k">def</span> <span class="nf">plot_uv</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;uvplot.png&#39;</span><span class="p">,</span><span class="n">umax</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Make a :math:`(u,v)`-coverage plot.</span>
+<span class="sd">    Create and save a :math:`(u,v)`-coverage plot.</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
 <span class="sd">      filename (str): file name for output plot</span>
-<span class="sd">      umax (float): maximum baseline length for plot axes; in :math:`\\rm{G}\\lambda`</span>
+<span class="sd">      umax (float): maximum baseline length for plot axes, in :math:`\\rm{G}\\lambda`</span>
 <span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -111,13 +111,14 @@
 
 <div class="viewcode-block" id="plot_amp"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_plotter.plot_amp">[docs]</a><span class="k">def</span> <span class="nf">plot_amp</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;ampplot.png&#39;</span><span class="p">,</span><span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">),</span><span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span><span class="mi">3</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Make a plot of visibility amplitude vs (u,v)-distance</span>
+<span class="sd">    Create and save a plot of visibility amplitude vs :math:`(u,v)`-distance.</span>
 <span class="sd">    </span>
-<span class="sd">    obs : ehtim obsdata object</span>
-<span class="sd">    filename : output filename</span>
-<span class="sd">    xlim : x-axis range, in Glambda</span>
-<span class="sd">    ylim : y-axis range, in Jy</span>
-<span class="sd">     </span>
+<span class="sd">    Args:</span>
+<span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object</span>
+<span class="sd">      filename (str): file name for output plot</span>
+<span class="sd">      xlim (tuple): x-axis range, in :math:`\\rm{G}\\lambda`</span>
+<span class="sd">      ylim (tuple): x-axis range, in Jy</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     
     <span class="c1"># unpack data</span>
