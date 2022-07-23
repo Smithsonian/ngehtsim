@@ -8,3 +8,11 @@ Definition of the obs_generator interface.
 
 .. automodule:: obs.obs_generator
    :members:
+
+Observation plotting
+=========================
+
+Definition of the obs_generator interface.
+
+.. automodule:: obs.obs_plotter
+   :members:

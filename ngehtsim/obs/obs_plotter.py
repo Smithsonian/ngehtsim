@@ -14,12 +14,13 @@ import ngehtsim.const_def as const
 
 def plot_uv(obs,filename='uvplot.png',umax=10):
     """
-    Make a (u,v)-coverage plot
+    Create and save a :math:`(u,v)`-coverage plot.
     
-    obs : ehtim obsdata object
-    filename : output filename
-    umax : axis ranges, in Glambda
-
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      filename (str): file name for output plot
+      umax (float): maximum baseline length for plot axes, in :math:`\\rm{G}\\lambda`
+    
     """
 
     # unpack data
@@ -40,15 +41,16 @@ def plot_uv(obs,filename='uvplot.png',umax=10):
 
 def plot_amp(obs,filename='ampplot.png',xlim=(0,10),ylim=(0.01,3)):
     """
-    Make a plot of visibility amplitude vs (u,v)-distance
+    Create and save a plot of visibility amplitude vs :math:`(u,v)`-distance.
     
-    obs : ehtim obsdata object
-    filename : output filename
-    xlim : x-axis range, in Glambda
-    ylim : y-axis range, in Jy
-     
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      filename (str): file name for output plot
+      xlim (tuple): x-axis range, in :math:`\\rm{G}\\lambda`
+      ylim (tuple): y-axis range, in Jy
+
     """
-    
+
     # unpack data
     u = obs.data['u'] / (1.0e9)
     v = obs.data['v'] / (1.0e9)
@@ -69,13 +71,14 @@ def plot_amp(obs,filename='ampplot.png',xlim=(0,10),ylim=(0.01,3)):
 
 def plot_phase(obs,filename='ampplot.png',xlim=(0,10),ylim=(-180,180)):
     """
-    Make a plot of visibility phase vs (u,v)-distance
+    Create and save a plot of visibility phase vs :math:`(u,v)`-distance.
     
-    obs : ehtim obsdata object
-    filename : output filename
-    xlim : x-axis range, in Glambda
-    ylim : y-axis range, in degrees
-     
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      filename (str): file name for output plot
+      xlim (tuple): x-axis range, in :math:`\\rm{G}\\lambda`
+      ylim (tuple): y-axis range, in degrees
+
     """
 
     # unpack data
@@ -97,13 +100,14 @@ def plot_phase(obs,filename='ampplot.png',xlim=(0,10),ylim=(-180,180)):
 
 def plot_snr(obs,filename='snrplot.png',xlim=(0,10),ylim=(1e0,1e4)):
     """
-    Make a plot of SNR vs (u,v)-distance
+    Create and save a plot of SNR vs :math:`(u,v)`-distance.
     
-    obs : ehtim obsdata object
-    filename : output filename
-    xlim : x-axis range, in Glambda
-    ylim : y-axis range, in degrees
-     
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      filename (str): file name for output plot
+      xlim (tuple): x-axis range, in :math:`\\rm{G}\\lambda`
+      ylim (tuple): y-axis range
+
     """
 
     # unpack data
@@ -126,25 +130,22 @@ def plot_snr(obs,filename='snrplot.png',xlim=(0,10),ylim=(1e0,1e4)):
 
 def plot_snapshot(obs,obsgen,metric,filename='metric.png',timetype='UTC',fov=100.0,fillpix=10,logmid=1.5,logwid=0.525,stokes='I',artype='mean',weighting='natural',robust=0.0,ylim=None):
     """
-    Plot the chosen metric on snapshots
+    Create and save a plot of the chosen metric on snapshots.
     
-    obs : input ehtim obsdata object
-    obsgen : an input siteselection obs_generator object
-    metric : selected metric to plot, can be 'ff', 'bff', lcg', 'ar'
-    start_time : starting time of first snapshot, in hours
-    end_time : ending time of last snapshot, in hours
-    snapshot_interval : length of a single snapshot, in seconds
-    fov : FOV to consider when computing FF, in uas
-    fillpix : number of resolution elements across a convolving kernel in FF
-    logmid : the logarithmic midpoint of the BFF SNR mapping function
-    logwid : the logarithmic width of the BFF SNR mapping function
-    stokes : Stokes parameter for which to compute the BFF
-    artype : what measure of the beam shape to use; can be 'mean', 'minor', 'major', 'PA'/'angle'
-    weighting : (u,v)-weighting; can be 'natural', 'uniform', 'Briggs' / 'robust'
-    robust : the robust parameter for Briggs weighting
-    ylim : y-axis range
-    
-    returns : a figure containin the plot
+    Args:
+      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
+      obsgen (ngehtsim.obs.obs_generator): an input obs_generator object
+      metric (str): selected metric to plot; can be 'ff', 'bff', lcg', 'ar'
+      filename (str): file name for output plot
+      timetype (str): eht-imaging recognized timetype; can be 'UTC' or 'GMST'
+      fov (float): field of view for computing FF, in :math:`\\mu\\rm{as}`
+      logmid (float): the logarithmic midpoint of the BFF SNR mapping function
+      logwid (float): the logarithmic width of the BFF SNR mapping function
+      stokes (str): Stokes parameter for which to compute the BFF metric; can be 'I', 'Q', 'U', 'V'
+      artype (str): what measure of the beam shape to use for AR metric; can be 'mean', 'minor', 'major', 'PA', 'angle'
+      weighting (str): :math:`(u,v)`-weighting scheme for AR metric; can be 'natural', 'uniform', 'Briggs', 'robust'
+      robust (float): the robust parameter for Briggs weighting in the AR metric
+      ylim (tuple): y-axis range
 
     """
 

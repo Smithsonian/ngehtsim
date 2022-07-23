@@ -279,7 +279,7 @@ class obs_generator(object):
         Note, no SNR thresholding is applied in this function.
         
         Args:
-          im (ehtim.obsdata.Obsdata): eht-imaging Image object containing the source model
+          im (ehtim.image.Image): eht-imaging Image object containing the source model
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
