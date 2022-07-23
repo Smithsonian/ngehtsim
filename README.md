@@ -4,4 +4,4 @@ A set of tools for generating synthetic data for the next-generation Event Horiz
 
 # Documentation
 
-Details about installing and using ngehtsim can be found in the [online documentation](https://smithsonian.github.io/ngeht-sims/).
+Details about installing and using ngehtsim can be found in the [online documentation](https://smithsonian.github.io/ngehtsim/).
