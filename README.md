@@ -1,5 +1,7 @@
 # ngehtsim
 
+[![Build Status](https://github.com/Smithsonian/ngehtsim/workflows/CI/badge.svg)](https://github.com/Smithsonian/ngehtsim/actions)
+
 A set of tools for generating synthetic data for the next-generation Event Horizon Telescope ([ngEHT](https://www.ngeht.org)).
 
 # Documentation
