@@ -60,7 +60,7 @@ def LCG_metric(obs,method='analytic',tavg=None,scan_avg=False,dummy_circ=True,du
         else: x0 = (maxuv/2.0,np.pi/2.)
         #set up the minimizer and solve for the most remote point
         bnds=((0.05,maxuv),(0,np.pi))
-        minimizer_kwargs = { "method": "L-BFGS-B","bounds":bnds,"tol":1.e-4}
+        minimizer_kwargs = {"method": "L-BFGS-B","bounds":bnds,"tol":1.e-4}
         def distance_from_coverage(x):
             return -np.min(((uvecwork-x[0]*np.sin(x[1]))**2 + (vvecwork-x[0]*np.cos(x[1]))**2))
         sol = so.basinhopping(distance_from_coverage, x0,T=maxuv/10.0,niter=niter,minimizer_kwargs=minimizer_kwargs)
@@ -73,8 +73,8 @@ def LCG_metric(obs,method='analytic',tavg=None,scan_avg=False,dummy_circ=True,du
     
     #output info
     if verbose:
-        print('solver time:', stop-start )
-        print('total time:', stop-start0 )
+        print('solver time:', stop-start)
+        print('total time:', stop-start0)
         print('largest diameter (Gigalambda):', 2.0*rgap)
         print('LCG metric:', metric)
     

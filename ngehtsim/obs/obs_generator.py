@@ -564,7 +564,7 @@ class obs_generator(object):
                     ant2 = obs_seg.data['t2']
 
                     # create a running index list of sites to flag
-                    master_index =  np.zeros(len(obs_seg.data),dtype='bool')
+                    master_index = np.zeros(len(obs_seg.data),dtype='bool')
 
                     # check all timestamps
                     for itime, timestamp in enumerate(timestamps):

@@ -33,7 +33,7 @@ show_authors = False
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.duration',
-			  'sphinx.ext.autodoc',
+              'sphinx.ext.autodoc',
               'sphinx.ext.doctest',
               'sphinx.ext.intersphinx',
               'sphinx.ext.todo',
@@ -70,11 +70,11 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['docs/source/_static']
 
 # Example configuration for intersphinx: refer to the Python standard library.
-#intersphinx_mapping = {'https://docs.python.org/': None}
+# intersphinx_mapping = {'https://docs.python.org/': None}
 intersphinx_mapping = {'python': ('https://docs.python.org', None),
                        'numpy': ('https://docs.scipy.org/doc/numpy/', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
                        'matplotlib': ('https://matplotlib.org/', None),
                        'ehtim': ('https://achael.github.io/eht-imaging/', None),
-                       'joblib':('https://joblib.readthedocs.io/en/latest/',None)
+                       'joblib': ('https://joblib.readthedocs.io/en/latest/', None)
                        }

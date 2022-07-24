@@ -4,7 +4,7 @@ Created on Sun Jul 08 12:39:01 2018
 """
 from __future__ import division
 import ehtim as eh
-from scipy.signal import convolve2d, fftconvolve
+from scipy.signal import fftconvolve
 import numpy as np
 import matplotlib
 from math import pi, sqrt

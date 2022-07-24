@@ -52,8 +52,8 @@ print('PSS metric value (in Jy) is: ',pss)
 
 # compute angular resolution metric with different weightings
 for weighting in ['natural','uniform','robust']:
-	ar = cm.calc_ar(obs,artype='mean',weighting=weighting)
-	print('Average beam size (in uas) with ' + weighting + ' weighting is: ',ar)
+    ar = cm.calc_ar(obs,artype='mean',weighting=weighting)
+    print('Average beam size (in uas) with ' + weighting + ' weighting is: ',ar)
 
 # compute array cost metric
 total_cost, operating_cost = cm.calc_cost(obs)

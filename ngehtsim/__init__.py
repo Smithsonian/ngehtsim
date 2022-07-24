@@ -10,12 +10,12 @@ obs
     Tools for generating observations
 """
 
-__author__="Dominic W. Pesce"
+__author__ = "Dominic W. Pesce"
 __bibtex__ = r"""@Article{TBD,
   %%% Fill in from ADS!
 }"""
 
-__all__=['obs','metrics','const_def']
+__all__ = ['obs','metrics','const_def']
 from . import *
 
 
