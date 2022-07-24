@@ -12,6 +12,7 @@ import sys
 from collections import defaultdict
 from astropy.time import Time
 import time
+import os
 
 import ngehtsim.const_def as const
 
@@ -40,6 +41,9 @@ class obs_generator(object):
         self.load_settings()
         print("========= Loaded settings from {0}".format(settings_file))
 
+        # set absolute path to weather
+        self.path_to_weather = os.path.abspath(const.path_to_weather)
+
         # check for issues, fix some easy ones, complain about the others
         if self.settings['frequency'] not in ['86','230','345']:
             raise ValueError('Input frequency needs to be one of 86, 230, or 345.')
@@ -48,8 +52,8 @@ class obs_generator(object):
             raise Warning('Input nbands must be at least 1; setting to 1.')
         if ((self.settings['nbands'] > 1) & (self.settings['rf_offset'] < self.settings['bandwidth'])):
             raise Exception('Input rf_offset must be greater than or equal to input bandwidth when nbands > 1.')
-        if (self.settings['path_to_weather'][-1] != '/'):
-            self.settings['path_to_weather'] += '/'
+        if (self.path_to_weather[-1] != '/'):
+            self.path_to_weather += '/'
 
         self.set_seed()
 
@@ -239,7 +243,7 @@ class obs_generator(object):
         for isite, site in enumerate(sites):
 
             # determine which table to read
-            pathhere = self.settings['path_to_weather']
+            pathhere = self.path_to_weather
             pathhere += site + '/'
             pathhere += monthnum + self.settings['month'] + '/'
             pathhere += 'mean_SEFD_info_' + self.settings['frequency'] + '.csv'

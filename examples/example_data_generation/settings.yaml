@@ -1,8 +1,7 @@
 ############################################################
 # input files
 
-model_file: './examples/example_data_generation/M87_230GHz_Chael.fits'
-path_to_weather: './weather_data/'
+model_file: './M87_230GHz_Chael.fits'
 
 ############################################################
 # observation specs

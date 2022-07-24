@@ -1,5 +1,11 @@
+import ngehtsim as ng
+import os
+
 ###################################################
 # useful constants
+
+# relative path to the weather information
+path_to_weather = os.path.dirname(ng.__file__) + '/weather_data/'
 
 # Boltzmann constant, in Jy m^2 / K
 k = 1381.0

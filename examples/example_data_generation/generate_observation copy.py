@@ -11,7 +11,7 @@ import ngehtsim.metrics as cm
 # generate an observation
 
 # input settings file
-yamlfile = './settings.yaml'
+yamlfile = 'examples/example_data_generation/settings.yaml'
 
 # initialize the observation generator
 obsgen = og.obs_generator(yamlfile)
@@ -20,15 +20,15 @@ obsgen = og.obs_generator(yamlfile)
 obs = obsgen.make_obs()
 
 # save it as a uvfits file
-obs.save_uvfits('./example_datafile.uvfits')
+obs.save_uvfits('examples/example_data_generation/example_datafile.uvfits')
 
 #######################################################
 # make some plots of the data
 
-op.plot_uv(obs,filename='./example_plot_uv.png')
-op.plot_amp(obs,filename='./example_plot_amp.png')
-op.plot_phase(obs,filename='./example_plot_phase.png')
-op.plot_snr(obs,filename='./example_plot_snr.png')
+op.plot_uv(obs,filename='examples/example_data_generation/example_plot_uv.png')
+op.plot_amp(obs,filename='examples/example_data_generation/example_plot_amp.png')
+op.plot_phase(obs,filename='examples/example_data_generation/example_plot_phase.png')
+op.plot_snr(obs,filename='examples/example_data_generation/example_plot_snr.png')
 
 #######################################################
 # compute various metrics

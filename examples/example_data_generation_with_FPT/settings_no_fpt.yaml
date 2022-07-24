@@ -1,8 +1,7 @@
 ############################################################
 # input files
 
-model_file: './examples/example_data_generation_with_FPT/M87_345GHz_Chael_modified.fits'
-path_to_weather: './weather_data/'
+model_file: './M87_345GHz_Chael_modified.fits'
 
 ############################################################
 # observation specs
