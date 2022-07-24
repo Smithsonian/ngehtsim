@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.41.g00404cc.dirty documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.45.g962bedb documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.41.g00404cc.dirty
+                0+untagged.45.g962bedb
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -82,6 +82,7 @@
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">os</span>
 
 <span class="kn">import</span> <span class="nn">ngehtsim.const_def</span> <span class="k">as</span> <span class="nn">const</span>
 
@@ -110,6 +111,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">load_settings</span><span class="p">()</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;========= Loaded settings from </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">settings_file</span><span class="p">))</span>
 
+        <span class="c1"># set absolute path to weather</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span>
+
         <span class="c1"># check for issues, fix some easy ones, complain about the others</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;86&#39;</span><span class="p">,</span><span class="s1">&#39;230&#39;</span><span class="p">,</span><span class="s1">&#39;345&#39;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input frequency needs to be one of 86, 230, or 345.&#39;</span><span class="p">)</span>
@@ -118,8 +122,8 @@
             <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span><span class="s1">&#39;Input nbands must be at least 1; setting to 1.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;nbands&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;rf_offset&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">])):</span>
             <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Input rf_offset must be greater than or equal to input bandwidth when nbands &gt; 1.&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;path_to_weather&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;/&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;path_to_weather&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;/&#39;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;/&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+=</span> <span class="s1">&#39;/&#39;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">set_seed</span><span class="p">()</span>
 
@@ -309,7 +313,7 @@
         <span class="k">for</span> <span class="n">isite</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sites</span><span class="p">):</span>
 
             <span class="c1"># determine which table to read</span>
-            <span class="n">pathhere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;path_to_weather&#39;</span><span class="p">]</span>
+            <span class="n">pathhere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_to_weather</span>
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_SEFD_info_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
