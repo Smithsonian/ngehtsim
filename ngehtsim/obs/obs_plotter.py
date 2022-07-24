@@ -69,7 +69,7 @@ def plot_amp(obs,filename='ampplot.png',xlim=(0,10),ylim=(0.01,3)):
     plt.savefig(filename, dpi=300, bbox_inches='tight')
     plt.close()
 
-def plot_phase(obs,filename='ampplot.png',xlim=(0,10),ylim=(-180,180)):
+def plot_phase(obs,filename='phaseplot.png',xlim=(0,10),ylim=(-180,180)):
     """
     Create and save a plot of visibility phase vs :math:`(u,v)`-distance.
     

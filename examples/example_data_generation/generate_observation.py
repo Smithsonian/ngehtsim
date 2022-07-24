@@ -59,3 +59,8 @@ for weighting in ['natural','uniform','robust']:
 total_cost, operating_cost = cm.calc_cost(obs)
 print('Total cost to build this array is: $%.2fM' % (total_cost/(1.0e6)))
 print('Annual operating cost of this array is: $%.2fM' % (operating_cost/(1.0e6)))
+
+#######################################################
+# plot a metric versus time for the observation
+
+op.plot_snapshot(obs,obsgen,'FF',fov=200.0,filename='./example_plot_FF.png')
