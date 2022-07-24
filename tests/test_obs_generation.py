@@ -14,7 +14,7 @@ yamlfile = './tests/settings.yaml'
 obsgen = og.obs_generator(yamlfile)
 
 #######################################################
-# make a simple initial test of some settings
+# make a trivial initial test, just to get CI working
 
 def settings_test(obsgen):
     return obsgen.settings['month']

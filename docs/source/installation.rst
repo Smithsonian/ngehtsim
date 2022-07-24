@@ -20,7 +20,7 @@ Dependencies
 
 ngehtsim uses the following packages:
 
-* `python <https://www.python.org/downloads>`_ (built using version 3.9, but possibly works with some older versions as well)
+* `python <https://www.python.org/downloads>`_ >=3.8
 * `ehtim <https://github.com/achael/eht-imaging>`_
 * `numpy <https://numpy.org>`_
 * `matplotlib <https://matplotlib.org>`_
