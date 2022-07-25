@@ -49,9 +49,11 @@ year_min = 2009
 year_max = 2018
 
 # fiducial receiver temperatures, in K
-T_R_86 = 40.0
-T_R_230 = 50.0
-T_R_345 = 75.0
+T_R_dict = {'86': 40.0,
+            '230': 50.0,
+            '345': 75.0,
+            '410': 150.0,
+            '690': 100.0}
 
 # quantization efficiency
 quant_eff = 0.88

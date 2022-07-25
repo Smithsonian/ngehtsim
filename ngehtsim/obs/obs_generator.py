@@ -61,8 +61,8 @@ class obs_generator(object):
         self.path_to_weather = os.path.abspath(const.path_to_weather)
 
         # check for issues, fix some easy ones, complain about the others
-        if self.settings['frequency'] not in ['86', '230', '345']:
-            raise ValueError('Input frequency needs to be one of 86, 230, or 345.')
+        if self.settings['frequency'] not in ['86', '230', '345', '690']:
+            raise ValueError('Input frequency needs to be one of 86, 230, 345, or 690.')
         if (self.settings['nbands'] < 1):
             self.settings['nbands'] = 1
             raise Warning('Input nbands must be at least 1; setting to 1.')
@@ -118,12 +118,7 @@ class obs_generator(object):
 
     # store receiver temperature
     def set_TR(self):
-        if (self.settings['frequency'] == '86'):
-            self.T_R = const.T_R_86
-        if (self.settings['frequency'] == '230'):
-            self.T_R = const.T_R_230
-        if (self.settings['frequency'] == '345'):
-            self.T_R = const.T_R_345
+        self.T_R = const.T_R_dict[self.settings['frequency']]
         if self.verbosity > 0:
             print("************** T_R set to : {0}".format(self.T_R))
         
@@ -591,7 +586,7 @@ def make_array(sitelist,D_new,D_override_dict={},array_name='nameless array',fre
       freq (float): Observing frequency, in GHz
     
     Returns:
-      (ngehtutil.array, ehtim.array): An ngehtutil array object and an ehtim array object
+      (ngehtutil.array, ehtim.array.Array): An ngehtutil array object and an ehtim array object
     """
 
     stations = list()
