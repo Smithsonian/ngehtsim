@@ -1,23 +1,25 @@
 #######################################################
 # imports
 
-import numpy as np
-import ehtim as eh
 import ngehtsim.obs.obs_generator as og
+import ngEHTforecast.fisher as fp
 import ngehtsim.obs.obs_plotter as op
 import ngehtsim.metrics as cm
 
 #######################################################
+# generate a FisherForecast object
+
+ff = fp.FF_symmetric_gaussian()
+
+#######################################################
 # generate an observation
 
-# input settings file
-yamlfile = './settings.yaml'
-
 # initialize the observation generator
-obsgen = og.obs_generator(settings_file=yamlfile)
+obsgen = og.obs_generator()
 
-# generate the observation
-obs = obsgen.make_obs()
+# generate the observation by passing the FisherForecast object and parameters
+p = [0.2,20.0]
+obs = obsgen.make_obs(ff,p=p)
 
 # save it as a uvfits file
 obs.save_uvfits('./example_datafile.uvfits')

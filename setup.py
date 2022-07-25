@@ -29,5 +29,6 @@ setup(name='ngehtsim',
                         'matplotlib',
                         'numpy',
                         'scipy',
-                        'ngehtutil']
+                        'ngehtutil',
+                        'ngEHTforecast @ git+https://github.com/aeb/ngEHTforecast.git']
       )
