@@ -13,7 +13,7 @@ import ngehtsim.obs.obs_generator as og
 yamlfile = './tests/settings.yaml'
 
 # initialize the observation generator
-obsgen = og.obs_generator(yamlfile)
+obsgen = og.obs_generator(settings_file=yamlfile)
 
 # load settings file
 loader = yaml.SafeLoader
