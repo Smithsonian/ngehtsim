@@ -13,7 +13,7 @@ import ngehtsim.obs.obs_generator as og
 yamlfile = './settings_fpt.yaml'
 
 # initialize the observation generator
-obsgen_fpt = og.obs_generator(yamlfile)
+obsgen_fpt = og.obs_generator(settings_file=yamlfile)
 
 # generate the observation
 obs_fpt = obsgen_fpt.make_obs()
@@ -28,7 +28,7 @@ obs_fpt.save_uvfits('./example_datafile_with_fpt.uvfits')
 yamlfile = './settings_no_fpt.yaml'
 
 # initialize the observation generator
-obsgen = og.obs_generator(yamlfile)
+obsgen = og.obs_generator(settings_file=yamlfile)
 
 # generate the observation
 obs = obsgen.make_obs()

@@ -14,6 +14,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('./ngehtsim/'))
+import versioneer
 
 # -- Project information -----------------------------------------------------
 
@@ -22,7 +23,6 @@ copyright = '2022, Dom Pesce'
 author = 'Dom Pesce'
 
 # The full version, including alpha/beta/rc tags
-import versioneer
 version = versioneer.get_version()
 release = version
 show_authors = False
@@ -61,7 +61,6 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-import sphinx_rtd_theme
 html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,

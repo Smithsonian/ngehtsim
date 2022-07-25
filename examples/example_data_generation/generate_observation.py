@@ -14,7 +14,7 @@ import ngehtsim.metrics as cm
 yamlfile = './settings.yaml'
 
 # initialize the observation generator
-obsgen = og.obs_generator(yamlfile)
+obsgen = og.obs_generator(settings_file=yamlfile)
 
 # generate the observation
 obs = obsgen.make_obs()
