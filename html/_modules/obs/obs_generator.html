@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.55.gd9463ec.dirty documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.56.g5d2b584 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.55.gd9463ec.dirty
+                0+untagged.56.g5d2b584
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -131,8 +131,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span>
 
         <span class="c1"># check for issues, fix some easy ones, complain about the others</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;86&#39;</span><span class="p">,</span> <span class="s1">&#39;230&#39;</span><span class="p">,</span> <span class="s1">&#39;345&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input frequency needs to be one of 86, 230, or 345.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;86&#39;</span><span class="p">,</span> <span class="s1">&#39;230&#39;</span><span class="p">,</span> <span class="s1">&#39;345&#39;</span><span class="p">,</span> <span class="s1">&#39;690&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input frequency needs to be one of 86, 230, 345, or 690.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;nbands&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;nbands&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span><span class="s1">&#39;Input nbands must be at least 1; setting to 1.&#39;</span><span class="p">)</span>
@@ -188,12 +188,7 @@
 
     <span class="c1"># store receiver temperature</span>
     <span class="k">def</span> <span class="nf">set_TR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;86&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_86</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;230&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_230</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;345&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_345</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;************** T_R set to : </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">T_R</span><span class="p">))</span>
         
