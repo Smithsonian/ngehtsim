@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.56.g5d2b584 documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.58.g72038b9 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.56.g5d2b584
+                0+untagged.58.g72038b9
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -840,6 +840,7 @@
 
     <span class="c1"># create dummy obsgen object</span>
     <span class="n">new_settings</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span>
+    <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">freq_ref</span><span class="p">))</span>
     <span class="k">if</span> <span class="p">((</span><span class="n">model_ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_ref</span><span class="p">,</span><span class="nb">str</span><span class="p">)):</span>
         <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;model_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_ref</span>
     <span class="n">obsgen_ref</span> <span class="o">=</span> <span class="n">obs_generator</span><span class="p">(</span><span class="n">new_settings</span><span class="p">)</span>
