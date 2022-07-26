@@ -96,4 +96,4 @@ translation_dict = {'AMT': 'GAM',
                     'PDB': 'NOEMA',
                     'PIKES': 'PIKE',
                     'PV': 'IRAM',
-                    'SOC':'VLA'}
+                    'SOC': 'VLA'}

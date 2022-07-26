@@ -623,7 +623,7 @@ def load_image(infile,freq=230.0e9,verbose=0):
     else:
         try:
             im = eh.image.load_image(infile)
-            im.rf = np.float(np.round(im.rf))
+            im.rf = float(np.round(im.rf))
         except:
             if verbose > 0:
                 print('Source file does not appear to be an image; assuming that it is a movie file instead.')
@@ -634,6 +634,8 @@ def load_image(infile,freq=230.0e9,verbose=0):
                 im = eh.movie.load_fits(infile)
             elif extension.lower() == ['txt']:
                 im = eh.movie.load_txt(infile)
+            else:
+                raise Exception('Source file does not have a recognized file extension.')
             im.rf = freq
         return im
 
