@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.58.g72038b9 documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.59.geead626.dirty documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.58.g72038b9
+                0+untagged.59.geead626.dirty
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -693,7 +693,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">im</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="n">infile</span><span class="p">)</span>
-            <span class="n">im</span><span class="o">.</span><span class="n">rf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">rf</span><span class="p">))</span>
+            <span class="n">im</span><span class="o">.</span><span class="n">rf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">rf</span><span class="p">))</span>
         <span class="k">except</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Source file does not appear to be an image; assuming that it is a movie file instead.&#39;</span><span class="p">)</span>
@@ -704,6 +704,8 @@
                 <span class="n">im</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">movie</span><span class="o">.</span><span class="n">load_fits</span><span class="p">(</span><span class="n">infile</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">extension</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;txt&#39;</span><span class="p">]:</span>
                 <span class="n">im</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">movie</span><span class="o">.</span><span class="n">load_txt</span><span class="p">(</span><span class="n">infile</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Source file does not have a recognized file extension.&#39;</span><span class="p">)</span>
             <span class="n">im</span><span class="o">.</span><span class="n">rf</span> <span class="o">=</span> <span class="n">freq</span>
         <span class="k">return</span> <span class="n">im</span></div>
 
