@@ -15,11 +15,12 @@ ff = fp.FF_symmetric_gaussian()
 # generate an observation
 
 # initialize the observation generator
-obsgen = og.obs_generator()
+settings = {'weather': 'typical'}
+obsgen = og.obs_generator(settings)
 
 # generate the observation by passing the FisherForecast object and parameters
 p = [0.2,20.0]
-obs = obsgen.make_obs(ff,p=p)
+obs = obsgen.make_obs(ff,p=p,addnoise=False,addgains=False)
 
 # save it as a uvfits file
 obs.save_uvfits('./example_datafile.uvfits')
