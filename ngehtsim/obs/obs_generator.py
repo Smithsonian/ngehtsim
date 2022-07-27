@@ -773,6 +773,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,**kwargs):
     # create dummy obsgen object
     new_settings = obsgen.settings
     new_settings['frequency'] = str(int(freq_ref))
+    new_settings['bandwidth'] = obsgen.settings['bandwidth'] * (freq_ref/float(obsgen.settings['frequency']))
     if ((model_ref is None) | isinstance(model_ref,str)):
         new_settings['model_file'] = model_ref
     obsgen_ref = obs_generator(new_settings)
