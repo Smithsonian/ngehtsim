@@ -79,7 +79,8 @@ class obs_generator(object):
         self.DEC = self.settings['DEC']
         self.nbands = self.settings['nbands']
         self.freq_offsets = (np.arange(float(self.nbands)) - np.mean(np.arange(float(self.nbands)))) * float(self.settings['rf_offset']) * (1.0e9)
-        
+        self.weather = self.settings['weather']
+
         # run initialization functions
         self.set_seed()
         self.translate_sites()
@@ -128,25 +129,32 @@ class obs_generator(object):
         # list of sites
         sites = self.arr.tarr['site']
 
-        # pick a random past date from which to pull the weather
-        self.randyear = np.random.randint(const.year_min,const.year_max+1)
-        if (self.settings['month'] == 'Feb'):
-            self.randday = np.random.randint(1,29)
-        elif (self.settings['month'] in ['Apr','Jun','Sep','Nov']):
-            self.randday = np.random.randint(1,31)
-        else:
-            self.randday = np.random.randint(1,32)
-
         # initialize dictionaries
         tau_dict = defaultdict(dict)
         Tatm_dict = defaultdict(dict)
         Tb_dict = defaultdict(dict)
 
-        # read in the weather info and store it
+        # extract month number
         monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
         monthnams = np.array(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])
         monthnum = monthnums[monthnams == self.settings['month']][0]
-        broken = False
+
+        # get a day and year for the weather parameters
+        if (self.weather == 'random'):
+            # pick a random past date from which to pull the weather
+            self.randyear = np.random.randint(const.year_min,const.year_max+1)
+            if (self.settings['month'] == 'Feb'):
+                self.randday = np.random.randint(1,29)
+            elif (self.settings['month'] in ['Apr','Jun','Sep','Nov']):
+                self.randday = np.random.randint(1,31)
+            else:
+                self.randday = np.random.randint(1,32)
+        elif (self.weather == 'exact'):
+            # use the specified date
+            self.randyear = int(self.settings['year'])
+            self.randday = int(self.settings['day'])
+
+        # read in the weather info and store it
         for isite, site in enumerate(sites):
 
             # determine which table to read
@@ -158,13 +166,22 @@ class obs_generator(object):
             # read in the table
             year, monthdum, day, tau, Tb = np.loadtxt(pathhere,skiprows=7,unpack=True,delimiter=',')
 
-            # pull out the info for the selected random past date
-            index = ((year == self.randyear) & (day == self.randday))
-            if (index.sum() == 0):
-                broken = True
-                break
-            tau_here = tau[index][0]
-            Tb_here = Tb[index][0]
+            if ((self.weather == 'random') | (self.weather == 'exact')):
+                # pull out the info for the selected date
+                index = ((year == self.randyear) & (day == self.randday))
+                if (np.array(index).sum() == 0):
+                    raise Exception('No weather on file for the selected date!')
+                tau_here = tau[index][0]
+                Tb_here = Tb[index][0]
+            elif (self.weather == 'typical'):
+                tau_here = np.median(tau)
+                Tb_here = np.median(Tb)
+            elif (self.weather == 'good'):
+                tau_here = np.percentile(tau,15.87)
+                Tb_here = np.percentile(Tb,15.87)
+            elif (self.weather == 'poor'):
+                tau_here = np.percentile(tau,84.13)
+                Tb_here = np.percentile(Tb,84.13)
 
             # divide out the opacity term to get the actual atmospheric temperature
             Tatm = (Tb_here - (const.T_CMB_AM*np.exp(-tau_here))) / (1.0 - np.exp(-tau_here))
@@ -174,14 +191,10 @@ class obs_generator(object):
             Tatm_dict[site] = Tatm
             Tb_dict[site] = Tb_here
 
-        # store the dictionaries, but only if everything executed successfully
-        if broken:
-            print('Something went wrong; retabulating weather...')
-            self.tabulate_weather()
-        else:
-            self.tau_dict = tau_dict
-            self.Tatm_dict = Tatm_dict
-            self.Tb_dict = Tb_dict
+        # store the dictionaries
+        self.tau_dict = tau_dict
+        self.Tatm_dict = Tatm_dict
+        self.Tb_dict = Tb_dict
 
     # generate dictionaries of telescope properties
     def telescope_properties(self):

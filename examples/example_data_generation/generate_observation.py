@@ -22,6 +22,9 @@ obs = obsgen.make_obs()
 # save it as a uvfits file
 obs.save_uvfits('./example_datafile.uvfits')
 
+print(obsgen.tau_dict)
+print(obsgen.Tb_dict)
+
 #######################################################
 # make some plots of the data
 

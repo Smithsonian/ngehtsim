@@ -41,6 +41,7 @@ sites: ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT
 ############################################################
 # other settings
 
+weather: 'random'               # way to select the weather ('random', 'exact', 'good', 'typical', or 'poor')
 ttype: 'fast'                   # type of Fourier transform ('direct', 'nfft', or 'fast')
 fft_pad_factor: 2               # zero pad the image to fft_pad_factor * image size in the FFT
-random_seed: 12345              # random number seed; if blank, will be auto-generated
+random_seed:                    # random number seed; if blank, will be auto-generated

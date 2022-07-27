@@ -36,6 +36,7 @@ default_settings = {'model_file': None,
                               'SPT'],
                     'D_new': 10.0,
                     'tech_readiness': 1.0,
+                    'weather': 'random',
                     'ttype': 'fast',
                     'fft_pad_factor': 2,
                     'random_seed': None}
