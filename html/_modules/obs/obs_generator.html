@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.59.geead626.dirty documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.63.g6024e26 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.59.geead626.dirty
+                0+untagged.63.g6024e26
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -149,7 +149,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">DEC</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;DEC&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nbands</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;nbands&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">freq_offsets</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbands</span><span class="p">))</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nbands</span><span class="p">))))</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;rf_offset&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0e9</span><span class="p">)</span>
-        
+        <span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather&#39;</span><span class="p">]</span>
+
         <span class="c1"># run initialization functions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_seed</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">translate_sites</span><span class="p">()</span>
@@ -198,25 +199,32 @@
         <span class="c1"># list of sites</span>
         <span class="n">sites</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arr</span><span class="o">.</span><span class="n">tarr</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span>
 
-        <span class="c1"># pick a random past date from which to pull the weather</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">randyear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">year_min</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">year_max</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Feb&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">29</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span><span class="s1">&#39;Jun&#39;</span><span class="p">,</span><span class="s1">&#39;Sep&#39;</span><span class="p">,</span><span class="s1">&#39;Nov&#39;</span><span class="p">]):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">31</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">32</span><span class="p">)</span>
-
         <span class="c1"># initialize dictionaries</span>
         <span class="n">tau_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
         <span class="n">Tatm_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
         <span class="n">Tb_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
 
-        <span class="c1"># read in the weather info and store it</span>
+        <span class="c1"># extract month number</span>
         <span class="n">monthnums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;01&#39;</span><span class="p">,</span><span class="s1">&#39;02&#39;</span><span class="p">,</span><span class="s1">&#39;03&#39;</span><span class="p">,</span><span class="s1">&#39;04&#39;</span><span class="p">,</span><span class="s1">&#39;05&#39;</span><span class="p">,</span><span class="s1">&#39;06&#39;</span><span class="p">,</span><span class="s1">&#39;07&#39;</span><span class="p">,</span><span class="s1">&#39;08&#39;</span><span class="p">,</span><span class="s1">&#39;09&#39;</span><span class="p">,</span><span class="s1">&#39;10&#39;</span><span class="p">,</span><span class="s1">&#39;11&#39;</span><span class="p">,</span><span class="s1">&#39;12&#39;</span><span class="p">])</span>
         <span class="n">monthnams</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;Jan&#39;</span><span class="p">,</span><span class="s1">&#39;Feb&#39;</span><span class="p">,</span><span class="s1">&#39;Mar&#39;</span><span class="p">,</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span><span class="s1">&#39;May&#39;</span><span class="p">,</span><span class="s1">&#39;Jun&#39;</span><span class="p">,</span><span class="s1">&#39;Jul&#39;</span><span class="p">,</span><span class="s1">&#39;Aug&#39;</span><span class="p">,</span><span class="s1">&#39;Sep&#39;</span><span class="p">,</span><span class="s1">&#39;Oct&#39;</span><span class="p">,</span><span class="s1">&#39;Nov&#39;</span><span class="p">,</span><span class="s1">&#39;Dec&#39;</span><span class="p">])</span>
         <span class="n">monthnum</span> <span class="o">=</span> <span class="n">monthnums</span><span class="p">[</span><span class="n">monthnams</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">broken</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># get a day and year for the weather parameters</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">):</span>
+            <span class="c1"># pick a random past date from which to pull the weather</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">randyear</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">year_min</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">year_max</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Feb&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">29</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span><span class="s1">&#39;Jun&#39;</span><span class="p">,</span><span class="s1">&#39;Sep&#39;</span><span class="p">,</span><span class="s1">&#39;Nov&#39;</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">31</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">32</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
+            <span class="c1"># use the specified date</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">randyear</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;day&#39;</span><span class="p">])</span>
+
+        <span class="c1"># read in the weather info and store it</span>
         <span class="k">for</span> <span class="n">isite</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sites</span><span class="p">):</span>
 
             <span class="c1"># determine which table to read</span>
@@ -228,13 +236,22 @@
             <span class="c1"># read in the table</span>
             <span class="n">year</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
 
-            <span class="c1"># pull out the info for the selected random past date</span>
-            <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">year</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">day</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">randday</span><span class="p">))</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-                <span class="n">broken</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="k">break</span>
-            <span class="n">tau_here</span> <span class="o">=</span> <span class="n">tau</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">Tb</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">)):</span>
+                <span class="c1"># pull out the info for the selected date</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">year</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">day</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">randday</span><span class="p">))</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!&#39;</span><span class="p">)</span>
+                <span class="n">tau_here</span> <span class="o">=</span> <span class="n">tau</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">Tb</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;typical&#39;</span><span class="p">):</span>
+                <span class="n">tau_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">tau</span><span class="p">)</span>
+                <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">Tb</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
+                <span class="n">tau_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
+                <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tb</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;poor&#39;</span><span class="p">):</span>
+                <span class="n">tau_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
+                <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tb</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
 
             <span class="c1"># divide out the opacity term to get the actual atmospheric temperature</span>
             <span class="n">Tatm</span> <span class="o">=</span> <span class="p">(</span><span class="n">Tb_here</span> <span class="o">-</span> <span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">T_CMB_AM</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau_here</span><span class="p">)))</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau_here</span><span class="p">))</span>
@@ -244,14 +261,10 @@
             <span class="n">Tatm_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tatm</span>
             <span class="n">Tb_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tb_here</span>
 
-        <span class="c1"># store the dictionaries, but only if everything executed successfully</span>
-        <span class="k">if</span> <span class="n">broken</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Something went wrong; retabulating weather...&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tabulate_weather</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">tau_dict</span> <span class="o">=</span> <span class="n">tau_dict</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Tatm_dict</span> <span class="o">=</span> <span class="n">Tatm_dict</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">Tb_dict</span> <span class="o">=</span> <span class="n">Tb_dict</span>
+        <span class="c1"># store the dictionaries</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau_dict</span> <span class="o">=</span> <span class="n">tau_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tatm_dict</span> <span class="o">=</span> <span class="n">Tatm_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tb_dict</span> <span class="o">=</span> <span class="n">Tb_dict</span>
 
     <span class="c1"># generate dictionaries of telescope properties</span>
     <span class="k">def</span> <span class="nf">telescope_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -843,6 +856,7 @@
     <span class="c1"># create dummy obsgen object</span>
     <span class="n">new_settings</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span>
     <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">freq_ref</span><span class="p">))</span>
+    <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">freq_ref</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]))</span>
     <span class="k">if</span> <span class="p">((</span><span class="n">model_ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_ref</span><span class="p">,</span><span class="nb">str</span><span class="p">)):</span>
         <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;model_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_ref</span>
     <span class="n">obsgen_ref</span> <span class="o">=</span> <span class="n">obs_generator</span><span class="p">(</span><span class="n">new_settings</span><span class="p">)</span>
