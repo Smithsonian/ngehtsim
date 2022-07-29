@@ -32,11 +32,12 @@ SNR_cutoff: ['fringegroups', [5., 10.]]
 ############################################################
 # array specs
 
-D_new: 10.          # new dish diameter, in meters
-tech_readiness: 1.0 # derating for technical readiness
+array: 'ngEHTphase1'   # name of the array to use
+D_new: 10.             # new dish diameter, in meters
+tech_readiness: 1.0    # derating for technical readiness
 
-# list containing the array site names
-sites: ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT', 'SPT', 'BAJA', 'BAR', 'CNI', 'HAY', 'LAS', 'OVRO']
+# list containing any additional sites to include
+sites: 
 
 ############################################################
 # other settings

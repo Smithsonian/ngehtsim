@@ -27,16 +27,17 @@ t_rest: 600.        # time interval between consecutive integrations, in seconds
 # ['naive',threshold]
 # ['fringegroups', [strong baseline SNR threshold, strong baseline coherence time (in seconds)]
 # ['fpt', [strong baseline SNR threshold, strong baseline coherence time (in seconds), FPT reference frequency (in GHz), path to FPT reference model]
-SNR_cutoff: ['fpt', [5., 10., 86., './M87_86GHz_Chael_modified.fits']]
+SNR_cutoff: ['fpt', [20., 5., 86., './M87_86GHz_Chael_modified.fits']]
 
 ############################################################
 # array specs
 
-D_new: 10.          # new dish diameter, in meters
-tech_readiness: 1.0 # derating for technical readiness
+array: 'ngEHTphase1'   # name of the array to use
+D_new: 6.             # new dish diameter, in meters
+tech_readiness: 1.0    # derating for technical readiness
 
-# list containing the array site names
-sites: ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT', 'SPT', 'BAJA', 'BAR', 'CNI', 'HAY', 'LAS', 'OVRO']
+# list containing any additional sites to include
+sites: 
 
 ############################################################
 # other settings

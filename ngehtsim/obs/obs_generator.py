@@ -36,11 +36,13 @@ class obs_generator(object):
     """
 
     # initialize class instantiation
-    def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={}, array_name='nameless array'):
+    def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={}, array_name=None):
 
         self.settings = {}
         self.settings_file = settings_file
         self.verbosity = verbose
+        self.D_override_dict = D_override_dict
+        self.array_name = array_name
 
         # start with some default settings
         self.settings = const.default_settings
@@ -70,9 +72,11 @@ class obs_generator(object):
             raise Exception('Input rf_offset must be greater than or equal to input bandwidth when nbands > 1.')
         if (self.path_to_weather[-1] != '/'):
             self.path_to_weather += '/'
+        if self.array_name is None:
+            if self.settings['array'] is not None:
+                self.array_name = self.settings['array']
 
         # extract commonly-used settings
-        self.sites = self.settings['sites']
         self.model_file = self.settings['model_file']
         self.freq = float(self.settings['frequency'])*(1.0e9)
         self.RA = self.settings['RA']
@@ -83,10 +87,11 @@ class obs_generator(object):
 
         # run initialization functions
         self.set_seed()
+        self.get_sites()
         self.translate_sites()
         self.set_TR()
         self.mjd = determine_mjd(self.settings['day'],self.settings['month'],self.settings['year'])
-        self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=D_override_dict,array_name=array_name,freq=self.freq/(1.0e9))
+        self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9))
         self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
         self.tabulate_weather()
         self.telescope_properties()
@@ -107,6 +112,32 @@ class obs_generator(object):
             np.random.seed(int(time.time()))
         else:
             np.random.seed(self.settings['random_seed'])
+
+    # generate the site list
+    def get_sites(self):
+
+        # initialize site list
+        self.sites = list()
+
+        # if a known array is specified, pull its sites and overrides
+        if self.settings['array'] in const.known_arrays.keys():
+            self.sites = const.known_arrays[self.settings['array']]
+            override_dict_here = const.known_array_overrides[self.settings['array']]
+            override_dict_here.update(self.D_override_dict)
+            self.D_override_dict = override_dict_here
+
+        # add in any additional sites
+        else:
+            if self.settings['sites'] is not None:
+                self.sites += self.settings['sites']
+            else:
+                raise Exception('No known array or sites have been specified!')
+        if self.settings['sites'] is not None:
+            self.sites += self.settings['sites']
+
+        # remove duplicates
+        temp_sites = np.unique(np.array(self.sites))
+        self.sites = list(temp_sites)
 
     # make sure all sites are known
     def translate_sites(self):
@@ -587,7 +618,7 @@ def determine_mjd(day,month,year):
     return t.mjd
 
 
-def make_array(sitelist,D_new,D_override_dict={},array_name='nameless array',freq=230.0):
+def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0):
     """
     Create ngehtutil and ehtim array objects from a list of sites.
     
@@ -611,7 +642,11 @@ def make_array(sitelist,D_new,D_override_dict={},array_name='nameless array',fre
             if (stationhere.existing_dish == False):
                 stationhere.dishes = [ng.station.Dish(diameter=D_new)]
         stations.append(stationhere)
-    array = ng.Array(array_name,stations)
+
+    if array_name is not None:
+        array = ng.Array(array_name,stations)
+    else:
+        array = ng.Array('nameless array',stations)
     arr = array.to_ehtim_array(freq)
 
     return array, arr
