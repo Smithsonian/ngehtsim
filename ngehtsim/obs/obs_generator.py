@@ -551,6 +551,23 @@ class obs_generator(object):
 # other functions
 
 
+def get_station_list():
+    """
+    Return a list of known stations; equivalent to "get_site_list"
+
+    Args:
+    
+    Returns:
+      (list): a list of station names
+    """
+
+    return ng.Station.get_list()
+
+
+# alias for get_station_list
+get_site_list = get_station_list
+
+
 def determine_mjd(day,month,year):
     """
     Determine the MJD from a given day, month, and year.
