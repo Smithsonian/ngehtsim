@@ -79,8 +79,6 @@ class obs_generator(object):
         # extract commonly-used settings
         self.model_file = self.settings['model_file']
         self.freq = float(self.settings['frequency'])*(1.0e9)
-        self.RA = self.settings['RA']
-        self.DEC = self.settings['DEC']
         self.nbands = self.settings['nbands']
         self.freq_offsets = (np.arange(float(self.nbands)) - np.mean(np.arange(float(self.nbands)))) * float(self.settings['rf_offset']) * (1.0e9)
         self.weather = self.settings['weather']
@@ -91,6 +89,7 @@ class obs_generator(object):
         self.translate_sites()
         self.set_weather_freq()
         self.set_TR()
+        self.set_coords()
         self.mjd = determine_mjd(self.settings['day'],self.settings['month'],self.settings['year'])
         self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9))
         self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
@@ -164,7 +163,24 @@ class obs_generator(object):
         self.T_R = const.T_R_dict[self.weather_freq]
         if self.verbosity > 0:
             print("************** Receiver temperature set to " + str(self.T_R) + ' K.')
-        
+    
+    # set source coordinates
+    def set_coords(self):
+
+        # retrieve coordinates from source, if known
+        if self.settings['source'] in const.known_sources.keys():
+            self.RA = const.known_sources[self.settings['source']]['RA']
+            self.DEC = const.known_sources[self.settings['source']]['DEC']
+        else:
+            if ((self.settings['RA'] is None) & (self.settings['DEC'] is None)):
+                raise Exception('A known source and/or a set of (RA,DEC) coordinates must be specified.')
+
+        # if coordinates are specified, use those instead
+        if self.settings['RA'] is not None:
+            self.RA = self.settings['RA']
+        if self.settings['DEC'] is not None:
+            self.DEC = self.settings['DEC']
+
     # extract the opacity and Tb information from weather tables
     def tabulate_weather(self):
 
@@ -260,7 +276,6 @@ class obs_generator(object):
         t_last = t_first+float(N_obs-1)*(self.settings['t_rest']/3600.)
         self.t_seg_times = np.linspace(t_first,t_last,N_obs)
         if self.verbosity > 0:
-            print("========= Source: {0}".format(self.settings['source']))
             print("========= Number of timestamps: {0}".format(N_obs))
             print("========= Beginning of first integration: {0}".format(t_first))
             print("========= Beginning of last integration: {0}".format(t_last))
@@ -305,16 +320,22 @@ class obs_generator(object):
 
         # observe the source
         if isinstance(input_model, eh.image.Image):
+            input_model.ra = self.RA
+            input_model.dec = self.DEC
             input_model.mjd = self.mjd
             input_model.source = self.settings['source']
             input_model.rf = obsfreq
             obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'])
         elif isinstance(input_model, eh.movie.Movie):
+            input_model.ra = self.RA
+            input_model.dec = self.DEC
             input_model.mjd = self.mjd
             input_model.source = self.settings['source']
             input_model.rf = obsfreq
             obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'],repeat=True)
         elif isinstance(input_model, eh.model.Model):
+            input_model.ra = self.RA
+            input_model.dec = self.DEC
             input_model.mjd = self.mjd
             input_model.source = self.settings['source']
             input_model.rf = obsfreq

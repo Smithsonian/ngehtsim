@@ -10,8 +10,8 @@ path_to_weather = os.path.dirname(ng.__file__) + '/weather_data/'
 default_settings = {'model_file': None,
                     'source': 'M87',
                     'frequency': 230.0,
-                    'RA': 12.51373,
-                    'DEC': 12.39112,
+                    'RA': None,
+                    'DEC': None,
                     'bandwidth': 2.0,
                     'nbands': 1,
                     'rf_offset': 0.0,
@@ -171,6 +171,26 @@ known_array_overrides = {'EHT2017': {},
                                          'CNI': 6.1,
                                          'LAS': 6.1,
                                          'OVRO': 10.4}}
+
+###################################################
+# known sources
+
+known_sources = {'M87': {'RA': 12.51373,
+                         'DEC': 12.39112},
+                 'M 87': {'RA': 12.51373,
+                          'DEC': 12.39112},
+                 'SgrA': {'RA': 17.76112,
+                          'DEC': -29.007797},
+                 'Sgr A': {'RA': 17.76112,
+                           'DEC': -29.007797},
+                 'SgrA*': {'RA': 17.76112,
+                           'DEC': -29.007797},
+                 'Sgr A*': {'RA': 17.76112,
+                            'DEC': -29.007797},
+                 '3C279': {'RA': 12.93642,
+                           'DEC': -5.78944},
+                 '3C 279': {'RA': 12.93642,
+                            'DEC': -5.78944},}
 
 ###################################################
 # other items
