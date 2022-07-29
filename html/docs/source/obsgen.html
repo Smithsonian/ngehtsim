@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Observation utilities &mdash; ngehtsim 0+untagged.63.g6024e26 documentation</title>
+  <title>Observation utilities &mdash; ngehtsim 0+untagged.67.gde694d9 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -32,7 +32,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.63.g6024e26
+                0+untagged.67.gde694d9
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -175,6 +175,36 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="obs.obs_generator.get_site_list">
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">get_site_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#obs.obs_generator.get_site_list" title="Permalink to this definition"></a></dt>
+<dd><p>Return a list of known stations; equivalent to “get_site_list”</p>
+<p>Args:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a list of station names</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="obs.obs_generator.get_station_list">
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">get_station_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#get_station_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.get_station_list" title="Permalink to this definition"></a></dt>
+<dd><p>Return a list of known stations; equivalent to “get_site_list”</p>
+<p>Args:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a list of station names</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_generator.get_unready_sites">
 <span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">get_unready_sites</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sites_in_observ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tech_readiness</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#get_unready_sites"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.get_unready_sites" title="Permalink to this definition"></a></dt>
 <dd><p>Function to determine which sites will randomly fail technical readiness.</p>
@@ -218,7 +248,7 @@ takes on a value between 0 and 1</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_generator.make_array">
-<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">make_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_new</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nameless</span> <span class="pre">array'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">230.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#make_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.make_array" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">make_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_new</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">230.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#make_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.make_array" title="Permalink to this definition"></a></dt>
 <dd><p>Create ngehtutil and ehtim array objects from a list of sites.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -241,7 +271,7 @@ takes on a value between 0 and 1</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">obs_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nameless</span> <span class="pre">array'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">obs_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator" title="Permalink to this definition"></a></dt>
 <dd><p>Class that organizes information for generating synthetic observations.  Typically initialized by
 passing a settings file.</p>
 <dl class="py attribute">
