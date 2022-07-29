@@ -9,7 +9,7 @@ path_to_weather = os.path.dirname(ng.__file__) + '/weather_data/'
 
 default_settings = {'model_file': None,
                     'source': 'M87',
-                    'frequency': '230',
+                    'frequency': 230.0,
                     'RA': 12.51373,
                     'DEC': 12.39112,
                     'bandwidth': 2.0,
@@ -28,6 +28,7 @@ default_settings = {'model_file': None,
                     'D_new': 10.0,
                     'tech_readiness': 1.0,
                     'weather': 'random',
+                    'weather_freq': None,
                     'ttype': 'fast',
                     'fft_pad_factor': 2,
                     'random_seed': None}

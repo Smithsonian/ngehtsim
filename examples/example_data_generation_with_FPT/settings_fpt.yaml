@@ -9,7 +9,7 @@ model_file: './M87_345GHz_Chael_modified.fits'
 source: 'M87'       # name of science target
 RA: 12.51373        # right ascension of science target, in J2000 hours
 DEC: 12.39112       # declination of science target, in J2000 degrees
-frequency: '345'    # observing frequency, in GHz; options are 86, 230, 345
+frequency: 345.0    # observing frequency, in GHz
 bandwidth: 2.0      # fringe-finding bandwidth, in GHz
 nbands: 1           # number of bands
 rf_offset: 0.0      # rf offset, in GHz; should be larger than bandwidth for nbands > 1

@@ -63,8 +63,8 @@ class obs_generator(object):
         self.path_to_weather = os.path.abspath(const.path_to_weather)
 
         # check for issues, fix some easy ones, complain about the others
-        if self.settings['frequency'] not in ['86', '230', '345', '690']:
-            raise ValueError('Input frequency needs to be one of 86, 230, 345, or 690.')
+        if (self.settings['weather_freq'] is not None) & (self.settings['weather_freq'] not in ['86', '230', '345', '690']):
+            raise ValueError('Input weather frequency needs to be one of 86, 230, 345, or 690.')
         if (self.settings['nbands'] < 1):
             self.settings['nbands'] = 1
             raise Warning('Input nbands must be at least 1; setting to 1.')
@@ -89,6 +89,7 @@ class obs_generator(object):
         self.set_seed()
         self.get_sites()
         self.translate_sites()
+        self.set_weather_freq()
         self.set_TR()
         self.mjd = determine_mjd(self.settings['day'],self.settings['month'],self.settings['year'])
         self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9))
@@ -148,11 +149,21 @@ class obs_generator(object):
                 if site not in ng.Station.get_list():
                     raise Exception(site+' is not a known station.')
 
+    # determine the weather frequency to use
+    def set_weather_freq(self):
+        freq_options = np.array([86.0,230.0,345.0,690.0])
+        weath_options = np.array(['86','230','345','690'])
+        if self.settings['weather_freq'] is None:
+            freqhere = self.freq / (1.0e9)
+            self.weather_freq = weath_options[np.argmin(np.abs(freqhere - freq_options))]
+        if self.verbosity > 0:
+            print("************** Weather frequency set to " + str(self.weather_freq) + ' GHz.')
+
     # store receiver temperature
     def set_TR(self):
-        self.T_R = const.T_R_dict[self.settings['frequency']]
+        self.T_R = const.T_R_dict[self.weather_freq]
         if self.verbosity > 0:
-            print("************** T_R set to : {0}".format(self.T_R))
+            print("************** Receiver temperature set to " + str(self.T_R) + ' K.')
         
     # extract the opacity and Tb information from weather tables
     def tabulate_weather(self):
@@ -192,7 +203,7 @@ class obs_generator(object):
             pathhere = self.path_to_weather
             pathhere += site + '/'
             pathhere += monthnum + self.settings['month'] + '/'
-            pathhere += 'mean_SEFD_info_' + self.settings['frequency'] + '.csv'
+            pathhere += 'mean_SEFD_info_' + self.weather_freq + '.csv'
             
             # read in the table
             year, monthdum, day, tau, Tb = np.loadtxt(pathhere,skiprows=7,unpack=True,delimiter=',')
@@ -553,9 +564,7 @@ class obs_generator(object):
 
 def get_station_list():
     """
-    Return a list of known stations; equivalent to "get_site_list"
-
-    Args:
+    Return a list of known stations; "get_station_list" and "get_site_list" are equivalent
     
     Returns:
       (list): a list of station names
@@ -837,7 +846,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,**kwargs):
 
     # create dummy obsgen object
     new_settings = obsgen.settings
-    new_settings['frequency'] = str(int(freq_ref))
+    new_settings['frequency'] = freq_ref
     new_settings['bandwidth'] = obsgen.settings['bandwidth'] * (freq_ref/float(obsgen.settings['frequency']))
     if ((model_ref is None) | isinstance(model_ref,str)):
         new_settings['model_file'] = model_ref

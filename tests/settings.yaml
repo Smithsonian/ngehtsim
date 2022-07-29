@@ -7,7 +7,7 @@ model_file: './tests/M87_230GHz_Chael.fits'
 # observation specs
 
 source: 'M87'       # name of science target
-frequency: '230'    # observing frequency, in GHz; options are 86, 230, 345
+frequency: 230      # observing frequency, in GHz
 bandwidth: 2.0      # fringe-finding bandwidth, in GHz
 nbands: 1           # number of bands
 rf_offset: 4.0      # rf offset, in GHz; should be larger than bandwidth for nbands > 1
