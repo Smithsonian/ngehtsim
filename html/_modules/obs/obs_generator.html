@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.67.gde694d9 documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.68.g0242acd documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.67.gde694d9
+                0+untagged.68.g0242acd
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -133,8 +133,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span>
 
         <span class="c1"># check for issues, fix some easy ones, complain about the others</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;86&#39;</span><span class="p">,</span> <span class="s1">&#39;230&#39;</span><span class="p">,</span> <span class="s1">&#39;345&#39;</span><span class="p">,</span> <span class="s1">&#39;690&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input frequency needs to be one of 86, 230, 345, or 690.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_freq&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_freq&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;86&#39;</span><span class="p">,</span> <span class="s1">&#39;230&#39;</span><span class="p">,</span> <span class="s1">&#39;345&#39;</span><span class="p">,</span> <span class="s1">&#39;690&#39;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input weather frequency needs to be one of 86, 230, 345, or 690.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;nbands&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;nbands&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span><span class="s1">&#39;Input nbands must be at least 1; setting to 1.&#39;</span><span class="p">)</span>
@@ -159,6 +159,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_seed</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">get_sites</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">translate_sites</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_weather_freq</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_TR</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mjd</span> <span class="o">=</span> <span class="n">determine_mjd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;day&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">make_array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;D_new&#39;</span><span class="p">],</span><span class="n">D_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">D_override_dict</span><span class="p">,</span><span class="n">array_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">array_name</span><span class="p">,</span><span class="n">freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0e9</span><span class="p">))</span>
@@ -218,11 +219,21 @@
                 <span class="k">if</span> <span class="n">site</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ng</span><span class="o">.</span><span class="n">Station</span><span class="o">.</span><span class="n">get_list</span><span class="p">():</span>
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">site</span><span class="o">+</span><span class="s1">&#39; is not a known station.&#39;</span><span class="p">)</span>
 
+    <span class="c1"># determine the weather frequency to use</span>
+    <span class="k">def</span> <span class="nf">set_weather_freq</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">freq_options</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">86.0</span><span class="p">,</span><span class="mf">230.0</span><span class="p">,</span><span class="mf">345.0</span><span class="p">,</span><span class="mf">690.0</span><span class="p">])</span>
+        <span class="n">weath_options</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;86&#39;</span><span class="p">,</span><span class="s1">&#39;230&#39;</span><span class="p">,</span><span class="s1">&#39;345&#39;</span><span class="p">,</span><span class="s1">&#39;690&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_freq&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">freqhere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0e9</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span> <span class="o">=</span> <span class="n">weath_options</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freqhere</span> <span class="o">-</span> <span class="n">freq_options</span><span class="p">))]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;************** Weather frequency set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; GHz.&#39;</span><span class="p">)</span>
+
     <span class="c1"># store receiver temperature</span>
     <span class="k">def</span> <span class="nf">set_TR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;************** T_R set to : </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">T_R</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;************** Receiver temperature set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">T_R</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; K.&#39;</span><span class="p">)</span>
         
     <span class="c1"># extract the opacity and Tb information from weather tables</span>
     <span class="k">def</span> <span class="nf">tabulate_weather</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -262,7 +273,7 @@
             <span class="n">pathhere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_to_weather</span>
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-            <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_SEFD_info_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
+            <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_SEFD_info_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
             
             <span class="c1"># read in the table</span>
             <span class="n">year</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
@@ -623,9 +634,7 @@
 
 <div class="viewcode-block" id="get_station_list"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.get_station_list">[docs]</a><span class="k">def</span> <span class="nf">get_station_list</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return a list of known stations; equivalent to &quot;get_site_list&quot;</span>
-
-<span class="sd">    Args:</span>
+<span class="sd">    Return a list of known stations; &quot;get_station_list&quot; and &quot;get_site_list&quot; are equivalent</span>
 <span class="sd">    </span>
 <span class="sd">    Returns:</span>
 <span class="sd">      (list): a list of station names</span>
@@ -907,7 +916,7 @@
 
     <span class="c1"># create dummy obsgen object</span>
     <span class="n">new_settings</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span>
-    <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">freq_ref</span><span class="p">))</span>
+    <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq_ref</span>
     <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">freq_ref</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]))</span>
     <span class="k">if</span> <span class="p">((</span><span class="n">model_ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_ref</span><span class="p">,</span><span class="nb">str</span><span class="p">)):</span>
         <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;model_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_ref</span>
