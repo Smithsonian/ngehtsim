@@ -184,9 +184,6 @@ class obs_generator(object):
     # extract the opacity and Tb information from weather tables
     def tabulate_weather(self):
 
-        # list of sites
-        sites = self.arr.tarr['site']
-
         # initialize dictionaries
         tau_dict = defaultdict(dict)
         Tatm_dict = defaultdict(dict)
@@ -213,7 +210,7 @@ class obs_generator(object):
             self.randday = int(self.settings['day'])
 
         # read in the weather info and store it
-        for isite, site in enumerate(sites):
+        for isite, site in enumerate(self.sites):
 
             # determine which table to read
             pathhere = self.path_to_weather

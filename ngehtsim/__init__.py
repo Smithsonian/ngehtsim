@@ -15,7 +15,7 @@ __bibtex__ = r"""@Article{TBD,
   %%% Fill in from ADS!
 }"""
 
-__all__ = ['obs', 'metrics', 'const_def']
+__all__ = ['obs', 'metrics', 'const_def', 'weather']
 from . import *
 
 

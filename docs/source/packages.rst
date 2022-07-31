@@ -8,4 +8,5 @@ Individual package documentation organized by area.
 
    ./obsgen
    ./metrics
+   ./weather
    
