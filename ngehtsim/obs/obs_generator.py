@@ -694,17 +694,23 @@ class obs_generator(object):
                 strhere += str(1.0).ljust(11)
                 strhere += str(0.1).ljust(12)
 
-                # add leakage means and stds
+                # add leakage means and stds                
+                strhere += str(0.05+0.05j)[1:-1].ljust(12)
                 strhere += str(0.0).ljust(12)
-                strhere += str(0.05+0.05j).ljust(12)
+                strhere += str(0.05+0.05j)[1:-1].ljust(12)
                 strhere += str(0.0).ljust(12)
-                strhere += str(0.05+0.05j).ljust(12)
 
                 # add feed angle
-                strhere += str(0.0).ljust(20)
+                if site in const.known_feed_angles.keys():
+                    strhere += str(const.known_feed_angles[site]).ljust(20)
+                else:
+                    strhere += str(const.feed_angle).ljust(20)
 
                 # add mount type
-                strhere += 'ALT-AZ'.ljust(18)
+                if site in const.known_mount_types.keys():
+                    strhere += const.known_mount_types[site].ljust(18)
+                else:
+                    strhere += const.mount_type.ljust(18)
 
                 # add dish diameter
                 diam = stat.diameter()
@@ -712,7 +718,9 @@ class obs_generator(object):
 
                 # add xyz coordinates
                 coords = stat.xyz()
-                strhere += str(coords[0]) + ',' + str(coords[1]) + ',' + str(coords[2])
+                strhere += str(np.round(coords[0],8)) + ',' 
+                strhere += str(np.round(coords[1],8)) + ',' 
+                strhere += str(np.round(coords[2],8))
 
                 # write line
                 strhere += '\n'

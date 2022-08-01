@@ -51,15 +51,6 @@ T_R_dict = {'86': 40.0,
 # quantization efficiency
 quant_eff = 0.88
 
-# fiducial focus offset, in effective surface accuracy units
-focus_offset = 50.0e-6
-
-# fiducial surface RMS, in meters
-sigma_surface = 40.0e-6
-
-# fiducial pointing accuracy factor for existing telescopes, such that pointing RMS = primary_beamsize / accuracy_factor
-existing_pt_accuracy_factor = 10.0
-
 ###################################################
 # physical constants
 
@@ -191,6 +182,47 @@ known_sources = {'M87': {'RA': 12.51373,
                            'DEC': -5.78944},
                  '3C 279': {'RA': 12.93642,
                             'DEC': -5.78944},}
+
+###################################################
+# antenna properties
+
+# fiducial focus offset, in effective surface accuracy units
+focus_offset = 50.0e-6
+
+# fiducial surface RMS, in meters
+sigma_surface = 40.0e-6
+
+known_mount_types = {'ALMA': 'ALT-AZ',
+                     'APEX': 'ALT-AZ+NASMYTH-R',
+                     'GAM': 'ALT-AZ',
+                     'GLT': 'ALT-AZ',
+                     'IRAM': 'ALT-AZ+NASMYTH-L',
+                     'JCMT': 'ALT-AZ',
+                     'KP': 'ALT-AZ',
+                     'LMT': 'ALT-AZ+NASMYTH-L',
+                     'NOEMA': 'ALT-AZ',
+                     'SMA': 'ALT-AZ+NASMYTH-L',
+                     'SMT': 'ALT-AZ+NASMYTH-R',
+                     'SPT': 'ALT-AZ'}
+
+# default mount type, if not otherwise known
+mount_type = 'ALT-AZ'
+
+known_feed_angles = {'ALMA': 0.0,
+                     'APEX': 0.0,
+                     'GAM': 0.0,
+                     'GLT': 0.0,
+                     'IRAM': 0.0,
+                     'JCMT': 0.0,
+                     'KP': 0.0,
+                     'LMT': 0.0,
+                     'NOEMA': 0.0,
+                     'SMA': 45.0,
+                     'SMT': 0.0,
+                     'SPT': 0.0}
+
+# default feed angle, if not otherwise known
+feed_angle = 0.0
 
 ###################################################
 # other items
