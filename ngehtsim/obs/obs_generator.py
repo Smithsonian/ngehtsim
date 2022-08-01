@@ -16,6 +16,7 @@ import sys
 import os
 
 import ngehtsim.const_def as const
+import ngehtsim.weather.weather as nw
 
 ###################################################
 # class definition
@@ -575,6 +576,147 @@ class obs_generator(object):
                 print("Dropping {0} due to technical (un)readiness.".format(sites_to_drop))
 
         return obs
+
+    def export_SYMBA(self,output_filename='obsgen.antennas',t_coh=10.0,RMS_point=1.0,PB_model='gaussian'):
+        """
+        Export a SYMBA-compatible .antennas file from the obs_generator object.
+
+        Args:
+          output_filename (str): name of .antennas file to save
+          t_coh (float): default coherence time, in seconds
+          RMS_point (float): default RMS pointing uncertainty, in arcseconds
+          PB_model (str): primary beam model to use; only option right now is 'gaussian'
+
+        Returns:
+          SYMBA-compatible .antennas file containing the observation information
+        """
+
+        # make a list of station names in the correct order for the ngehtutils array object
+        stationnames = list()
+        for stat in self.array.stations():
+            stationnames.append(stat.name)
+        stationnames = np.array(stationnames)
+
+        with open(output_filename,'w') as outfile:
+
+            # add file header 
+            header = 'station'.ljust(9)
+            header += 's_rx[Jy]'.ljust(11)
+            header += 'pwv[mm]'.ljust(9)
+            header += 'gpress[mb]'.ljust(12)
+            header += 'gtemp[K]'.ljust(10)
+            header += 'c_time[sec]'.ljust(13)
+            header += 'ptg_rms[arcsec]'.ljust(17)
+            header += 'PB_FWHM230[arcsec]'.ljust(20)
+            header += 'PB_model'.ljust(12)
+            header += 'ap_eff'.ljust(9)
+            header += 'gainR_mean'.ljust(11)
+            header += 'gainR_std'.ljust(12)
+            header += 'gainL_mean'.ljust(11)
+            header += 'gainL_std'.ljust(12)
+            header += 'leakR_mean'.ljust(12)
+            header += 'leakR_std'.ljust(12)
+            header += 'leakL_mean'.ljust(12)
+            header += 'leakL_std'.ljust(12)
+            header += 'feed_angle[degree]'.ljust(20)
+            header += 'mount'.ljust(18)
+            header += 'dish_diameter'.ljust(17)
+            header += 'xzy_position_m' + '\n'
+            outfile.write(header)
+
+            for site in self.sites:
+
+                # initialize empty string
+                strhere = ''
+
+                # add station name as a two-letter code
+                strhere += const.two_letter_station_codes[site].ljust(9)
+
+                # add receiver SEFD, in Jy
+                SEFD_R = (2.0*const.k*self.T_R)/((np.pi/4.0)*self.eta_dict[site]*(self.D_dict[site])**2)
+                strhere += str(np.round(SEFD_R,2)).ljust(11)
+
+                # add PWV, in mm
+                if ((self.weather == 'exact') | (self.weather == 'random')):
+                    PWV = nw.PWV(site, form='exact', month=self.settings['month'], day=self.randday, year=self.randyear)
+                elif (self.weather == 'typical'):
+                    PWV = nw.PWV(site, form='median', month=self.settings['month'])
+                elif (self.weather == 'good'):
+                    PWV = nw.PWV(site, form='good', month=self.settings['month'])
+                elif (self.weather == 'bad'):
+                    PWV = nw.PWV(site, form='bad', month=self.settings['month'])
+                strhere += str(np.round(PWV,4)).ljust(9)
+
+                # add surface pressure, in mbar
+                if ((self.weather == 'exact') | (self.weather == 'random')):
+                    pres = nw.pressure(site, form='exact', month=self.settings['month'], day=self.randday, year=self.randyear)
+                elif (self.weather == 'typical'):
+                    pres = nw.pressure(site, form='median', month=self.settings['month'])
+                elif (self.weather == 'good'):
+                    pres = nw.pressure(site, form='good', month=self.settings['month'])
+                elif (self.weather == 'bad'):
+                    pres = nw.pressure(site, form='bad', month=self.settings['month'])
+                strhere += str(np.round(pres,2)).ljust(12)
+
+                # add surface temperature, in K
+                if ((self.weather == 'exact') | (self.weather == 'random')):
+                    temp = nw.temperature(site, form='exact', month=self.settings['month'], day=self.randday, year=self.randyear)
+                elif (self.weather == 'typical'):
+                    temp = nw.temperature(site, form='median', month=self.settings['month'])
+                elif (self.weather == 'good'):
+                    temp = nw.temperature(site, form='good', month=self.settings['month'])
+                elif (self.weather == 'bad'):
+                    temp = nw.temperature(site, form='bad', month=self.settings['month'])
+                strhere += str(np.round(temp,2)).ljust(10)
+
+                # add coherence time, in seconds
+                strhere += str(np.round(t_coh,2)).ljust(13)
+
+                # add RMS pointing uncertainty, in seconds
+                strhere += str(np.round(RMS_point,2)).ljust(17)
+
+                # add 230GHz FWHM primary beam size
+                ind = (stationnames == site)
+                stat = np.array(self.array.stations())[ind][0]
+                diam = stat.dishes[0].diameter
+                pb = ((180.0/np.pi)*3600.0)*((const.c / (230.0e9)) / diam)
+                strhere += str(np.round(pb,2)).ljust(20)
+
+                # add the primary beam model
+                strhere += PB_model.ljust(12)
+
+                # add the aperture efficiency
+                strhere += str(np.round(self.eta_dict[site],4)).ljust(9)
+
+                # add gain means and stds
+                strhere += str(1.0).ljust(11)
+                strhere += str(0.1).ljust(12)
+                strhere += str(1.0).ljust(11)
+                strhere += str(0.1).ljust(12)
+
+                # add leakage means and stds
+                strhere += str(0.0).ljust(12)
+                strhere += str(0.05+0.05j).ljust(12)
+                strhere += str(0.0).ljust(12)
+                strhere += str(0.05+0.05j).ljust(12)
+
+                # add feed angle
+                strhere += str(0.0).ljust(20)
+
+                # add mount type
+                strhere += 'ALT-AZ'.ljust(18)
+
+                # add dish diameter
+                diam = stat.diameter()
+                strhere += str(np.round(diam,2)).ljust(17)
+
+                # add xyz coordinates
+                coords = stat.xyz()
+                strhere += str(coords[0]) + ',' + str(coords[1]) + ',' + str(coords[2])
+
+                # write line
+                strhere += '\n'
+                outfile.write(strhere)
 
 ###################################################
 # other functions
