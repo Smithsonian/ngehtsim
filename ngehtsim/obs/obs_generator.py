@@ -205,7 +205,7 @@ class obs_generator(object):
                 self.randday = np.random.randint(1,31)
             else:
                 self.randday = np.random.randint(1,32)
-        elif (self.weather == 'exact'):
+        else:
             # use the specified date
             self.randyear = int(self.settings['year'])
             self.randday = int(self.settings['day'])
@@ -577,7 +577,8 @@ class obs_generator(object):
 
         return obs
 
-    def export_SYMBA(self,output_filename='obsgen.antennas',t_coh=10.0,RMS_point=1.0,PB_model='gaussian'):
+    def export_SYMBA(self, output_filename='obsgen.antennas', t_coh=10.0, RMS_point=1.0,
+                     PB_model='gaussian', gain_mean=1.0, leak_mean=0.0j):
         """
         Export a SYMBA-compatible .antennas file from the obs_generator object.
 
@@ -586,6 +587,12 @@ class obs_generator(object):
           t_coh (float): default coherence time, in seconds
           RMS_point (float): default RMS pointing uncertainty, in arcseconds
           PB_model (str): primary beam model to use; only option right now is 'gaussian'
+          gain_mean (float)/(dict): Value of the mean gain offset for each station.
+                                    If a float, will apply to all stations; if a dict,
+                                    should be indexed by station name
+          leak_mean (complex)/(dict): Value of the mean leakage offset for each station.
+                                      If complex, will apply to all stations; if a dict,
+                                      should be indexed by station name
 
         Returns:
           SYMBA-compatible .antennas file containing the observation information
@@ -596,6 +603,14 @@ class obs_generator(object):
         for stat in self.array.stations():
             stationnames.append(stat.name)
         stationnames = np.array(stationnames)
+
+        # translate the weather type setting
+        weather_translation_dict = {'exact': 'exact',
+                                    'random': 'exact',
+                                    'typical': 'median',
+                                    'good': 'good',
+                                    'bad': 'bad'}
+        weather_translation = weather_translation_dict[self.weather]
 
         with open(output_filename,'w') as outfile:
 
@@ -637,36 +652,15 @@ class obs_generator(object):
                 strhere += str(np.round(SEFD_R,2)).ljust(11)
 
                 # add PWV, in mm
-                if ((self.weather == 'exact') | (self.weather == 'random')):
-                    PWV = nw.PWV(site, form='exact', month=self.settings['month'], day=self.randday, year=self.randyear)
-                elif (self.weather == 'typical'):
-                    PWV = nw.PWV(site, form='median', month=self.settings['month'])
-                elif (self.weather == 'good'):
-                    PWV = nw.PWV(site, form='good', month=self.settings['month'])
-                elif (self.weather == 'bad'):
-                    PWV = nw.PWV(site, form='bad', month=self.settings['month'])
+                PWV = nw.PWV(site, form=weather_translation, month=self.settings['month'], day=self.randday, year=self.randyear)
                 strhere += str(np.round(PWV,4)).ljust(9)
 
                 # add surface pressure, in mbar
-                if ((self.weather == 'exact') | (self.weather == 'random')):
-                    pres = nw.pressure(site, form='exact', month=self.settings['month'], day=self.randday, year=self.randyear)
-                elif (self.weather == 'typical'):
-                    pres = nw.pressure(site, form='median', month=self.settings['month'])
-                elif (self.weather == 'good'):
-                    pres = nw.pressure(site, form='good', month=self.settings['month'])
-                elif (self.weather == 'bad'):
-                    pres = nw.pressure(site, form='bad', month=self.settings['month'])
+                pres = nw.pressure(site, form=weather_translation, month=self.settings['month'], day=self.randday, year=self.randyear)
                 strhere += str(np.round(pres,2)).ljust(12)
 
                 # add surface temperature, in K
-                if ((self.weather == 'exact') | (self.weather == 'random')):
-                    temp = nw.temperature(site, form='exact', month=self.settings['month'], day=self.randday, year=self.randyear)
-                elif (self.weather == 'typical'):
-                    temp = nw.temperature(site, form='median', month=self.settings['month'])
-                elif (self.weather == 'good'):
-                    temp = nw.temperature(site, form='good', month=self.settings['month'])
-                elif (self.weather == 'bad'):
-                    temp = nw.temperature(site, form='bad', month=self.settings['month'])
+                temp = nw.temperature(site, form=weather_translation, month=self.settings['month'], day=self.randday, year=self.randyear)
                 strhere += str(np.round(temp,2)).ljust(10)
 
                 # add coherence time, in seconds
@@ -689,15 +683,31 @@ class obs_generator(object):
                 strhere += str(np.round(self.eta_dict[site],4)).ljust(9)
 
                 # add gain means and stds
-                strhere += str(1.0).ljust(11)
-                strhere += str(0.1).ljust(12)
-                strhere += str(1.0).ljust(11)
-                strhere += str(0.1).ljust(12)
-
-                # add leakage means and stds                
-                strhere += str(0.05+0.05j)[1:-1].ljust(12)
+                if isinstance(gain_mean,float) or isinstance(gain_mean,complex):
+                    gain_here = gain_mean
+                elif isinstance(gain_mean,dict):
+                    gain_here = gain_mean[site]
+                if isinstance(gain_here,complex):
+                    gain_str = str(gain_here)[1:-1]
+                else:
+                    gain_str = str(gain_here)
+                strhere += gain_str.ljust(11)
                 strhere += str(0.0).ljust(12)
-                strhere += str(0.05+0.05j)[1:-1].ljust(12)
+                strhere += gain_str.ljust(11)
+                strhere += str(0.0).ljust(12)
+
+                # add leakage means and stds
+                if isinstance(leak_mean,float) or isinstance(leak_mean,complex):
+                    leak_here = leak_mean
+                elif isinstance(leak_mean,dict):
+                    leak_here = leak_mean[site]
+                if isinstance(leak_here,complex):
+                    leak_str = str(leak_here)[1:-1]
+                else:
+                    leak_str = str(leak_here)
+                strhere += leak_str.ljust(12)
+                strhere += str(0.0).ljust(12)
+                strhere += leak_str.ljust(12)
                 strhere += str(0.0).ljust(12)
 
                 # add feed angle
