@@ -355,8 +355,7 @@
 <span class="sd">        Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">          input_model (ehtim.image.Image): input source model; can be ehtim.image.Image, ehtim.movie.Movie,</span>
-<span class="sd">                                           ehtim.model.Model, or :class:`ngEHTforecast.fisher.fisher_forecast.FisherForecast`</span>
+<span class="sd">          input_model (ehtim.image.Image, ehtim.movie.Movie, ehtim.model.Model, ngEHTforecast.fisher.fisher_forecast.FisherForecast): input source model</span>
 <span class="sd">          obsfreq (float): observing frequency, in Hz</span>
 <span class="sd">          addnoise (bool): flag for whether or not to add thermal noise to the visibilities</span>
 <span class="sd">          addgains (bool): flag for whether or not to add station gain corruptions</span>
@@ -657,12 +656,12 @@
 <span class="sd">          t_coh (float): default coherence time, in seconds</span>
 <span class="sd">          RMS_point (float): default RMS pointing uncertainty, in arcseconds</span>
 <span class="sd">          PB_model (str): primary beam model to use; only option right now is &#39;gaussian&#39;</span>
-<span class="sd">          gain_mean (float)/(dict): Value of the mean gain offset for each station.</span>
-<span class="sd">                                    If a float, will apply to all stations; if a dict,</span>
-<span class="sd">                                    should be indexed by station name</span>
-<span class="sd">          leak_mean (complex)/(dict): Value of the mean leakage offset for each station.</span>
-<span class="sd">                                      If complex, will apply to all stations; if a dict,</span>
-<span class="sd">                                      should be indexed by station name</span>
+<span class="sd">          gain_mean (float, complex dict): Value of the mean gain offset for each station.</span>
+<span class="sd">                                           If float or complex, will apply to all stations;</span>
+<span class="sd">                                           if a dict, should be indexed by station name</span>
+<span class="sd">          leak_mean (float, complex, dict): Value of the mean leakage offset for each station.</span>
+<span class="sd">                                            If float or complex, will apply to all stations;</span>
+<span class="sd">                                            if a dict, should be indexed by station name</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          SYMBA-compatible .antennas file containing the observation information</span>

@@ -341,12 +341,12 @@ the corresponding settings from the settings file.</p>
 <li><p><strong>t_coh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – default coherence time, in seconds</p></li>
 <li><p><strong>RMS_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – default RMS pointing uncertainty, in arcseconds</p></li>
 <li><p><strong>PB_model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – primary beam model to use; only option right now is ‘gaussian’</p></li>
-<li><p><strong>gain_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>)</em><em>/</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Value of the mean gain offset for each station.
-If a float, will apply to all stations; if a dict,
-should be indexed by station name</p></li>
-<li><p><strong>leak_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>)</em><em>/</em><em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Value of the mean leakage offset for each station.
-If complex, will apply to all stations; if a dict,
-should be indexed by station name</p></li>
+<li><p><strong>gain_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><em>complex dict</em>) – Value of the mean gain offset for each station.
+If float or complex, will apply to all stations;
+if a dict, should be indexed by station name</p></li>
+<li><p><strong>leak_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.10)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Value of the mean leakage offset for each station.
+If float or complex, will apply to all stations;
+if a dict, should be indexed by station name</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -388,8 +388,7 @@ ehtim.model.Model, or ngEHTforecast.fisher.fisher_forecast.FisherForecast</p></l
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_model</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/image.html#ehtim.image.Image" title="(in ehtim v1.2)"><em>ehtim.image.Image</em></a>) – input source model; can be ehtim.image.Image, ehtim.movie.Movie,
-ehtim.model.Model, or <code class="xref py py-class docutils literal notranslate"><span class="pre">ngEHTforecast.fisher.fisher_forecast.FisherForecast</span></code></p></li>
+<li><p><strong>input_model</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/image.html#ehtim.image.Image" title="(in ehtim v1.2)"><em>ehtim.image.Image</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/movie.html#ehtim.movie.Movie" title="(in ehtim v1.2)"><em>ehtim.movie.Movie</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/model.html#ehtim.model.Model" title="(in ehtim v1.2)"><em>ehtim.model.Model</em></a><em>, </em><em>ngEHTforecast.fisher.fisher_forecast.FisherForecast</em>) – input source model</p></li>
 <li><p><strong>obsfreq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – observing frequency, in Hz</p></li>
 <li><p><strong>addnoise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – flag for whether or not to add thermal noise to the visibilities</p></li>
 <li><p><strong>addgains</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – flag for whether or not to add station gain corruptions</p></li>
