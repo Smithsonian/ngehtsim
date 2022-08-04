@@ -285,8 +285,7 @@ class obs_generator(object):
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
         Args:
-          input_model (ehtim.image.Image): input source model; can be ehtim.image.Image, ehtim.movie.Movie,
-                                           ehtim.model.Model, or ngEHTforecast.fisher.fisher_forecast.FisherForecast
+          input_model (ehtim.image.Image, ehtim.movie.Movie, ehtim.model.Model, ngEHTforecast.fisher.fisher_forecast.FisherForecast): input source model
           obsfreq (float): observing frequency, in Hz
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
@@ -499,8 +498,7 @@ class obs_generator(object):
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
         
         Args:
-          input_model (ehtim.image.Image): input source model; can be ehtim.image.Image, ehtim.movie.Movie,
-                                           ehtim.model.Model, or ngEHTforecast.fisher.fisher_forecast.FisherForecast
+          input_model (ehtim.image.Image, ehtim.movie.Movie, ehtim.model.Model, ngEHTforecast.fisher.fisher_forecast.FisherForecast): input source model
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
@@ -587,12 +585,12 @@ class obs_generator(object):
           t_coh (float): default coherence time, in seconds
           RMS_point (float): default RMS pointing uncertainty, in arcseconds
           PB_model (str): primary beam model to use; only option right now is 'gaussian'
-          gain_mean (float)/(dict): Value of the mean gain offset for each station.
-                                    If a float, will apply to all stations; if a dict,
-                                    should be indexed by station name
-          leak_mean (complex)/(dict): Value of the mean leakage offset for each station.
-                                      If complex, will apply to all stations; if a dict,
-                                      should be indexed by station name
+          gain_mean (float, complex, dict): Value of the mean gain offset for each station.
+                                           If float or complex, will apply to all stations;
+                                           if a dict, should be indexed by station name
+          leak_mean (float, complex, dict): Value of the mean leakage offset for each station.
+                                            If float or complex, will apply to all stations;
+                                            if a dict, should be indexed by station name
 
         Returns:
           SYMBA-compatible .antennas file containing the observation information
@@ -834,7 +832,7 @@ def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0):
       freq (float): Observing frequency, in GHz
     
     Returns:
-      (ngehtutil.array, ehtim.array.Array): An ngehtutil array object and an ehtim array object
+      (ngehtutil.array), (ehtim.array.Array): An ngehtutil array object and an ehtim array object
     """
 
     stations = list()
@@ -866,7 +864,7 @@ def load_image(infile,freq=230.0e9,verbose=0):
       verbose (float): Set to >0 for more verbose output
     
     Returns:
-      (ehtim.image.Image): An ehtim image (or possibly movie) object; returns None if infile is None
+      (ehtim.image.Image, ehtim.movie.Movie): An ehtim image or movie object; returns None if infile is None
     """
 
     if infile is None:
