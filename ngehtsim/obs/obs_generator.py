@@ -218,6 +218,9 @@ class obs_generator(object):
             pathhere += site + '/'
             pathhere += monthnum + self.settings['month'] + '/'
             pathhere += 'mean_SEFD_info_' + self.weather_freq + '.csv'
+
+            if self.verbosity > 1:
+                print('Reading weather from '+pathhere)
             
             # read in the table
             year, monthdum, day, tau, Tb = np.loadtxt(pathhere,skiprows=7,unpack=True,delimiter=',')
@@ -226,7 +229,7 @@ class obs_generator(object):
                 # pull out the info for the selected date
                 index = ((year == self.randyear) & (day == self.randday))
                 if (np.array(index).sum() == 0):
-                    raise Exception('No weather on file for the selected date!')
+                    raise Exception('No weather on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
                 tau_here = tau[index][0]
                 Tb_here = Tb[index][0]
             elif (self.weather == 'typical'):
