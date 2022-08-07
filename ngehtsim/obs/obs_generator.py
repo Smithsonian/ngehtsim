@@ -64,8 +64,8 @@ class obs_generator(object):
         self.path_to_weather = os.path.abspath(const.path_to_weather)
 
         # check for issues, fix some easy ones, complain about the others
-        if (self.settings['weather_freq'] is not None) & (self.settings['weather_freq'] not in ['86', '230', '345', '690']):
-            raise ValueError('Input weather frequency needs to be one of 86, 230, 345, or 690.')
+        if (self.settings['weather_freq'] is not None) & (self.settings['weather_freq'] not in ['86', '230', '345', '410', '690']):
+            raise ValueError('Input weather frequency needs to be one of 86, 230, 345, 410, or 690.')
         if (self.settings['nbands'] < 1):
             self.settings['nbands'] = 1
             raise Warning('Input nbands must be at least 1; setting to 1.')
@@ -151,8 +151,8 @@ class obs_generator(object):
 
     # determine the weather frequency to use
     def set_weather_freq(self):
-        freq_options = np.array([86.0,230.0,345.0,690.0])
-        weath_options = np.array(['86','230','345','690'])
+        freq_options = np.array([86.0,230.0,345.0,410.0,690.0])
+        weath_options = np.array(['86','230','345','410','690'])
         if self.settings['weather_freq'] is None:
             freqhere = self.freq / (1.0e9)
             self.weather_freq = weath_options[np.argmin(np.abs(freqhere - freq_options))]
