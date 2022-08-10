@@ -14,6 +14,7 @@ import glob
 import time
 import sys
 import os
+import copy
 
 import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
@@ -42,11 +43,11 @@ class obs_generator(object):
         self.settings = {}
         self.settings_file = settings_file
         self.verbosity = verbose
-        self.D_override_dict = D_override_dict
+        self.D_override_dict = copy.deepcopy(D_override_dict)
         self.array_name = array_name
 
         # start with some default settings
-        self.settings = const.default_settings
+        self.settings = copy.deepcopy(const.default_settings)
 
         # check if user wants to load settings from a passed file
         if settings_file is not None:
@@ -932,7 +933,7 @@ def get_unready_sites(sites_in_observ,tech_readiness):
     return sites_to_drop
 
 
-def fringegroups(obs,snr_ref,tint_ref):
+def fringegroups(obs,snr_ref,tint_ref,return_index=False):
     """
     Function to apply the "fringegroups" SNR thresholding scheme to an observation.
     This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibration pipeline.
@@ -941,6 +942,7 @@ def fringegroups(obs,snr_ref,tint_ref):
       obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the input observation
       snr_ref (float): strong baseline SNR threshold
       tint_ref (float): strong baseline coherence time, in seconds
+      return_index (numpy.ndarray): if True, returns an array of kept data indices rather than an Obsdata object
 
     Returns:
       (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the thresholded observation
@@ -999,11 +1001,17 @@ def fringegroups(obs,snr_ref,tint_ref):
                     master_index[count] = True
             count += 1
 
-    # apply the flagging
-    data_copy = obs.data.copy()
-    obs.data = data_copy[master_index]
+    if return_index:
 
-    return obs
+        return master_index
+
+    else:
+
+        # apply the flagging
+        data_copy = obs.data.copy()
+        obs.data = data_copy[master_index]
+
+        return obs
 
 
 def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,**kwargs):
@@ -1024,7 +1032,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,**kwargs):
     """
 
     # create dummy obsgen object
-    new_settings = obsgen.settings
+    new_settings = copy.deepcopy(obsgen.settings)
     new_settings['frequency'] = freq_ref
     new_settings['bandwidth'] = obsgen.settings['bandwidth'] * (freq_ref/float(obsgen.settings['frequency']))
     if ((model_ref is None) | isinstance(model_ref,str)):
@@ -1088,6 +1096,11 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,**kwargs):
                 if (site_dict[datum['t1']] == site_dict[datum['t2']]):
                     master_index[count] = True
             count += 1
+
+    # get any additional detections from normal fringe-fitting
+    snr_fringegroups = snr_ref * (freq_ref/float(obsgen.settings['frequency']))
+    fringegroups_index = fringegroups(obs,snr_fringegroups,tint_ref,return_index=True)
+    master_index |= fringegroups_index
 
     # apply the flagging
     data_copy = obs.data.copy()
