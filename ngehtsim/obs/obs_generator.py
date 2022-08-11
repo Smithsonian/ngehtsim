@@ -226,11 +226,23 @@ class obs_generator(object):
             # read in the table
             year, monthdum, day, tau, Tb = np.loadtxt(pathhere,skiprows=7,unpack=True,delimiter=',')
 
+            # start a count of how many times it breaks
+            broken = 0
+
             if ((self.weather == 'random') | (self.weather == 'exact')):
                 # pull out the info for the selected date
                 index = ((year == self.randyear) & (day == self.randday))
                 if (np.array(index).sum() == 0):
-                    raise Exception('No weather on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
+                    broken += 1
+                    if self.verbosity > 1:
+                        print('Weather tabulation broke for the '+ str(broken) + ' time!')
+                    # if it breaks 10 times, toss an error
+                    if broken >= 10:
+                        raise Exception('No weather on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
+                    else:
+                        print('Retabulating weather...')
+                        self.tabulate_weather()
+                        return None
                 tau_here = tau[index][0]
                 Tb_here = Tb[index][0]
             elif (self.weather == 'typical'):
