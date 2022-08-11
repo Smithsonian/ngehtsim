@@ -123,8 +123,8 @@ class obs_generator(object):
 
         # if a known array is specified, pull its sites and overrides
         if self.settings['array'] in const.known_arrays.keys():
-            self.sites = const.known_arrays[self.settings['array']]
-            override_dict_here = const.known_array_overrides[self.settings['array']]
+            self.sites = copy.deepcopy(const.known_arrays[self.settings['array']])
+            override_dict_here = copy.deepcopy(const.known_array_overrides[self.settings['array']])
             override_dict_here.update(self.D_override_dict)
             self.D_override_dict = override_dict_here
 
@@ -145,7 +145,7 @@ class obs_generator(object):
     def translate_sites(self):
         for isite, site in enumerate(self.sites):
             if site in list(const.translation_dict.keys()):
-                self.sites[isite] = const.translation_dict[site]
+                self.sites[isite] = copy.deepcopy(const.translation_dict[site])
             else:
                 if site not in ng.Station.get_list():
                     raise Exception(site+' is not a known station.')
@@ -162,7 +162,7 @@ class obs_generator(object):
 
     # store receiver temperature
     def set_TR(self):
-        self.T_R = const.T_R_dict[self.weather_freq]
+        self.T_R = copy.deepcopy(const.T_R_dict[self.weather_freq])
         if self.verbosity > 0:
             print("************** Receiver temperature set to " + str(self.T_R) + ' K.')
     
@@ -171,8 +171,8 @@ class obs_generator(object):
 
         # retrieve coordinates from source, if known
         if self.settings['source'] in const.known_sources.keys():
-            self.RA = const.known_sources[self.settings['source']]['RA']
-            self.DEC = const.known_sources[self.settings['source']]['DEC']
+            self.RA = copy.deepcopy(const.known_sources[self.settings['source']]['RA'])
+            self.DEC = copy.deepcopy(const.known_sources[self.settings['source']]['DEC'])
         else:
             if ((self.settings['RA'] is None) & (self.settings['DEC'] is None)):
                 raise Exception('A known source and/or a set of (RA,DEC) coordinates must be specified.')
