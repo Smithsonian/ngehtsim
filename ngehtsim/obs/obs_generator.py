@@ -296,13 +296,14 @@ class obs_generator(object):
             print('************** Scan start times: {0}'.format(self.t_seg_times))
 
     # generate a raw observation
-    def observe(self,input_model,obsfreq,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None):
+    def observe(self,input_model,obsfreq,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
         Args:
           input_model (ehtim.image.Image, ehtim.movie.Movie, ehtim.model.Model, ngEHTforecast.fisher.fisher_forecast.FisherForecast): input source model
           obsfreq (float): observing frequency, in Hz
+          return_SEFDs (bool): if True, returns two lists of station SEFDs along with the observation
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
@@ -505,16 +506,20 @@ class obs_generator(object):
         # restore Stokes polrep
         obs = obs.switch_polrep(polrep_out='stokes')
 
-        return obs
+        if return_SEFDs:
+            return obs, SEFD1*np.exp(tau1), SEFD2*np.exp(tau2)
+        else:
+            return obs
 
     # generate observation
-    def make_obs(self,input_model=None,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None):
+    def make_obs(self,input_model=None,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None):
         """
         Generate an observation (possibly multi-band) that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
         
         Args:
           input_model (ehtim.image.Image, ehtim.movie.Movie, ehtim.model.Model, ngEHTforecast.fisher.fisher_forecast.FisherForecast): input source model
+          return_SEFDs (bool): if True, returns two lists of station SEFDs along with the observation
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
@@ -544,7 +549,10 @@ class obs_generator(object):
             adjusted_frequency = self.freq + self.freq_offsets[i_band]
 
             # generate raw observation for this band
-            obs_seg = self.observe(input_model,adjusted_frequency,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p)
+            if return_SEFDs:
+                obs_seg, SEFD1, SEFD2 = self.observe(input_model,adjusted_frequency,return_SEFDs=True,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p)
+            else:
+                obs_seg = self.observe(input_model,adjusted_frequency,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p)
 
             # apply naive SNR thresholding
             if (snr_algo == 'naive'):
@@ -589,7 +597,10 @@ class obs_generator(object):
             if self.verbosity > 0:
                 print("Dropping {0} due to technical (un)readiness.".format(sites_to_drop))
 
-        return obs
+        if return_SEFDs:
+            return obs, SEFD1, SEFD2
+        else:
+            return obs
 
     def export_SYMBA(self, output_filename='obsgen.antennas', t_coh=10.0, RMS_point=1.0,
                      PB_model='gaussian', gain_mean=1.0, leak_mean=0.0j):
@@ -1026,7 +1037,7 @@ def fringegroups(obs,snr_ref,tint_ref,return_index=False):
         return obs
 
 
-def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,**kwargs):
+def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,**kwargs):
     """
     Function to apply the frequency phase transfer ("FPT") SNR thresholding scheme to an observation.
     This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibration pipeline.
@@ -1038,6 +1049,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,**kwargs):
       tint_ref (float): strong baseline coherence time, in seconds
       freq_ref(float): FPT reference frequency, in GHz
       model_ref (str): path to FPT reference model, or the reference model itself
+      return_index (numpy.ndarray): if True, returns an array of kept data indices rather than an Obsdata object
 
     Returns:
       (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the thresholded observation
@@ -1110,12 +1122,18 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,**kwargs):
             count += 1
 
     # get any additional detections from normal fringe-fitting
-    snr_fringegroups = snr_ref * (freq_ref/float(obsgen.settings['frequency']))
+    snr_fringegroups = snr_ref * (freq_ref/obsgen.freq)
     fringegroups_index = fringegroups(obs,snr_fringegroups,tint_ref,return_index=True)
     master_index |= fringegroups_index
 
-    # apply the flagging
-    data_copy = obs.data.copy()
-    obs.data = data_copy[master_index]
+    if return_index:
 
-    return obs
+        return master_index
+
+    else:
+
+        # apply the flagging
+        data_copy = obs.data.copy()
+        obs.data = data_copy[master_index]
+
+        return obs
