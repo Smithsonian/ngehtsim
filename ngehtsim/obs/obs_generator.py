@@ -576,7 +576,7 @@ class obs_generator(object):
                 freq_ref = snr_args[2]
                 model_path_ref = snr_args[3]
 
-                obs_seg = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,obsfreq=adjusted_frequency,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p)
+                obs_seg = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p)
 
             # unrecognized SNR thresholding scheme
             else:
@@ -1059,6 +1059,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
     new_settings = copy.deepcopy(obsgen.settings)
     new_settings['frequency'] = freq_ref
     new_settings['bandwidth'] = obsgen.settings['bandwidth'] * (freq_ref/float(obsgen.settings['frequency']))
+    new_settings['SNR_cutoff'] = ['fringegroups', [snr_ref, tint_ref]]
     if ((model_ref is None) | isinstance(model_ref,str)):
         new_settings['model_file'] = model_ref
     obsgen_ref = obs_generator(new_settings)
@@ -1066,63 +1067,17 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
         obsgen_ref.im = model_ref
 
     # generate observation at reference frequency
-    obs_ref = obsgen_ref.observe(obsgen_ref.im,**kwargs)
-
-    # get the timestamps
-    time = obs_ref.data['time']
-    timestamps = np.unique(obs_ref.data['time'])
+    obs_ref = obsgen_ref.observe(obsgen_ref.im,obsgen_ref.freq,**kwargs)
 
     # create a running index list of baselines to flag
     master_index = np.zeros(len(obs_ref.data),dtype='bool')
-    count = 0
 
-    # create blank dummy obsdata objects
-    obs_here = obs_ref.copy()
-    obs_here.data = None
-    obs_search = obs_here.copy()
-
-    # check all timestamps
-    for itime, timestamp in enumerate(timestamps):
-
-        ind_t = (time == timestamp)
-        obs_here.data = obs_ref.data[ind_t]
-
-        # scale effective SNR to the actual integration time
-        snr_scaled = snr_ref*np.sqrt(obs_here.data['tint'] / tint_ref)
-
-        # determine which baselines are "strong"
-        index = (np.abs(obs_here.data['vis'])/obs_here.data['sigma']) >= snr_scaled
-
-        # limit the searched baselines to those that are strong
-        obs_search.data = obs_here.data[index]
-
-        # group stations that are connected by strong baselines
-        groups = list()
-        for datum in obs_search.data:
-            bl = [datum['t1'],datum['t2']]
-            (merged, remaining) = (set(bl), [])
-            for g in groups:
-                if bl[0] in g or bl[1] in g:
-                    merged |= g
-                else:
-                    remaining.append(g)
-            groups = remaining + [merged]
-            
-        # assign stations to groups
-        site_dict = {}
-        for ig, group in enumerate(groups):
-            for station in group:
-                site_dict[station] = ig
-
-        # check whether both stations on each baseline are in the same group
-        for datum in obs_here.data:
-            if ((datum['t1'] in site_dict.keys()) & (datum['t2'] in site_dict.keys())):
-                if (site_dict[datum['t1']] == site_dict[datum['t2']]):
-                    master_index[count] = True
-            count += 1
+    # get detections from the reference frequency
+    fringegroups_index = fringegroups(obs_ref,snr_ref,tint_ref,return_index=True)
+    master_index |= fringegroups_index
 
     # get any additional detections from normal fringe-fitting
-    snr_fringegroups = snr_ref * (freq_ref/obsgen.freq)
+    snr_fringegroups = snr_ref * (freq_ref/(obsgen.freq/(1.0e9)))
     fringegroups_index = fringegroups(obs,snr_fringegroups,tint_ref,return_index=True)
     master_index |= fringegroups_index
 
