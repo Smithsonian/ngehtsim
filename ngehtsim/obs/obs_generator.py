@@ -34,16 +34,19 @@ class obs_generator(object):
                            the corresponding settings from the settings file.
       verbose (float): Set to >0 for more verbose output
       D_override_dict (dict): A dictionary of station names and diameters to override the internal defaults
+      surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override the internal defaults
       array_name (str): Name to get assigned to the ngehtutil array object
     """
 
     # initialize class instantiation
-    def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={}, array_name=None):
+    def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={},
+                 surf_rms_override_dict={}, array_name=None):
 
         self.settings = {}
         self.settings_file = settings_file
         self.verbosity = verbose
         self.D_override_dict = copy.deepcopy(D_override_dict)
+        self.surf_rms_override_dict = copy.deepcopy(surf_rms_override_dict)
         self.array_name = array_name
 
         # start with some default settings
@@ -96,7 +99,7 @@ class obs_generator(object):
         self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9))
         self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
         self.tabulate_weather()
-        self.telescope_properties()
+        self.telescope_properties(self.settings['surf_rms_new'])
         self.get_obs_times()
 
         # other settings
@@ -269,16 +272,26 @@ class obs_generator(object):
         self.Tb_dict = Tb_dict
 
     # generate dictionaries of telescope properties
-    def telescope_properties(self):
+    def telescope_properties(self,surf_rms_new):
 
         # aperture efficiency of new dishes
-        eta_new = eta_dish(self.freq,const.sigma_surface,const.focus_offset)
+        eta_new = eta_dish(self.freq,surf_rms_new,const.focus_offset)
 
         D_dict = {}
         eta_dict = {}
         for station in self.array.stations():
             D_dict[station.name] = station.diameter()
-            eta_dict[station.name] = eta_new
+
+            # recompute aperture efficiency for stations with known or overridden surface RMSs
+            known = False
+            if station.name in const.known_surf_rms.keys():
+                eta_dict[station.name] = eta_dish(self.freq,const.known_surf_rms[station.name],const.focus_offset)
+                known = True
+            if station.name in self.surf_rms_override_dict.keys():
+                eta_dict[station.name] = eta_dish(self.freq,self.surf_rms_override_dict[station.name],const.focus_offset)
+                known = True
+            if not known:
+                eta_dict[station.name] = eta_new
 
         self.D_dict = D_dict
         self.eta_dict = eta_dict
@@ -924,7 +937,7 @@ def eta_dish(freq,sigma,offset):
     Args:
       freq (float): observing frequency, in Hz
       sigma (float): surface RMS, in meters
-      offset (float): focus offset, in meters
+      offset (float): focus offset, in equivalent surface RMS units
     
     Returns:
       (float): aperture efficiency

@@ -7,6 +7,12 @@ import os
 # relative path to the weather information
 path_to_weather = os.path.dirname(ng.__file__) + '/weather_data/'
 
+# fiducial focus offset, in fractional surface RMS units
+focus_offset = 50.0e-6
+
+# fiducial surface RMS, in meters
+surf_rms = 40.0e-6
+
 default_settings = {'model_file': None,
                     'source': 'M87',
                     'frequency': 230.0,
@@ -26,6 +32,7 @@ default_settings = {'model_file': None,
                     'array': 'EHT2022',
                     'sites': None,
                     'D_new': 10.0,
+                    'surf_rms_new': surf_rms,
                     'tech_readiness': 1.0,
                     'weather': 'random',
                     'weather_freq': None,
@@ -186,11 +193,18 @@ known_sources = {'M87': {'RA': 12.51373,
 ###################################################
 # antenna properties
 
-# fiducial focus offset, in effective surface accuracy units
-focus_offset = 50.0e-6
-
-# fiducial surface RMS, in meters
-sigma_surface = 40.0e-6
+known_surf_rms = {'ALMA': 25.0e-6,
+                  'APEX': 25.0e-6,
+                  'GLT': 50.0e-6,
+                  'HAY': 85.0e-6,
+                  'IRAM': 55.0e-6,
+                  'JCMT': 24.0e-6,
+                  'KP': 16.0e-6,
+                  'LMT': 80.0e-6,
+                  'NOEMA': 35.0e-6,
+                  'SMA': 20.0e-6,
+                  'SMT': 15.0e-6,
+                  'SPT': 25.0e-6}
 
 known_mount_types = {'ALMA': 'ALT-AZ',
                      'APEX': 'ALT-AZ+NASMYTH-R',
