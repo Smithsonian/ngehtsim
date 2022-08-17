@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.76.g8e80a03 documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.84.g0ff9a67.dirty documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.76.g8e80a03
+                0+untagged.84.g0ff9a67.dirty
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -84,6 +84,7 @@
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">copy</span>
 
 <span class="kn">import</span> <span class="nn">ngehtsim.const_def</span> <span class="k">as</span> <span class="nn">const</span>
 <span class="kn">import</span> <span class="nn">ngehtsim.weather.weather</span> <span class="k">as</span> <span class="nn">nw</span>
@@ -103,20 +104,23 @@
 <span class="sd">                           the corresponding settings from the settings file.</span>
 <span class="sd">      verbose (float): Set to &gt;0 for more verbose output</span>
 <span class="sd">      D_override_dict (dict): A dictionary of station names and diameters to override the internal defaults</span>
+<span class="sd">      surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override the internal defaults</span>
 <span class="sd">      array_name (str): Name to get assigned to the ngehtutil array object</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># initialize class instantiation</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="o">=</span><span class="p">{},</span> <span class="n">settings_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">D_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">array_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="o">=</span><span class="p">{},</span> <span class="n">settings_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">D_override_dict</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">surf_rms_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">array_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">settings_file</span> <span class="o">=</span> <span class="n">settings_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="n">verbose</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">D_override_dict</span> <span class="o">=</span> <span class="n">D_override_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">D_override_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surf_rms_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">surf_rms_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">array_name</span> <span class="o">=</span> <span class="n">array_name</span>
 
         <span class="c1"># start with some default settings</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">default_settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">default_settings</span><span class="p">)</span>
 
         <span class="c1"># check if user wants to load settings from a passed file</span>
         <span class="k">if</span> <span class="n">settings_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -134,8 +138,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span>
 
         <span class="c1"># check for issues, fix some easy ones, complain about the others</span>
-        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_freq&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_freq&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;86&#39;</span><span class="p">,</span> <span class="s1">&#39;230&#39;</span><span class="p">,</span> <span class="s1">&#39;345&#39;</span><span class="p">,</span> <span class="s1">&#39;690&#39;</span><span class="p">]):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input weather frequency needs to be one of 86, 230, 345, or 690.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_freq&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_freq&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;86&#39;</span><span class="p">,</span> <span class="s1">&#39;230&#39;</span><span class="p">,</span> <span class="s1">&#39;345&#39;</span><span class="p">,</span> <span class="s1">&#39;410&#39;</span><span class="p">,</span> <span class="s1">&#39;690&#39;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Input weather frequency needs to be one of 86, 230, 345, 410, or 690.&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;nbands&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;nbands&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span><span class="s1">&#39;Input nbands must be at least 1; setting to 1.&#39;</span><span class="p">)</span>
@@ -165,7 +169,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">make_array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;D_new&#39;</span><span class="p">],</span><span class="n">D_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">D_override_dict</span><span class="p">,</span><span class="n">array_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">array_name</span><span class="p">,</span><span class="n">freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0e9</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">im</span> <span class="o">=</span> <span class="n">load_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_file</span><span class="p">,</span><span class="n">freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tabulate_weather</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">telescope_properties</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">telescope_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;surf_rms_new&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">get_obs_times</span><span class="p">()</span>
 
         <span class="c1"># other settings</span>
@@ -192,8 +196,8 @@
 
         <span class="c1"># if a known array is specified, pull its sites and overrides</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;array&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_arrays</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sites</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_arrays</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;array&#39;</span><span class="p">]]</span>
-            <span class="n">override_dict_here</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_array_overrides</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;array&#39;</span><span class="p">]]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sites</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_arrays</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;array&#39;</span><span class="p">]])</span>
+            <span class="n">override_dict_here</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_array_overrides</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;array&#39;</span><span class="p">]])</span>
             <span class="n">override_dict_here</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D_override_dict</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">D_override_dict</span> <span class="o">=</span> <span class="n">override_dict_here</span>
 
@@ -214,15 +218,15 @@
     <span class="k">def</span> <span class="nf">translate_sites</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">isite</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">translation_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">[</span><span class="n">isite</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">translation_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">[</span><span class="n">isite</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">translation_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">site</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ng</span><span class="o">.</span><span class="n">Station</span><span class="o">.</span><span class="n">get_list</span><span class="p">():</span>
                     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">site</span><span class="o">+</span><span class="s1">&#39; is not a known station.&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine the weather frequency to use</span>
     <span class="k">def</span> <span class="nf">set_weather_freq</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">freq_options</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">86.0</span><span class="p">,</span><span class="mf">230.0</span><span class="p">,</span><span class="mf">345.0</span><span class="p">,</span><span class="mf">690.0</span><span class="p">])</span>
-        <span class="n">weath_options</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;86&#39;</span><span class="p">,</span><span class="s1">&#39;230&#39;</span><span class="p">,</span><span class="s1">&#39;345&#39;</span><span class="p">,</span><span class="s1">&#39;690&#39;</span><span class="p">])</span>
+        <span class="n">freq_options</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">86.0</span><span class="p">,</span><span class="mf">230.0</span><span class="p">,</span><span class="mf">345.0</span><span class="p">,</span><span class="mf">410.0</span><span class="p">,</span><span class="mf">690.0</span><span class="p">])</span>
+        <span class="n">weath_options</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;86&#39;</span><span class="p">,</span><span class="s1">&#39;230&#39;</span><span class="p">,</span><span class="s1">&#39;345&#39;</span><span class="p">,</span><span class="s1">&#39;410&#39;</span><span class="p">,</span><span class="s1">&#39;690&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_freq&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">freqhere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0e9</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span> <span class="o">=</span> <span class="n">weath_options</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freqhere</span> <span class="o">-</span> <span class="n">freq_options</span><span class="p">))]</span>
@@ -231,7 +235,7 @@
 
     <span class="c1"># store receiver temperature</span>
     <span class="k">def</span> <span class="nf">set_TR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span><span class="p">])</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;************** Receiver temperature set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">T_R</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; K.&#39;</span><span class="p">)</span>
     
@@ -240,8 +244,8 @@
 
         <span class="c1"># retrieve coordinates from source, if known</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">RA</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]][</span><span class="s1">&#39;RA&#39;</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">DEC</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]][</span><span class="s1">&#39;DEC&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">RA</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]][</span><span class="s1">&#39;RA&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">DEC</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]][</span><span class="s1">&#39;DEC&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;RA&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;DEC&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)):</span>
                 <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;A known source and/or a set of (RA,DEC) coordinates must be specified.&#39;</span><span class="p">)</span>
@@ -288,15 +292,30 @@
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_SEFD_info_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reading weather from &#39;</span><span class="o">+</span><span class="n">pathhere</span><span class="p">)</span>
             
             <span class="c1"># read in the table</span>
             <span class="n">year</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+
+            <span class="c1"># start a count of how many times it breaks</span>
+            <span class="n">broken</span> <span class="o">=</span> <span class="mi">0</span>
 
             <span class="k">if</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">)):</span>
                 <span class="c1"># pull out the info for the selected date</span>
                 <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">year</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">day</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">randday</span><span class="p">))</span>
                 <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!&#39;</span><span class="p">)</span>
+                    <span class="n">broken</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Weather tabulation broke for the &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">broken</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; time!&#39;</span><span class="p">)</span>
+                    <span class="c1"># if it breaks 10 times, toss an error</span>
+                    <span class="k">if</span> <span class="n">broken</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!  Date is &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">randday</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Retabulating weather...&#39;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">tabulate_weather</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="kc">None</span>
                 <span class="n">tau_here</span> <span class="o">=</span> <span class="n">tau</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">Tb</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;typical&#39;</span><span class="p">):</span>
@@ -323,16 +342,26 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">Tb_dict</span> <span class="o">=</span> <span class="n">Tb_dict</span>
 
     <span class="c1"># generate dictionaries of telescope properties</span>
-    <span class="k">def</span> <span class="nf">telescope_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">telescope_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">surf_rms_new</span><span class="p">):</span>
 
         <span class="c1"># aperture efficiency of new dishes</span>
-        <span class="n">eta_new</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">sigma_surface</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">)</span>
+        <span class="n">eta_new</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">surf_rms_new</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">)</span>
 
         <span class="n">D_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">eta_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">station</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">stations</span><span class="p">():</span>
             <span class="n">D_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">diameter</span><span class="p">()</span>
-            <span class="n">eta_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta_new</span>
+
+            <span class="c1"># recompute aperture efficiency for stations with known or overridden surface RMSs</span>
+            <span class="n">known</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">station</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_surf_rms</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">eta_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">known_surf_rms</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">],</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">)</span>
+                <span class="n">known</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">station</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">surf_rms_override_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">eta_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_rms_override_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">],</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">)</span>
+                <span class="n">known</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">known</span><span class="p">:</span>
+                <span class="n">eta_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta_new</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">D_dict</span> <span class="o">=</span> <span class="n">D_dict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eta_dict</span> <span class="o">=</span> <span class="n">eta_dict</span>
@@ -350,13 +379,14 @@
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;************** Scan start times: </span><span class="si">{0}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_seg_times</span><span class="p">))</span>
 
     <span class="c1"># generate a raw observation</span>
-<div class="viewcode-block" id="obs_generator.observe"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.observe">[docs]</a>    <span class="k">def</span> <span class="nf">observe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">input_model</span><span class="p">,</span><span class="n">obsfreq</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="obs_generator.observe"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.observe">[docs]</a>    <span class="k">def</span> <span class="nf">observe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">input_model</span><span class="p">,</span><span class="n">obsfreq</span><span class="p">,</span><span class="n">return_SEFDs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">          input_model (ehtim.image.Image, ehtim.movie.Movie, ehtim.model.Model, ngEHTforecast.fisher.fisher_forecast.FisherForecast): input source model</span>
 <span class="sd">          obsfreq (float): observing frequency, in Hz</span>
+<span class="sd">          return_SEFDs (bool): if True, returns two lists of station SEFDs along with the observation</span>
 <span class="sd">          addnoise (bool): flag for whether or not to add thermal noise to the visibilities</span>
 <span class="sd">          addgains (bool): flag for whether or not to add station gain corruptions</span>
 <span class="sd">          gainamp (float): standard deviation of amplitude log-gains</span>
@@ -559,16 +589,20 @@
         <span class="c1"># restore Stokes polrep</span>
         <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">switch_polrep</span><span class="p">(</span><span class="n">polrep_out</span><span class="o">=</span><span class="s1">&#39;stokes&#39;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">obs</span></div>
+        <span class="k">if</span> <span class="n">return_SEFDs</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obs</span><span class="p">,</span> <span class="n">SEFD1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tau1</span><span class="p">),</span> <span class="n">SEFD2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tau2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obs</span></div>
 
     <span class="c1"># generate observation</span>
-<div class="viewcode-block" id="obs_generator.make_obs"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.make_obs">[docs]</a>    <span class="k">def</span> <span class="nf">make_obs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">input_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="obs_generator.make_obs"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.make_obs">[docs]</a>    <span class="k">def</span> <span class="nf">make_obs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">input_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">return_SEFDs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generate an observation (possibly multi-band) that folds in weather-based opacity effects</span>
 <span class="sd">        and applies a specified SNR thresholding scheme to mimic fringe-finding.</span>
 <span class="sd">        </span>
 <span class="sd">        Args:</span>
 <span class="sd">          input_model (ehtim.image.Image, ehtim.movie.Movie, ehtim.model.Model, ngEHTforecast.fisher.fisher_forecast.FisherForecast): input source model</span>
+<span class="sd">          return_SEFDs (bool): if True, returns two lists of station SEFDs along with the observation</span>
 <span class="sd">          addnoise (bool): flag for whether or not to add thermal noise to the visibilities</span>
 <span class="sd">          addgains (bool): flag for whether or not to add station gain corruptions</span>
 <span class="sd">          gainamp (float): standard deviation of amplitude log-gains</span>
@@ -598,7 +632,10 @@
             <span class="n">adjusted_frequency</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_offsets</span><span class="p">[</span><span class="n">i_band</span><span class="p">]</span>
 
             <span class="c1"># generate raw observation for this band</span>
-            <span class="n">obs_seg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">input_model</span><span class="p">,</span><span class="n">adjusted_frequency</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">return_SEFDs</span><span class="p">:</span>
+                <span class="n">obs_seg</span><span class="p">,</span> <span class="n">SEFD1</span><span class="p">,</span> <span class="n">SEFD2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">input_model</span><span class="p">,</span><span class="n">adjusted_frequency</span><span class="p">,</span><span class="n">return_SEFDs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obs_seg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">input_model</span><span class="p">,</span><span class="n">adjusted_frequency</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
 
             <span class="c1"># apply naive SNR thresholding</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">snr_algo</span> <span class="o">==</span> <span class="s1">&#39;naive&#39;</span><span class="p">):</span>
@@ -622,7 +659,7 @@
                 <span class="n">freq_ref</span> <span class="o">=</span> <span class="n">snr_args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
                 <span class="n">model_path_ref</span> <span class="o">=</span> <span class="n">snr_args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
 
-                <span class="n">obs_seg</span> <span class="o">=</span> <span class="n">FPT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">obs_seg</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">freq_ref</span><span class="p">,</span><span class="n">model_path_ref</span><span class="p">,</span><span class="n">obsfreq</span><span class="o">=</span><span class="n">adjusted_frequency</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+                <span class="n">obs_seg</span> <span class="o">=</span> <span class="n">FPT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">obs_seg</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">freq_ref</span><span class="p">,</span><span class="n">model_path_ref</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
 
             <span class="c1"># unrecognized SNR thresholding scheme</span>
             <span class="k">else</span><span class="p">:</span>
@@ -643,7 +680,10 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Dropping </span><span class="si">{0}</span><span class="s2"> due to technical (un)readiness.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sites_to_drop</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">obs</span></div>
+        <span class="k">if</span> <span class="n">return_SEFDs</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obs</span><span class="p">,</span> <span class="n">SEFD1</span><span class="p">,</span> <span class="n">SEFD2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">obs</span></div>
 
 <div class="viewcode-block" id="obs_generator.export_SYMBA"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.export_SYMBA">[docs]</a>    <span class="k">def</span> <span class="nf">export_SYMBA</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_filename</span><span class="o">=</span><span class="s1">&#39;obsgen.antennas&#39;</span><span class="p">,</span> <span class="n">t_coh</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">RMS_point</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
                      <span class="n">PB_model</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">gain_mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">leak_mean</span><span class="o">=</span><span class="mf">0.0</span><span class="n">j</span><span class="p">):</span>
@@ -967,7 +1007,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">      freq (float): observing frequency, in Hz</span>
 <span class="sd">      sigma (float): surface RMS, in meters</span>
-<span class="sd">      offset (float): focus offset, in meters</span>
+<span class="sd">      offset (float): focus offset, in equivalent surface RMS units</span>
 <span class="sd">    </span>
 <span class="sd">    Returns:</span>
 <span class="sd">      (float): aperture efficiency</span>
@@ -999,7 +1039,7 @@
     <span class="k">return</span> <span class="n">sites_to_drop</span></div>
 
 
-<div class="viewcode-block" id="fringegroups"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.fringegroups">[docs]</a><span class="k">def</span> <span class="nf">fringegroups</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">):</span>
+<div class="viewcode-block" id="fringegroups"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.fringegroups">[docs]</a><span class="k">def</span> <span class="nf">fringegroups</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">return_index</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to apply the &quot;fringegroups&quot; SNR thresholding scheme to an observation.</span>
 <span class="sd">    This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibration pipeline.</span>
@@ -1008,6 +1048,7 @@
 <span class="sd">      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the input observation</span>
 <span class="sd">      snr_ref (float): strong baseline SNR threshold</span>
 <span class="sd">      tint_ref (float): strong baseline coherence time, in seconds</span>
+<span class="sd">      return_index (numpy.ndarray): if True, returns an array of kept data indices rather than an Obsdata object</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the thresholded observation</span>
@@ -1066,14 +1107,20 @@
                     <span class="n">master_index</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
 
-    <span class="c1"># apply the flagging</span>
-    <span class="n">data_copy</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">obs</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data_copy</span><span class="p">[</span><span class="n">master_index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">return_index</span><span class="p">:</span>
 
-    <span class="k">return</span> <span class="n">obs</span></div>
+        <span class="k">return</span> <span class="n">master_index</span>
+
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="c1"># apply the flagging</span>
+        <span class="n">data_copy</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">obs</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data_copy</span><span class="p">[</span><span class="n">master_index</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">obs</span></div>
 
 
-<div class="viewcode-block" id="FPT"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.FPT">[docs]</a><span class="k">def</span> <span class="nf">FPT</span><span class="p">(</span><span class="n">obsgen</span><span class="p">,</span><span class="n">obs</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">freq_ref</span><span class="p">,</span><span class="n">model_ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="FPT"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.FPT">[docs]</a><span class="k">def</span> <span class="nf">FPT</span><span class="p">(</span><span class="n">obsgen</span><span class="p">,</span><span class="n">obs</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">freq_ref</span><span class="p">,</span><span class="n">model_ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">return_index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to apply the frequency phase transfer (&quot;FPT&quot;) SNR thresholding scheme to an observation.</span>
 <span class="sd">    This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibration pipeline.</span>
@@ -1085,15 +1132,17 @@
 <span class="sd">      tint_ref (float): strong baseline coherence time, in seconds</span>
 <span class="sd">      freq_ref(float): FPT reference frequency, in GHz</span>
 <span class="sd">      model_ref (str): path to FPT reference model, or the reference model itself</span>
+<span class="sd">      return_index (numpy.ndarray): if True, returns an array of kept data indices rather than an Obsdata object</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the thresholded observation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># create dummy obsgen object</span>
-    <span class="n">new_settings</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span>
+    <span class="n">new_settings</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">)</span>
     <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq_ref</span>
     <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">freq_ref</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]))</span>
+    <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;SNR_cutoff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fringegroups&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">snr_ref</span><span class="p">,</span> <span class="n">tint_ref</span><span class="p">]]</span>
     <span class="k">if</span> <span class="p">((</span><span class="n">model_ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_ref</span><span class="p">,</span><span class="nb">str</span><span class="p">)):</span>
         <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;model_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_ref</span>
     <span class="n">obsgen_ref</span> <span class="o">=</span> <span class="n">obs_generator</span><span class="p">(</span><span class="n">new_settings</span><span class="p">)</span>
@@ -1101,66 +1150,31 @@
         <span class="n">obsgen_ref</span><span class="o">.</span><span class="n">im</span> <span class="o">=</span> <span class="n">model_ref</span>
 
     <span class="c1"># generate observation at reference frequency</span>
-    <span class="n">obs_ref</span> <span class="o">=</span> <span class="n">obsgen_ref</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">obsgen_ref</span><span class="o">.</span><span class="n">im</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-    <span class="c1"># get the timestamps</span>
-    <span class="n">time</span> <span class="o">=</span> <span class="n">obs_ref</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
-    <span class="n">timestamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">obs_ref</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">])</span>
+    <span class="n">obs_ref</span> <span class="o">=</span> <span class="n">obsgen_ref</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">obsgen_ref</span><span class="o">.</span><span class="n">im</span><span class="p">,</span><span class="n">obsgen_ref</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="c1"># create a running index list of baselines to flag</span>
     <span class="n">master_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs_ref</span><span class="o">.</span><span class="n">data</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;bool&#39;</span><span class="p">)</span>
-    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c1"># create blank dummy obsdata objects</span>
-    <span class="n">obs_here</span> <span class="o">=</span> <span class="n">obs_ref</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">obs_here</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">obs_search</span> <span class="o">=</span> <span class="n">obs_here</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="c1"># get detections from the reference frequency</span>
+    <span class="n">fringegroups_index</span> <span class="o">=</span> <span class="n">fringegroups</span><span class="p">(</span><span class="n">obs_ref</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">master_index</span> <span class="o">|=</span> <span class="n">fringegroups_index</span>
 
-    <span class="c1"># check all timestamps</span>
-    <span class="k">for</span> <span class="n">itime</span><span class="p">,</span> <span class="n">timestamp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">timestamps</span><span class="p">):</span>
+    <span class="c1"># get any additional detections from normal fringe-fitting</span>
+    <span class="n">snr_fringegroups</span> <span class="o">=</span> <span class="n">snr_ref</span> <span class="o">*</span> <span class="p">(</span><span class="n">freq_ref</span><span class="o">/</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0e9</span><span class="p">)))</span>
+    <span class="n">fringegroups_index</span> <span class="o">=</span> <span class="n">fringegroups</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span><span class="n">snr_fringegroups</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">master_index</span> <span class="o">|=</span> <span class="n">fringegroups_index</span>
 
-        <span class="n">ind_t</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span> <span class="o">==</span> <span class="n">timestamp</span><span class="p">)</span>
-        <span class="n">obs_here</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">obs_ref</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">ind_t</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">return_index</span><span class="p">:</span>
 
-        <span class="c1"># scale effective SNR to the actual integration time</span>
-        <span class="n">snr_scaled</span> <span class="o">=</span> <span class="n">snr_ref</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">obs_here</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tint&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">tint_ref</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">master_index</span>
 
-        <span class="c1"># determine which baselines are &quot;strong&quot;</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">obs_here</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;vis&#39;</span><span class="p">])</span><span class="o">/</span><span class="n">obs_here</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">snr_scaled</span>
+    <span class="k">else</span><span class="p">:</span>
 
-        <span class="c1"># limit the searched baselines to those that are strong</span>
-        <span class="n">obs_search</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">obs_here</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="c1"># apply the flagging</span>
+        <span class="n">data_copy</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">obs</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data_copy</span><span class="p">[</span><span class="n">master_index</span><span class="p">]</span>
 
-        <span class="c1"># group stations that are connected by strong baselines</span>
-        <span class="n">groups</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">obs_search</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">bl</span> <span class="o">=</span> <span class="p">[</span><span class="n">datum</span><span class="p">[</span><span class="s1">&#39;t1&#39;</span><span class="p">],</span><span class="n">datum</span><span class="p">[</span><span class="s1">&#39;t2&#39;</span><span class="p">]]</span>
-            <span class="p">(</span><span class="n">merged</span><span class="p">,</span> <span class="n">remaining</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">bl</span><span class="p">),</span> <span class="p">[])</span>
-            <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">bl</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">g</span> <span class="ow">or</span> <span class="n">bl</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
-                    <span class="n">merged</span> <span class="o">|=</span> <span class="n">g</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">remaining</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
-            <span class="n">groups</span> <span class="o">=</span> <span class="n">remaining</span> <span class="o">+</span> <span class="p">[</span><span class="n">merged</span><span class="p">]</span>
-            
-        <span class="c1"># assign stations to groups</span>
-        <span class="n">site_dict</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">ig</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">groups</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">station</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
-                <span class="n">site_dict</span><span class="p">[</span><span class="n">station</span><span class="p">]</span> <span class="o">=</span> <span class="n">ig</span>
-
-        <span class="c1"># check whether both stations on each baseline are in the same group</span>
-        <span class="k">for</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">obs_here</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="k">if</span> <span class="p">((</span><span class="n">datum</span><span class="p">[</span><span class="s1">&#39;t1&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">datum</span><span class="p">[</span><span class="s1">&#39;t2&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">site_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">site_dict</span><span class="p">[</span><span class="n">datum</span><span class="p">[</span><span class="s1">&#39;t1&#39;</span><span class="p">]]</span> <span class="o">==</span> <span class="n">site_dict</span><span class="p">[</span><span class="n">datum</span><span class="p">[</span><span class="s1">&#39;t2&#39;</span><span class="p">]]):</span>
-                    <span class="n">master_index</span><span class="p">[</span><span class="n">count</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-
-    <span class="c1"># apply the flagging</span>
-    <span class="n">data_copy</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-    <span class="n">obs</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data_copy</span><span class="p">[</span><span class="n">master_index</span><span class="p">]</span>
-
-    <span class="k">return</span> <span class="n">obs</span></div>
+        <span class="k">return</span> <span class="n">obs</span></div>
 </pre></div>
 
            </div>
