@@ -496,10 +496,10 @@ class obs_generator(object):
         else:
             
             # apply opacity attenuation
-            obs.data['rrvis'] *= np.exp(-tau1)*np.exp(-tau2)
-            obs.data['llvis'] *= np.exp(-tau1)*np.exp(-tau2)
-            obs.data['rlvis'] *= np.exp(-tau1)*np.exp(-tau2)
-            obs.data['lrvis'] *= np.exp(-tau1)*np.exp(-tau2)
+            obs.data['rrvis'] *= np.sqrt(np.exp(-tau1)*np.exp(-tau2))
+            obs.data['llvis'] *= np.sqrt(np.exp(-tau1)*np.exp(-tau2))
+            obs.data['rlvis'] *= np.sqrt(np.exp(-tau1)*np.exp(-tau2))
+            obs.data['lrvis'] *= np.sqrt(np.exp(-tau1)*np.exp(-tau2))
             
             # determine baseline thermal noise levels
             tint = obs.data['tint']
@@ -520,7 +520,10 @@ class obs_generator(object):
         obs = obs.switch_polrep(polrep_out='stokes')
 
         if return_SEFDs:
-            return obs, SEFD1*np.exp(tau1), SEFD2*np.exp(tau2)
+            if opacitycal:
+                return obs, SEFD1*np.exp(tau1), SEFD2*np.exp(tau2)
+            else:
+                return obs, SEFD1, SEFD2
         else:
             return obs
 
