@@ -618,13 +618,15 @@ class obs_generator(object):
         else:
             return obs
 
-    def export_SYMBA(self, output_filename='obsgen.antennas', t_coh=10.0, RMS_point=1.0,
-                     PB_model='gaussian', gain_mean=1.0, leak_mean=0.0j):
+    # export SYMBA-compatible input files
+    def export_SYMBA(self, output_filenames=['obsgen.antennas','master_input.txt'],
+                     t_coh=10.0, RMS_point=0.0, PB_model='gaussian', gain_mean=1.0,
+                     leak_mean=0.0j, master_input_args={}, master_input_comments={}):
         """
-        Export a SYMBA-compatible .antennas file from the obs_generator object.
+        Export SYMBA-compatible .antennas and master_input.txt files from the obs_generator object.
 
         Args:
-          output_filename (str): name of .antennas file to save
+          output_filename (list): names of .antennas and master_input.txt files to save
           t_coh (float): default coherence time, in seconds
           RMS_point (float): default RMS pointing uncertainty, in arcseconds
           PB_model (str): primary beam model to use; only option right now is 'gaussian'
@@ -634,148 +636,28 @@ class obs_generator(object):
           leak_mean (float, complex, dict): Value of the mean leakage offset for each station.
                                             If float or complex, will apply to all stations;
                                             if a dict, should be indexed by station name
+          master_input_args (dict): dictionary of master input arguments
+          master_input_comments (dict): dictionary of comments associated with master input arguments
 
         Returns:
-          SYMBA-compatible .antennas file containing the observation information
+          SYMBA-compatible .antennas and master_input.txt files
         """
 
-        # make a list of station names in the correct order for the ngehtutils array object
-        stationnames = list()
-        for stat in self.array.stations():
-            stationnames.append(stat.name)
-        stationnames = np.array(stationnames)
+        # export .antennas file
+        export_SYMBA_antennas(self,
+                              output_filename=output_filenames[0],
+                              t_coh=t_coh,
+                              RMS_point=RMS_point,
+                              PB_model=PB_model,
+                              gain_mean=gain_mean,
+                              leak_mean=leak_mean)
 
-        # translate the weather type setting
-        weather_translation_dict = {'exact': 'exact',
-                                    'random': 'exact',
-                                    'typical': 'median',
-                                    'good': 'good',
-                                    'bad': 'bad'}
-        weather_translation = weather_translation_dict[self.weather]
-
-        with open(output_filename,'w') as outfile:
-
-            # add file header 
-            header = 'station'.ljust(9)
-            header += 's_rx[Jy]'.ljust(11)
-            header += 'pwv[mm]'.ljust(9)
-            header += 'gpress[mb]'.ljust(12)
-            header += 'gtemp[K]'.ljust(10)
-            header += 'c_time[sec]'.ljust(13)
-            header += 'ptg_rms[arcsec]'.ljust(17)
-            header += 'PB_FWHM230[arcsec]'.ljust(20)
-            header += 'PB_model'.ljust(12)
-            header += 'ap_eff'.ljust(9)
-            header += 'gainR_mean'.ljust(11)
-            header += 'gainR_std'.ljust(12)
-            header += 'gainL_mean'.ljust(11)
-            header += 'gainL_std'.ljust(12)
-            header += 'leakR_mean'.ljust(12)
-            header += 'leakR_std'.ljust(12)
-            header += 'leakL_mean'.ljust(12)
-            header += 'leakL_std'.ljust(12)
-            header += 'feed_angle[degree]'.ljust(20)
-            header += 'mount'.ljust(18)
-            header += 'dish_diameter'.ljust(17)
-            header += 'xzy_position_m' + '\n'
-            outfile.write(header)
-
-            for site in self.sites:
-
-                # initialize empty string
-                strhere = ''
-
-                # add station name as a two-letter code
-                strhere += const.two_letter_station_codes[site].ljust(9)
-
-                # add receiver SEFD, in Jy
-                SEFD_R = (2.0*const.k*self.T_R)/((np.pi/4.0)*self.eta_dict[site]*(self.D_dict[site])**2)
-                strhere += str(np.round(SEFD_R,2)).ljust(11)
-
-                # add PWV, in mm
-                PWV = nw.PWV(site, form=weather_translation, month=self.settings['month'], day=self.randday, year=self.randyear)
-                strhere += str(np.round(PWV,4)).ljust(9)
-
-                # add surface pressure, in mbar
-                pres = nw.pressure(site, form=weather_translation, month=self.settings['month'], day=self.randday, year=self.randyear)
-                strhere += str(np.round(pres,2)).ljust(12)
-
-                # add surface temperature, in K
-                temp = nw.temperature(site, form=weather_translation, month=self.settings['month'], day=self.randday, year=self.randyear)
-                strhere += str(np.round(temp,2)).ljust(10)
-
-                # add coherence time, in seconds
-                strhere += str(np.round(t_coh,2)).ljust(13)
-
-                # add RMS pointing uncertainty, in seconds
-                strhere += str(np.round(RMS_point,2)).ljust(17)
-
-                # add 230GHz FWHM primary beam size
-                ind = (stationnames == site)
-                stat = np.array(self.array.stations())[ind][0]
-                diam = stat.dishes[0].diameter
-                pb = ((180.0/np.pi)*3600.0)*((const.c / (230.0e9)) / diam)
-                strhere += str(np.round(pb,2)).ljust(20)
-
-                # add the primary beam model
-                strhere += PB_model.ljust(12)
-
-                # add the aperture efficiency
-                strhere += str(np.round(self.eta_dict[site],4)).ljust(9)
-
-                # add gain means and stds
-                if isinstance(gain_mean,float) or isinstance(gain_mean,complex):
-                    gain_here = gain_mean
-                elif isinstance(gain_mean,dict):
-                    gain_here = gain_mean[site]
-                if isinstance(gain_here,complex):
-                    gain_str = str(gain_here)[1:-1]
-                else:
-                    gain_str = str(gain_here)
-                strhere += gain_str.ljust(11)
-                strhere += str(0.0).ljust(12)
-                strhere += gain_str.ljust(11)
-                strhere += str(0.0).ljust(12)
-
-                # add leakage means and stds
-                if isinstance(leak_mean,float) or isinstance(leak_mean,complex):
-                    leak_here = leak_mean
-                elif isinstance(leak_mean,dict):
-                    leak_here = leak_mean[site]
-                if isinstance(leak_here,complex):
-                    leak_str = str(leak_here)[1:-1]
-                else:
-                    leak_str = str(leak_here)
-                strhere += leak_str.ljust(12)
-                strhere += str(0.0).ljust(12)
-                strhere += leak_str.ljust(12)
-                strhere += str(0.0).ljust(12)
-
-                # add feed angle
-                if site in const.known_feed_angles.keys():
-                    strhere += str(const.known_feed_angles[site]).ljust(20)
-                else:
-                    strhere += str(const.feed_angle).ljust(20)
-
-                # add mount type
-                if site in const.known_mount_types.keys():
-                    strhere += const.known_mount_types[site].ljust(18)
-                else:
-                    strhere += const.mount_type.ljust(18)
-
-                # add dish diameter
-                diam = stat.diameter()
-                strhere += str(np.round(diam,2)).ljust(17)
-
-                # add xyz coordinates
-                coords = stat.xyz()
-                strhere += str(np.round(coords[0],8)) + ',' 
-                strhere += str(np.round(coords[1],8)) + ',' 
-                strhere += str(np.round(coords[2],8))
-
-                # write line
-                strhere += '\n'
-                outfile.write(strhere)
+        # export master_input.txt file
+        master_input_args.update({'ms_antenna_table': output_filenames[0]})
+        export_SYMBA_master_input(self,
+                                  input_args=master_input_args,
+                                  input_comments=master_input_comments,
+                                  output_filename=output_filenames[1])
 
 ###################################################
 # other functions
@@ -1026,7 +908,7 @@ def fringegroups(obs,snr_ref,tint_ref,return_index=False):
                 else:
                     remaining.append(g)
             groups = remaining + [merged]
-            
+
         # assign stations to groups
         site_dict = {}
         for ig, group in enumerate(groups):
@@ -1108,3 +990,247 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
         obs.data = data_copy[master_index]
 
         return obs
+
+
+def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0, RMS_point=1.0,
+                              PB_model='gaussian', gain_mean=1.0, leak_mean=0.0j):
+        """
+        Export a SYMBA-compatible .antennas file from the obs_generator object.
+
+        Args:
+          obsgen (ngehtsim.obs.obs_generator.obs_generator): ngehtsim obs_generator object containing information about the observation
+          output_filename (str): name of .antennas file to save
+          t_coh (float): default coherence time, in seconds
+          RMS_point (float): default RMS pointing uncertainty, in arcseconds
+          PB_model (str): primary beam model to use; only option right now is 'gaussian'
+          gain_mean (float, complex, dict): Value of the mean gain offset for each station.
+                                           If float or complex, will apply to all stations;
+                                           if a dict, should be indexed by station name
+          leak_mean (float, complex, dict): Value of the mean leakage offset for each station.
+                                            If float or complex, will apply to all stations;
+                                            if a dict, should be indexed by station name
+
+        Returns:
+          SYMBA-compatible .antennas file containing the observation information
+        """
+
+        # make a list of station names in the correct order for the ngehtutils array object
+        stationnames = list()
+        for stat in obsgen.array.stations():
+            stationnames.append(stat.name)
+        stationnames = np.array(stationnames)
+
+        # translate the weather type setting
+        weather_translation_dict = {'exact': 'exact',
+                                    'random': 'exact',
+                                    'typical': 'median',
+                                    'good': 'good',
+                                    'bad': 'bad'}
+        weather_translation = weather_translation_dict[obsgen.weather]
+
+        with open(output_filename,'w') as outfile:
+
+            # add file header 
+            header = 'station'.ljust(9)
+            header += 's_rx[Jy]'.ljust(11)
+            header += 'pwv[mm]'.ljust(9)
+            header += 'gpress[mb]'.ljust(12)
+            header += 'gtemp[K]'.ljust(10)
+            header += 'c_time[sec]'.ljust(13)
+            header += 'ptg_rms[arcsec]'.ljust(17)
+            header += 'PB_FWHM230[arcsec]'.ljust(20)
+            header += 'PB_model'.ljust(12)
+            header += 'ap_eff'.ljust(9)
+            header += 'gainR_mean'.ljust(11)
+            header += 'gainR_std'.ljust(12)
+            header += 'gainL_mean'.ljust(11)
+            header += 'gainL_std'.ljust(12)
+            header += 'leakR_mean'.ljust(12)
+            header += 'leakR_std'.ljust(12)
+            header += 'leakL_mean'.ljust(12)
+            header += 'leakL_std'.ljust(12)
+            header += 'feed_angle[degree]'.ljust(20)
+            header += 'mount'.ljust(18)
+            header += 'dish_diameter'.ljust(17)
+            header += 'xzy_position_m' + '\n'
+            outfile.write(header)
+
+            for site in obsgen.sites:
+
+                # initialize empty string
+                strhere = ''
+
+                # add station name as a two-letter code
+                strhere += const.two_letter_station_codes[site].ljust(9)
+
+                # add receiver SEFD, in Jy
+                SEFD_R = (2.0*const.k*obsgen.T_R)/((np.pi/4.0)*obsgen.eta_dict[site]*(obsgen.D_dict[site])**2)
+                strhere += str(np.round(SEFD_R,2)).ljust(11)
+
+                # add PWV, in mm
+                PWV = nw.PWV(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
+                strhere += str(np.round(PWV,4)).ljust(9)
+
+                # add surface pressure, in mbar
+                pres = nw.pressure(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
+                strhere += str(np.round(pres,2)).ljust(12)
+
+                # add surface temperature, in K
+                temp = nw.temperature(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
+                strhere += str(np.round(temp,2)).ljust(10)
+
+                # add coherence time, in seconds
+                strhere += str(np.round(t_coh,2)).ljust(13)
+
+                # add RMS pointing uncertainty, in seconds
+                strhere += str(np.round(RMS_point,2)).ljust(17)
+
+                # add 230GHz FWHM primary beam size
+                ind = (stationnames == site)
+                stat = np.array(obsgen.array.stations())[ind][0]
+                diam = stat.dishes[0].diameter
+                pb = ((180.0/np.pi)*3600.0)*((const.c / (230.0e9)) / diam)
+                strhere += str(np.round(pb,2)).ljust(20)
+
+                # add the primary beam model
+                strhere += PB_model.ljust(12)
+
+                # add the aperture efficiency
+                strhere += str(np.round(obsgen.eta_dict[site],4)).ljust(9)
+
+                # add gain means and stds
+                if isinstance(gain_mean,float) or isinstance(gain_mean,complex):
+                    gain_here = gain_mean
+                elif isinstance(gain_mean,dict):
+                    gain_here = gain_mean[site]
+                if isinstance(gain_here,complex):
+                    gain_str = str(gain_here)[1:-1]
+                else:
+                    gain_str = str(gain_here)
+                strhere += gain_str.ljust(11)
+                strhere += str(0.0).ljust(12)
+                strhere += gain_str.ljust(11)
+                strhere += str(0.0).ljust(12)
+
+                # add leakage means and stds
+                if isinstance(leak_mean,float) or isinstance(leak_mean,complex):
+                    leak_here = leak_mean
+                elif isinstance(leak_mean,dict):
+                    leak_here = leak_mean[site]
+                if isinstance(leak_here,complex):
+                    leak_str = str(leak_here)[1:-1]
+                else:
+                    leak_str = str(leak_here)
+                strhere += leak_str.ljust(12)
+                strhere += str(0.0).ljust(12)
+                strhere += leak_str.ljust(12)
+                strhere += str(0.0).ljust(12)
+
+                # add feed angle
+                if site in const.known_feed_angles.keys():
+                    strhere += str(const.known_feed_angles[site]).ljust(20)
+                else:
+                    strhere += str(const.feed_angle).ljust(20)
+
+                # add mount type
+                if site in const.known_mount_types.keys():
+                    strhere += const.known_mount_types[site].ljust(18)
+                else:
+                    strhere += const.mount_type.ljust(18)
+
+                # add dish diameter
+                diam = stat.diameter()
+                strhere += str(np.round(diam,2)).ljust(17)
+
+                # add xyz coordinates
+                coords = stat.xyz()
+                strhere += str(np.round(coords[0],8)) + ',' 
+                strhere += str(np.round(coords[1],8)) + ',' 
+                strhere += str(np.round(coords[2],8))
+
+                # write line
+                strhere += '\n'
+                outfile.write(strhere)
+
+
+def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_filename='master_input.txt'):
+    """
+    Export a SYMBA-compatible master_input.txt file from the obs_generator object.
+
+    Args:
+      obsgen (ngehtsim.obs.obs_generator.obs_generator): ngehtsim obs_generator object containing information about the observation
+      input_args (dict): dictionary of input arguments
+      input_comments (dict): dictionary of comments associated with input arguments
+      output_filename (str): name of master_input.txt file to save
+
+    Returns:
+      SYMBA-compatible master_input.txt file containing the observation information
+    """
+
+    # load up the default input arguments and comments
+    args = copy.deepcopy(const.SYMBA_master_input_arguments)
+    comms = copy.deepcopy(const.SYMBA_master_input_comments)
+
+    #########################################################
+    # overwrite various defaults using the obsgen information
+
+    # determine the top 5 most sensitive sites in the array
+    indices = np.argsort(list(obsgen.D_dict.values()))[-5:]
+    sitenames = np.array(list(obsgen.D_dict.keys()))[indices][::-1]
+    strsites = ''
+    for site in sitenames:
+        strsites += const.two_letter_station_codes[site] + ', '
+    args['rpicard_refants'] = strsites[:-2]
+
+    # source name
+    args['vex_source'] = obsgen.settings['source']
+
+    # integration time
+    args['time_avg'] = str(obsgen.settings['t_int'])+'s'
+
+    # bandwidth
+    args['ms_dnu'] = str(obsgen.settings['bandwidth'])
+
+    # frequency
+    args['skyfreq'] = str(obsgen.freq/(1.0e9))
+
+    # RA and DEC
+    args['ms_RA'] = str(obsgen.RA*15.0)
+    args['ms_DEC'] = str(obsgen.DEC*15.0)
+
+    # observation start time
+    t = Time(obsgen.mjd, format='mjd')
+    dumt = t.fits
+    dumt2 = '/'.join(dumt.split('-'))
+    dumt3 = '/'.join(dumt.split('T'))
+    args['ms_StartTime'] = 'UTC,' + dumt3
+
+    # other observation time parameters
+    args['ms_obslength'] = str(len(obsgen.t_seg_times)*obsgen.settings['t_int'] / 3600.0)
+    args['ms_nscan'] = str(len(obsgen.t_seg_times))
+    args['ms_scan_lag'] = str((obsgen.settings['t_rest'] - obsgen.settings['t_int']) / 3600.0)
+
+    #########################################################
+
+    # update with any passed overrides
+    args.update(input_args)
+    comms.update(input_comments)
+
+    with open(output_filename,'w') as outfile:
+        
+        # loop through the arguments
+        for key in args.keys():
+
+            # initialize empty string
+            strhere = ''
+
+            # add comment
+            strhere += comms[key] + '\n'
+
+            # add argument
+            strhere += key + ' = ' + args[key] + '\n'
+
+            # write line
+            strhere += '\n'
+            outfile.write(strhere)
+
