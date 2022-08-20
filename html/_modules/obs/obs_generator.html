@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.84.g0ff9a67.dirty documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.86.ge17765f.dirty documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.84.g0ff9a67.dirty
+                0+untagged.86.ge17765f.dirty
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -566,10 +566,10 @@
         <span class="k">else</span><span class="p">:</span>
             
             <span class="c1"># apply opacity attenuation</span>
-            <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rrvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau2</span><span class="p">)</span>
-            <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau2</span><span class="p">)</span>
-            <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau2</span><span class="p">)</span>
-            <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau2</span><span class="p">)</span>
+            <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rrvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau2</span><span class="p">))</span>
+            <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau2</span><span class="p">))</span>
+            <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau2</span><span class="p">))</span>
+            <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau1</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau2</span><span class="p">))</span>
             
             <span class="c1"># determine baseline thermal noise levels</span>
             <span class="n">tint</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tint&#39;</span><span class="p">]</span>
@@ -590,7 +590,10 @@
         <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">switch_polrep</span><span class="p">(</span><span class="n">polrep_out</span><span class="o">=</span><span class="s1">&#39;stokes&#39;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">return_SEFDs</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">obs</span><span class="p">,</span> <span class="n">SEFD1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tau1</span><span class="p">),</span> <span class="n">SEFD2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tau2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">opacitycal</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">obs</span><span class="p">,</span> <span class="n">SEFD1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tau1</span><span class="p">),</span> <span class="n">SEFD2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">tau2</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">obs</span><span class="p">,</span> <span class="n">SEFD1</span><span class="p">,</span> <span class="n">SEFD2</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">obs</span></div>
 
@@ -685,13 +688,15 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">obs</span></div>
 
-<div class="viewcode-block" id="obs_generator.export_SYMBA"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.export_SYMBA">[docs]</a>    <span class="k">def</span> <span class="nf">export_SYMBA</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_filename</span><span class="o">=</span><span class="s1">&#39;obsgen.antennas&#39;</span><span class="p">,</span> <span class="n">t_coh</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">RMS_point</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-                     <span class="n">PB_model</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">gain_mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">leak_mean</span><span class="o">=</span><span class="mf">0.0</span><span class="n">j</span><span class="p">):</span>
+    <span class="c1"># export SYMBA-compatible input files</span>
+<div class="viewcode-block" id="obs_generator.export_SYMBA"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.export_SYMBA">[docs]</a>    <span class="k">def</span> <span class="nf">export_SYMBA</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_filenames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;obsgen.antennas&#39;</span><span class="p">,</span><span class="s1">&#39;master_input.txt&#39;</span><span class="p">],</span>
+                     <span class="n">t_coh</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">RMS_point</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">PB_model</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">gain_mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                     <span class="n">leak_mean</span><span class="o">=</span><span class="mf">0.0</span><span class="n">j</span><span class="p">,</span> <span class="n">master_input_args</span><span class="o">=</span><span class="p">{},</span> <span class="n">master_input_comments</span><span class="o">=</span><span class="p">{}):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Export a SYMBA-compatible .antennas file from the obs_generator object.</span>
+<span class="sd">        Export SYMBA-compatible .antennas and master_input.txt files from the obs_generator object.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">          output_filename (str): name of .antennas file to save</span>
+<span class="sd">          output_filename (list): names of .antennas and master_input.txt files to save</span>
 <span class="sd">          t_coh (float): default coherence time, in seconds</span>
 <span class="sd">          RMS_point (float): default RMS pointing uncertainty, in arcseconds</span>
 <span class="sd">          PB_model (str): primary beam model to use; only option right now is &#39;gaussian&#39;</span>
@@ -701,148 +706,28 @@
 <span class="sd">          leak_mean (float, complex, dict): Value of the mean leakage offset for each station.</span>
 <span class="sd">                                            If float or complex, will apply to all stations;</span>
 <span class="sd">                                            if a dict, should be indexed by station name</span>
+<span class="sd">          master_input_args (dict): dictionary of master input arguments</span>
+<span class="sd">          master_input_comments (dict): dictionary of comments associated with master input arguments</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">          SYMBA-compatible .antennas file containing the observation information</span>
+<span class="sd">          SYMBA-compatible .antennas and master_input.txt files</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># make a list of station names in the correct order for the ngehtutils array object</span>
-        <span class="n">stationnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">stat</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">stations</span><span class="p">():</span>
-            <span class="n">stationnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stat</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-        <span class="n">stationnames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">stationnames</span><span class="p">)</span>
+        <span class="c1"># export .antennas file</span>
+        <span class="n">export_SYMBA_antennas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                              <span class="n">output_filename</span><span class="o">=</span><span class="n">output_filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                              <span class="n">t_coh</span><span class="o">=</span><span class="n">t_coh</span><span class="p">,</span>
+                              <span class="n">RMS_point</span><span class="o">=</span><span class="n">RMS_point</span><span class="p">,</span>
+                              <span class="n">PB_model</span><span class="o">=</span><span class="n">PB_model</span><span class="p">,</span>
+                              <span class="n">gain_mean</span><span class="o">=</span><span class="n">gain_mean</span><span class="p">,</span>
+                              <span class="n">leak_mean</span><span class="o">=</span><span class="n">leak_mean</span><span class="p">)</span>
 
-        <span class="c1"># translate the weather type setting</span>
-        <span class="n">weather_translation_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;exact&#39;</span><span class="p">:</span> <span class="s1">&#39;exact&#39;</span><span class="p">,</span>
-                                    <span class="s1">&#39;random&#39;</span><span class="p">:</span> <span class="s1">&#39;exact&#39;</span><span class="p">,</span>
-                                    <span class="s1">&#39;typical&#39;</span><span class="p">:</span> <span class="s1">&#39;median&#39;</span><span class="p">,</span>
-                                    <span class="s1">&#39;good&#39;</span><span class="p">:</span> <span class="s1">&#39;good&#39;</span><span class="p">,</span>
-                                    <span class="s1">&#39;bad&#39;</span><span class="p">:</span> <span class="s1">&#39;bad&#39;</span><span class="p">}</span>
-        <span class="n">weather_translation</span> <span class="o">=</span> <span class="n">weather_translation_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span><span class="p">]</span>
-
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
-
-            <span class="c1"># add file header </span>
-            <span class="n">header</span> <span class="o">=</span> <span class="s1">&#39;station&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;s_rx[Jy]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;pwv[mm]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gpress[mb]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gtemp[K]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;c_time[sec]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;ptg_rms[arcsec]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;PB_FWHM230[arcsec]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;PB_model&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;ap_eff&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gainR_mean&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gainR_std&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gainL_mean&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gainL_std&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;leakR_mean&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;leakR_std&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;leakL_mean&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;leakL_std&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;feed_angle[degree]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;mount&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;dish_diameter&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
-            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;xzy_position_m&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
-            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
-
-            <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">:</span>
-
-                <span class="c1"># initialize empty string</span>
-                <span class="n">strhere</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-
-                <span class="c1"># add station name as a two-letter code</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">two_letter_station_codes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
-
-                <span class="c1"># add receiver SEFD, in Jy</span>
-                <span class="n">SEFD_R</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">T_R</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">SEFD_R</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
-
-                <span class="c1"># add PWV, in mm</span>
-                <span class="n">PWV</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">PWV</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">PWV</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
-
-                <span class="c1"># add surface pressure, in mbar</span>
-                <span class="n">pres</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">pressure</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pres</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-
-                <span class="c1"># add surface temperature, in K</span>
-                <span class="n">temp</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-
-                <span class="c1"># add coherence time, in seconds</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">t_coh</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
-
-                <span class="c1"># add RMS pointing uncertainty, in seconds</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">RMS_point</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
-
-                <span class="c1"># add 230GHz FWHM primary beam size</span>
-                <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span><span class="n">stationnames</span> <span class="o">==</span> <span class="n">site</span><span class="p">)</span>
-                <span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">stations</span><span class="p">())[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">diam</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">dishes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">diameter</span>
-                <span class="n">pb</span> <span class="o">=</span> <span class="p">((</span><span class="mf">180.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">*</span><span class="mf">3600.0</span><span class="p">)</span><span class="o">*</span><span class="p">((</span><span class="n">const</span><span class="o">.</span><span class="n">c</span> <span class="o">/</span> <span class="p">(</span><span class="mf">230.0e9</span><span class="p">))</span> <span class="o">/</span> <span class="n">diam</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pb</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-
-                <span class="c1"># add the primary beam model</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">PB_model</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-
-                <span class="c1"># add the aperture efficiency</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">],</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
-
-                <span class="c1"># add gain means and stds</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
-                    <span class="n">gain_here</span> <span class="o">=</span> <span class="n">gain_mean</span>
-                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
-                    <span class="n">gain_here</span> <span class="o">=</span> <span class="n">gain_mean</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_here</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
-                    <span class="n">gain_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gain_here</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">gain_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gain_here</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">gain_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">gain_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-
-                <span class="c1"># add leakage means and stds</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
-                    <span class="n">leak_here</span> <span class="o">=</span> <span class="n">leak_mean</span>
-                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
-                    <span class="n">leak_here</span> <span class="o">=</span> <span class="n">leak_mean</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_here</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
-                    <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">leak_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">leak_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-
-                <span class="c1"># add feed angle</span>
-                <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_feed_angles</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_feed_angles</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">feed_angle</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-
-                <span class="c1"># add mount type</span>
-                <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_mount_types</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_mount_types</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">mount_type</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
-
-                <span class="c1"># add dish diameter</span>
-                <span class="n">diam</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">diameter</span><span class="p">()</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">diam</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
-
-                <span class="c1"># add xyz coordinates</span>
-                <span class="n">coords</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">xyz</span><span class="p">()</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> 
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> 
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span>
-
-                <span class="c1"># write line</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">strhere</span><span class="p">)</span></div></div>
+        <span class="c1"># export master_input.txt file</span>
+        <span class="n">master_input_args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;ms_antenna_table&#39;</span><span class="p">:</span> <span class="n">output_filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">]})</span>
+        <span class="n">export_SYMBA_master_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                  <span class="n">input_args</span><span class="o">=</span><span class="n">master_input_args</span><span class="p">,</span>
+                                  <span class="n">input_comments</span><span class="o">=</span><span class="n">master_input_comments</span><span class="p">,</span>
+                                  <span class="n">output_filename</span><span class="o">=</span><span class="n">output_filenames</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div></div>
 
 <span class="c1">###################################################</span>
 <span class="c1"># other functions</span>
@@ -1093,7 +978,7 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">remaining</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
             <span class="n">groups</span> <span class="o">=</span> <span class="n">remaining</span> <span class="o">+</span> <span class="p">[</span><span class="n">merged</span><span class="p">]</span>
-            
+
         <span class="c1"># assign stations to groups</span>
         <span class="n">site_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">ig</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">groups</span><span class="p">):</span>
@@ -1175,6 +1060,250 @@
         <span class="n">obs</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data_copy</span><span class="p">[</span><span class="n">master_index</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">obs</span></div>
+
+
+<div class="viewcode-block" id="export_SYMBA_antennas"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.export_SYMBA_antennas">[docs]</a><span class="k">def</span> <span class="nf">export_SYMBA_antennas</span><span class="p">(</span><span class="n">obsgen</span><span class="p">,</span> <span class="n">output_filename</span><span class="o">=</span><span class="s1">&#39;obsgen.antennas&#39;</span><span class="p">,</span> <span class="n">t_coh</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">RMS_point</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                              <span class="n">PB_model</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">gain_mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">leak_mean</span><span class="o">=</span><span class="mf">0.0</span><span class="n">j</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Export a SYMBA-compatible .antennas file from the obs_generator object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          obsgen (ngehtsim.obs.obs_generator.obs_generator): ngehtsim obs_generator object containing information about the observation</span>
+<span class="sd">          output_filename (str): name of .antennas file to save</span>
+<span class="sd">          t_coh (float): default coherence time, in seconds</span>
+<span class="sd">          RMS_point (float): default RMS pointing uncertainty, in arcseconds</span>
+<span class="sd">          PB_model (str): primary beam model to use; only option right now is &#39;gaussian&#39;</span>
+<span class="sd">          gain_mean (float, complex, dict): Value of the mean gain offset for each station.</span>
+<span class="sd">                                           If float or complex, will apply to all stations;</span>
+<span class="sd">                                           if a dict, should be indexed by station name</span>
+<span class="sd">          leak_mean (float, complex, dict): Value of the mean leakage offset for each station.</span>
+<span class="sd">                                            If float or complex, will apply to all stations;</span>
+<span class="sd">                                            if a dict, should be indexed by station name</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          SYMBA-compatible .antennas file containing the observation information</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># make a list of station names in the correct order for the ngehtutils array object</span>
+        <span class="n">stationnames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">stat</span> <span class="ow">in</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">stations</span><span class="p">():</span>
+            <span class="n">stationnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stat</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">stationnames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">stationnames</span><span class="p">)</span>
+
+        <span class="c1"># translate the weather type setting</span>
+        <span class="n">weather_translation_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;exact&#39;</span><span class="p">:</span> <span class="s1">&#39;exact&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;random&#39;</span><span class="p">:</span> <span class="s1">&#39;exact&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;typical&#39;</span><span class="p">:</span> <span class="s1">&#39;median&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;good&#39;</span><span class="p">:</span> <span class="s1">&#39;good&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;bad&#39;</span><span class="p">:</span> <span class="s1">&#39;bad&#39;</span><span class="p">}</span>
+        <span class="n">weather_translation</span> <span class="o">=</span> <span class="n">weather_translation_dict</span><span class="p">[</span><span class="n">obsgen</span><span class="o">.</span><span class="n">weather</span><span class="p">]</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+
+            <span class="c1"># add file header </span>
+            <span class="n">header</span> <span class="o">=</span> <span class="s1">&#39;station&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;s_rx[Jy]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;pwv[mm]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gpress[mb]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gtemp[K]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;c_time[sec]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;ptg_rms[arcsec]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;PB_FWHM230[arcsec]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;PB_model&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;ap_eff&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gainR_mean&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gainR_std&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gainL_mean&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;gainL_std&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;leakR_mean&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;leakR_std&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;leakL_mean&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;leakL_std&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;feed_angle[degree]&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;mount&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;dish_diameter&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;xzy_position_m&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">sites</span><span class="p">:</span>
+
+                <span class="c1"># initialize empty string</span>
+                <span class="n">strhere</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+                <span class="c1"># add station name as a two-letter code</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">two_letter_station_codes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+
+                <span class="c1"># add receiver SEFD, in Jy</span>
+                <span class="n">SEFD_R</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">T_R</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">SEFD_R</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+
+                <span class="c1"># add PWV, in mm</span>
+                <span class="n">PWV</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">PWV</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">PWV</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+
+                <span class="c1"># add surface pressure, in mbar</span>
+                <span class="n">pres</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">pressure</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pres</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+
+                <span class="c1"># add surface temperature, in K</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+                <span class="c1"># add coherence time, in seconds</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">t_coh</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
+
+                <span class="c1"># add RMS pointing uncertainty, in seconds</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">RMS_point</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+
+                <span class="c1"># add 230GHz FWHM primary beam size</span>
+                <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span><span class="n">stationnames</span> <span class="o">==</span> <span class="n">site</span><span class="p">)</span>
+                <span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">stations</span><span class="p">())[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">diam</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">dishes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">diameter</span>
+                <span class="n">pb</span> <span class="o">=</span> <span class="p">((</span><span class="mf">180.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">*</span><span class="mf">3600.0</span><span class="p">)</span><span class="o">*</span><span class="p">((</span><span class="n">const</span><span class="o">.</span><span class="n">c</span> <span class="o">/</span> <span class="p">(</span><span class="mf">230.0e9</span><span class="p">))</span> <span class="o">/</span> <span class="n">diam</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pb</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+                <span class="c1"># add the primary beam model</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">PB_model</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+
+                <span class="c1"># add the aperture efficiency</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">],</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+
+                <span class="c1"># add gain means and stds</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
+                    <span class="n">gain_here</span> <span class="o">=</span> <span class="n">gain_mean</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">gain_here</span> <span class="o">=</span> <span class="n">gain_mean</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_here</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
+                    <span class="n">gain_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gain_here</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">gain_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gain_here</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">gain_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">gain_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+
+                <span class="c1"># add leakage means and stds</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
+                    <span class="n">leak_here</span> <span class="o">=</span> <span class="n">leak_mean</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">leak_here</span> <span class="o">=</span> <span class="n">leak_mean</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_here</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
+                    <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">leak_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">leak_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+
+                <span class="c1"># add feed angle</span>
+                <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_feed_angles</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_feed_angles</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">feed_angle</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+                <span class="c1"># add mount type</span>
+                <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_mount_types</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_mount_types</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">mount_type</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
+
+                <span class="c1"># add dish diameter</span>
+                <span class="n">diam</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">diameter</span><span class="p">()</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">diam</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+
+                <span class="c1"># add xyz coordinates</span>
+                <span class="n">coords</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">xyz</span><span class="p">()</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> 
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> 
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span>
+
+                <span class="c1"># write line</span>
+                <span class="n">strhere</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">strhere</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="export_SYMBA_master_input"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.export_SYMBA_master_input">[docs]</a><span class="k">def</span> <span class="nf">export_SYMBA_master_input</span><span class="p">(</span><span class="n">obsgen</span><span class="p">,</span><span class="n">input_args</span><span class="o">=</span><span class="p">{},</span><span class="n">input_comments</span><span class="o">=</span><span class="p">{},</span><span class="n">output_filename</span><span class="o">=</span><span class="s1">&#39;master_input.txt&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Export a SYMBA-compatible master_input.txt file from the obs_generator object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      obsgen (ngehtsim.obs.obs_generator.obs_generator): ngehtsim obs_generator object containing information about the observation</span>
+<span class="sd">      input_args (dict): dictionary of input arguments</span>
+<span class="sd">      input_comments (dict): dictionary of comments associated with input arguments</span>
+<span class="sd">      output_filename (str): name of master_input.txt file to save</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      SYMBA-compatible master_input.txt file containing the observation information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># load up the default input arguments and comments</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">SYMBA_master_input_arguments</span><span class="p">)</span>
+    <span class="n">comms</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">SYMBA_master_input_comments</span><span class="p">)</span>
+
+    <span class="c1">#########################################################</span>
+    <span class="c1"># overwrite various defaults using the obsgen information</span>
+
+    <span class="c1"># determine the top 5 most sensitive sites in the array</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()))[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span>
+    <span class="n">sitenames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))[</span><span class="n">indices</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">strsites</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sitenames</span><span class="p">:</span>
+        <span class="n">strsites</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">two_letter_station_codes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;rpicard_refants&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">strsites</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="c1"># source name</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;vex_source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span>
+
+    <span class="c1"># integration time</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;time_avg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_int&#39;</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39;s&#39;</span>
+
+    <span class="c1"># bandwidth</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_dnu&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">])</span>
+
+    <span class="c1"># frequency</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;skyfreq&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0e9</span><span class="p">))</span>
+
+    <span class="c1"># RA and DEC</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_RA&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">RA</span><span class="o">*</span><span class="mf">15.0</span><span class="p">)</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_DEC&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">DEC</span><span class="o">*</span><span class="mf">15.0</span><span class="p">)</span>
+
+    <span class="c1"># observation start time</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">mjd</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;mjd&#39;</span><span class="p">)</span>
+    <span class="n">dumt</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">fits</span>
+    <span class="n">dumt2</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dumt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">))</span>
+    <span class="n">dumt3</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dumt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">))</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_StartTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;UTC,&#39;</span> <span class="o">+</span> <span class="n">dumt3</span>
+
+    <span class="c1"># other observation time parameters</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_obslength&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">t_seg_times</span><span class="p">)</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_int&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">3600.0</span><span class="p">)</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_nscan&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">t_seg_times</span><span class="p">))</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_scan_lag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">((</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_rest&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_int&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="mf">3600.0</span><span class="p">)</span>
+
+    <span class="c1">#########################################################</span>
+
+    <span class="c1"># update with any passed overrides</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_args</span><span class="p">)</span>
+    <span class="n">comms</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">input_comments</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+        
+        <span class="c1"># loop through the arguments</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+            <span class="c1"># initialize empty string</span>
+            <span class="n">strhere</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+            <span class="c1"># add comment</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="n">comms</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+
+            <span class="c1"># add argument</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="n">key</span> <span class="o">+</span> <span class="s1">&#39; = &#39;</span> <span class="o">+</span> <span class="n">args</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+
+            <span class="c1"># write line</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">strhere</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>
