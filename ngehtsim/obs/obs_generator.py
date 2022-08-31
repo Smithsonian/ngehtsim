@@ -328,7 +328,23 @@ class obs_generator(object):
         """
 
         # generate an empty obsdata object
-        if self.obs_empty is None:
+        if (self.obs_empty is None):
+            self.obs_empty = self.arr.obsdata(self.RA,
+                                              self.DEC,
+                                              obsfreq,
+                                              (1.0e9)*float(self.settings['bandwidth']),
+                                              self.settings['t_int'],
+                                              self.settings['t_rest'],
+                                              self.settings['t_start'],
+                                              self.settings['t_start'] + self.settings['dt'],
+                                              mjd = self.mjd,
+                                              polrep = 'stokes',
+                                              tau = 0.0,
+                                              timetype = 'UTC',
+                                              elevmin = const.el_min,
+                                              elevmax = const.el_max,
+                                              fix_theta_GMST = False)
+        elif (self.obs_empty.rf != obsfreq):
             self.obs_empty = self.arr.obsdata(self.RA,
                                               self.DEC,
                                               obsfreq,
