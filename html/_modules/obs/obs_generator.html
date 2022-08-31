@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.86.ge17765f.dirty documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.87.g9628ddf.dirty documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.86.ge17765f.dirty
+                0+untagged.87.g9628ddf.dirty
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -398,7 +398,23 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># generate an empty obsdata object</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs_empty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_empty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">obs_empty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arr</span><span class="o">.</span><span class="n">obsdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">RA</span><span class="p">,</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">DEC</span><span class="p">,</span>
+                                              <span class="n">obsfreq</span><span class="p">,</span>
+                                              <span class="p">(</span><span class="mf">1.0e9</span><span class="p">)</span><span class="o">*</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">]),</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_int&#39;</span><span class="p">],</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_rest&#39;</span><span class="p">],</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_start&#39;</span><span class="p">],</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_start&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;dt&#39;</span><span class="p">],</span>
+                                              <span class="n">mjd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mjd</span><span class="p">,</span>
+                                              <span class="n">polrep</span> <span class="o">=</span> <span class="s1">&#39;stokes&#39;</span><span class="p">,</span>
+                                              <span class="n">tau</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                                              <span class="n">timetype</span> <span class="o">=</span> <span class="s1">&#39;UTC&#39;</span><span class="p">,</span>
+                                              <span class="n">elevmin</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">el_min</span><span class="p">,</span>
+                                              <span class="n">elevmax</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">el_max</span><span class="p">,</span>
+                                              <span class="n">fix_theta_GMST</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_empty</span><span class="o">.</span><span class="n">rf</span> <span class="o">!=</span> <span class="n">obsfreq</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">obs_empty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arr</span><span class="o">.</span><span class="n">obsdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">RA</span><span class="p">,</span>
                                               <span class="bp">self</span><span class="o">.</span><span class="n">DEC</span><span class="p">,</span>
                                               <span class="n">obsfreq</span><span class="p">,</span>
