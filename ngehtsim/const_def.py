@@ -323,7 +323,7 @@ SYMBA_master_input_arguments = OrderedDict({'rpicard_path': '/usr/local/src/pica
                                             'vexfile': '/usr/local/src/symba/symba_input/vex_examples/EHT2017/e17e11.vex',
                                             'vex_source': 'M87',
                                             'input_fitsimage': '/usr/local/src/symba/symba_input/fits_examples/*.fits',
-                                            'input_fitspol': 'True',
+                                            'input_fitspol': 'False',
                                             'input_changroups': '1',
                                             'model_rotangle': '0.0',
                                             'model_scale': '1.0',

@@ -635,14 +635,16 @@ class obs_generator(object):
             return obs
 
     # export SYMBA-compatible input files
-    def export_SYMBA(self, output_filenames=['obsgen.antennas','master_input.txt'],
+    def export_SYMBA(self, symba_workdir='./data',
+                     output_filenames=['obsgen.antennas','master_input.txt'],
                      t_coh=10.0, RMS_point=0.0, PB_model='gaussian', gain_mean=1.0,
                      leak_mean=0.0j, master_input_args={}, master_input_comments={}):
         """
-        Export SYMBA-compatible .antennas and master_input.txt files from the obs_generator object.
+        Export SYMBA-compatible directory structure and input files from the obs_generator object.
 
         Args:
-          output_filename (list): names of .antennas and master_input.txt files to save
+          symba_workdir (str): name of SYMBA working directory to use or create
+          output_filenames (list): names of .antennas and master_input.txt files to save
           t_coh (float): default coherence time, in seconds
           RMS_point (float): default RMS pointing uncertainty, in arcseconds
           PB_model (str): primary beam model to use; only option right now is 'gaussian'
@@ -659,6 +661,19 @@ class obs_generator(object):
           SYMBA-compatible .antennas and master_input.txt files
         """
 
+        # create SYMBA working directory
+        os.makedirs(symba_workdir, exist_ok=True)
+
+        # create input and output folders within the working directory
+        inpdir = symba_workdir + '/symba_input'
+        outdir = symba_workdir + '/symba_output'
+        os.makedirs(inpdir, exist_ok=True)
+        os.makedirs(outdir, exist_ok=True)
+
+        # modify filenames appropriately
+        for i in range(len(output_filenames)):
+            output_filenames[i] = inpdir + '/' + output_filenames[i]
+
         # export .antennas file
         export_SYMBA_antennas(self,
                               output_filename=output_filenames[0],
@@ -669,7 +684,9 @@ class obs_generator(object):
                               leak_mean=leak_mean)
 
         # export master_input.txt file
-        master_input_args.update({'ms_antenna_table': output_filenames[0]})
+        master_input_args.update({'outdirname': outdir,
+                                  'ms_antenna_table': output_filenames[0],
+                                  'input_fitsimage': inpdir + '/*.fits'})
         export_SYMBA_master_input(self,
                                   input_args=master_input_args,
                                   input_comments=master_input_comments,
@@ -1212,7 +1229,7 @@ def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_file
 
     # RA and DEC
     args['ms_RA'] = str(obsgen.RA*15.0)
-    args['ms_DEC'] = str(obsgen.DEC*15.0)
+    args['ms_DEC'] = str(obsgen.DEC)
 
     # observation start time
     t = Time(obsgen.mjd, format='mjd')
