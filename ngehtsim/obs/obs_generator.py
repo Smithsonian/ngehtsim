@@ -33,20 +33,21 @@ class obs_generator(object):
                            Note that any settings specified by the settings keyword argument will override
                            the corresponding settings from the settings file.
       verbose (float): Set to >0 for more verbose output
-      D_override_dict (dict): A dictionary of station names and diameters to override the internal defaults
-      surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override the internal defaults
+      D_override_dict (dict): A dictionary of station names and diameters to override internal defaults
+      surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override internal defaults
+      receiver_override_dict (dict): A dictionary of station names and available receivers to override internal defaults
       array_name (str): Name to get assigned to the ngehtutil array object
     """
 
     # initialize class instantiation
     def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={},
-                 surf_rms_override_dict={}, array_name=None):
+                 surf_rms_override_dict={}, receiver_override_dict={}, array_name=None):
 
-        self.settings = {}
         self.settings_file = settings_file
         self.verbosity = verbose
         self.D_override_dict = copy.deepcopy(D_override_dict)
         self.surf_rms_override_dict = copy.deepcopy(surf_rms_override_dict)
+        self.receiver_override_dict = copy.deepcopy(receiver_override_dict)
         self.array_name = array_name
 
         # start with some default settings
@@ -97,6 +98,7 @@ class obs_generator(object):
         self.set_coords()
         self.mjd = determine_mjd(self.settings['day'],self.settings['month'],self.settings['year'])
         self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9))
+        self.receiver_setup = set_receivers(self.sites,receiver_override_dict=self.receiver_override_dict)
         self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
         self.tabulate_weather()
         self.telescope_properties(self.settings['surf_rms_new'])
@@ -127,9 +129,14 @@ class obs_generator(object):
         # if a known array is specified, pull its sites and overrides
         if self.settings['array'] in const.known_arrays.keys():
             self.sites = copy.deepcopy(const.known_arrays[self.settings['array']])
-            override_dict_here = copy.deepcopy(const.known_array_overrides[self.settings['array']])
-            override_dict_here.update(self.D_override_dict)
-            self.D_override_dict = override_dict_here
+
+            D_override_dict_here = copy.deepcopy(const.known_array_D_overrides[self.settings['array']])
+            D_override_dict_here.update(self.D_override_dict)
+            self.D_override_dict = D_override_dict_here
+
+            receiver_override_dict_here = copy.deepcopy(const.known_array_receiver_overrides[self.settings['array']])
+            receiver_override_dict_here.update(self.receiver_override_dict)
+            self.receiver_override_dict = receiver_override_dict_here
 
         # add in any additional sites
         else:
@@ -597,7 +604,7 @@ class obs_generator(object):
                 snr_ref = snr_args[0]
                 tint_ref = snr_args[1]
 
-                obs_seg = fringegroups(obs_seg,snr_ref,tint_ref)
+                obs_seg = fringegroups(self,obs_seg,snr_ref,tint_ref)
 
             # apply an FPT proxy for SNR thresholding
             elif (snr_algo == 'fpt'):
@@ -620,6 +627,15 @@ class obs_generator(object):
             else:
                 obs_seg.data['time'] += i_band*0.00001
                 obs.data = np.concatenate([obs.data,obs_seg.data])
+
+        # remove sites that can't observe at the requested frequency
+        sites_to_remove = list()
+        for site in self.sites:
+            recs_here = self.receiver_setup[site]
+            if self.weather_freq not in recs_here:
+                sites_to_remove.append(site)
+        if len(sites_to_remove) > 0:
+            obs = obs.flag_sites(sites_to_remove,output='kept')
 
         # drop any sites randomly deemed to be technically unready
         sites_in_obs = obs.tarr['site']
@@ -812,6 +828,29 @@ def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0):
     return array, arr
 
 
+def set_receivers(sitelist,receiver_override_dict={}):
+    """
+    Create a receiver suite dictionary given a list of sites and overrides
+    
+    Args:
+      sitelist (list): A list of site names
+      receiver_override_dict (dict): A dictionary of station names and available receivers to override the defaults
+    
+    Returns:
+      (dict): A dictionary of station names and available receivers
+    """
+
+    receiver_setup = {}
+
+    for site in sitelist:
+        if site in list(receiver_override_dict.keys()):
+            receiver_setup[site] = receiver_override_dict[site]
+        else:
+            receiver_setup[site] = const.receivers
+
+    return receiver_setup
+
+
 def load_image(infile,freq=230.0e9,verbose=0):
     """
     Load an ehtim image or movie object.
@@ -887,12 +926,13 @@ def get_unready_sites(sites_in_observ,tech_readiness):
     return sites_to_drop
 
 
-def fringegroups(obs,snr_ref,tint_ref,return_index=False):
+def fringegroups(obsgen,obs,snr_ref,tint_ref,return_index=False):
     """
     Function to apply the "fringegroups" SNR thresholding scheme to an observation.
     This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibration pipeline.
     
     Args:
+      obsgen (ngehtsim.obs.obs_generator.obs_generator): ngehtsim obs_generator object containing information about the observation
       obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the input observation
       snr_ref (float): strong baseline SNR threshold
       tint_ref (float): strong baseline coherence time, in seconds
@@ -904,7 +944,14 @@ def fringegroups(obs,snr_ref,tint_ref,return_index=False):
 
     # get the timestamps
     time = obs.data['time']
-    timestamps = np.unique(obs.data['time'])
+    timestamps = np.unique(time)
+
+    # get the stations that are able to observe at this frequency
+    available_sites = list()
+    for site in obsgen.sites:
+        recs_here = obsgen.receiver_setup[site]
+        if obsgen.weather_freq in recs_here:
+            available_sites.append(site)
 
     # create a running index list of baselines to flag
     master_index = np.zeros(len(obs.data),dtype='bool')
@@ -927,7 +974,13 @@ def fringegroups(obs,snr_ref,tint_ref,return_index=False):
         # determine which baselines are "strong"
         index = (np.abs(obs_here.data['vis'])/obs_here.data['sigma']) >= snr_scaled
 
-        # limit the searched baselines to those that are strong
+        # determine which sites are available to observe at this frequency
+        t1_available = np.isin(obs_here.data['t1'], available_sites)
+        t2_available = np.isin(obs_here.data['t2'], available_sites)
+        index &= t1_available
+        index &= t2_available
+
+        # limit the searched baselines to those that are strong and available
         obs_search.data = obs_here.data[index]
 
         # group stations that are connected by strong baselines
@@ -1004,12 +1057,12 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
     master_index = np.zeros(len(obs_ref.data),dtype='bool')
 
     # get detections from the reference frequency
-    fringegroups_index = fringegroups(obs_ref,snr_ref,tint_ref,return_index=True)
+    fringegroups_index = fringegroups(obsgen_ref,obs_ref,snr_ref,tint_ref,return_index=True)
     master_index |= fringegroups_index
 
     # get any additional detections from normal fringe-fitting
     snr_fringegroups = snr_ref * (freq_ref/(obsgen.freq/(1.0e9)))
-    fringegroups_index = fringegroups(obs,snr_fringegroups,tint_ref,return_index=True)
+    fringegroups_index = fringegroups(obsgen,obs,snr_fringegroups,tint_ref,return_index=True)
     master_index |= fringegroups_index
 
     if return_index:

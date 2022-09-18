@@ -12,8 +12,15 @@ import ngehtsim.obs.obs_generator as og
 # input settings file
 yamlfile = './settings_fpt.yaml'
 
+# some sites only have access to certain frequencies
+receiver_override_dict = {'ALMA': ['345'],
+						  'HAY': ['86', '230'],
+						  'KP': ['86', '230'],
+						  'OVRO': ['86', '230'],
+						  'SPT': ['230', '345']}
+
 # initialize the observation generator
-obsgen_fpt = og.obs_generator(settings_file=yamlfile)
+obsgen_fpt = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict)
 
 # generate the observation
 obs_fpt = obsgen_fpt.make_obs()
@@ -28,7 +35,7 @@ obs_fpt.save_uvfits('./example_datafile_with_fpt.uvfits')
 yamlfile = './settings_no_fpt.yaml'
 
 # initialize the observation generator
-obsgen = og.obs_generator(settings_file=yamlfile)
+obsgen = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict)
 
 # generate the observation
 obs = obsgen.make_obs()
