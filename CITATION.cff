@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Pesce"
+  given-names: "Dominic W."
+  orcid: "https://orcid.org/0000-0002-5278-9221"
+- family-names: "Hamilton"
+  given-names: "Linus"
+- family-names: "Palumbo"
+  given-names: "Daniel C. M."
+  orcid: "https://orcid.org/0000-0002-7179-3816"
+- family-names: "Raymond"
+  given-names: "Alexander W."
+  orcid: "https://orcid.org/0000-0002-5779-4767"
+- family-names: "Wielgus"
+  given-names: "Maciek"
+  orcid: "https://orcid.org/0000-0002-8635-4242"
+title: "ngEHT simulation tools"
+version: 0.1
+date-released: 2021-09-20
+url: "https://github.com/Smithsonian/ngehtsim"
