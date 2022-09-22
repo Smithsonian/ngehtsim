@@ -167,6 +167,8 @@ class obs_generator(object):
         if self.settings['weather_freq'] is None:
             freqhere = self.freq / (1.0e9)
             self.weather_freq = weath_options[np.argmin(np.abs(freqhere - freq_options))]
+        else:
+            self.weather_freq = self.settings['weather_freq']
         if self.verbosity > 0:
             print("************** Weather frequency set to " + str(self.weather_freq) + ' GHz.')
 
