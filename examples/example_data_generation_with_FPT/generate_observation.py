@@ -14,10 +14,10 @@ yamlfile = './settings_fpt.yaml'
 
 # some sites only have access to certain frequencies
 receiver_override_dict = {'ALMA': ['345'],
-						  'HAY': ['86', '230'],
-						  'KP': ['86', '230'],
-						  'OVRO': ['86', '230'],
-						  'SPT': ['230', '345']}
+                          'HAY': ['86', '230'],
+                          'KP': ['86', '230'],
+                          'OVRO': ['86', '230'],
+                          'SPT': ['230', '345']}
 
 # initialize the observation generator
 obsgen_fpt = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict)

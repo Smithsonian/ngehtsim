@@ -45,6 +45,10 @@ default_settings = {'model_file': None,
 el_min = 10.0
 el_max = 80.0
 
+# windspeed limitations
+windspeed_degradation = 15.0
+windspeed_shutdown = 25.0
+
 # minimum and maximum years from which to query weather data
 year_min = 2009
 year_max = 2018

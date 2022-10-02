@@ -202,6 +202,7 @@ class obs_generator(object):
         tau_dict = defaultdict(dict)
         Tatm_dict = defaultdict(dict)
         Tb_dict = defaultdict(dict)
+        windspeed_dict = defaultdict(dict)
 
         # extract month number
         monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
@@ -230,13 +231,15 @@ class obs_generator(object):
             pathhere = self.path_to_weather
             pathhere += site + '/'
             pathhere += monthnum + self.settings['month'] + '/'
-            pathhere += 'mean_SEFD_info_' + self.weather_freq + '.csv'
+            weather_file = pathhere + 'mean_SEFD_info_' + self.weather_freq + '.csv'
+            wind_file = pathhere + 'mean_wind_speed.csv'
 
             if self.verbosity > 1:
-                print('Reading weather from '+pathhere)
+                print('Reading weather from '+weather_file)
             
-            # read in the table
-            year, monthdum, day, tau, Tb = np.loadtxt(pathhere,skiprows=7,unpack=True,delimiter=',')
+            # read in the tables
+            year_ws, monthdum, day_ws, ws = np.loadtxt(wind_file,skiprows=6,unpack=True,delimiter=',')
+            year, monthdum, day, tau, Tb = np.loadtxt(weather_file,skiprows=7,unpack=True,delimiter=',')
 
             # start a count of how many times it breaks
             broken = 0
@@ -257,15 +260,33 @@ class obs_generator(object):
                         return None
                 tau_here = tau[index][0]
                 Tb_here = Tb[index][0]
+
+                # do the same for windspeed
+                index_ws = ((year_ws == self.randyear) & (day_ws == self.randday))
+                if (np.array(index_ws).sum() == 0):
+                    broken += 1
+                    if self.verbosity > 1:
+                        print('Windspeed tabulation broke for the '+ str(broken) + ' time!')
+                    # if it breaks 10 times, toss an error
+                    if broken >= 10:
+                        raise Exception('No windspeed on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
+                    else:
+                        print('Retabulating windspeed...')
+                        self.tabulate_weather()
+                        return None
+                ws_here = ws[index_ws][0]
             elif (self.weather == 'typical'):
                 tau_here = np.median(tau)
                 Tb_here = np.median(Tb)
+                ws_here = np.median(ws)
             elif (self.weather == 'good'):
                 tau_here = np.percentile(tau,15.87)
                 Tb_here = np.percentile(Tb,15.87)
+                ws_here = np.percentile(ws,15.87)
             elif (self.weather == 'poor'):
                 tau_here = np.percentile(tau,84.13)
                 Tb_here = np.percentile(Tb,84.13)
+                ws_here = np.percentile(ws,84.13)
 
             # divide out the opacity term to get the actual atmospheric temperature
             Tatm = (Tb_here - (const.T_CMB_AM*np.exp(-tau_here))) / (1.0 - np.exp(-tau_here))
@@ -274,11 +295,13 @@ class obs_generator(object):
             tau_dict[site] = tau_here
             Tatm_dict[site] = Tatm
             Tb_dict[site] = Tb_here
+            windspeed_dict[site] = ws_here
 
         # store the dictionaries
         self.tau_dict = tau_dict
         self.Tatm_dict = Tatm_dict
         self.Tb_dict = Tb_dict
+        self.windspeed_dict = windspeed_dict
 
     # generate dictionaries of telescope properties
     def telescope_properties(self,surf_rms_new):
@@ -442,11 +465,17 @@ class obs_generator(object):
             gainphase2L = np.zeros_like(el2)
         
         # loop through the sites in the array
+        flagsites = list()
         for isite, site in enumerate(sites_obs):
 
-            # zenith opacity and atmospheric temperature
+            # zenith opacity, atmospheric temperature, and windspeed
             tau_z = self.tau_dict[site]
             Tatm = self.Tatm_dict[site]
+            ws = self.windspeed_dict[site]
+
+            # if the windspeed exceeds the shutdown threshold, mark the site as to be flagged
+            if (ws > const.windspeed_shutdown):
+                flagsites.append(site)
 
             # indices for this site
             ind1 = (t1 == site)
@@ -467,6 +496,11 @@ class obs_generator(object):
             # determine SEFDs
             SEFD1[ind1] = (2.0*const.k*Tsys1[ind1])/((np.pi/4.0)*self.eta_dict[site]*(self.D_dict[site])**2)
             SEFD2[ind2] = (2.0*const.k*Tsys2[ind2])/((np.pi/4.0)*self.eta_dict[site]*(self.D_dict[site])**2)
+
+            # modify SEFDs to account for wind
+            SEFD_factor = windspeed_SEFD_modification(ws)
+            SEFD1[ind1] *= SEFD_factor
+            SEFD2[ind2] *= SEFD_factor
 
             # generate gains
             if addgains:
@@ -540,6 +574,9 @@ class obs_generator(object):
             obs.data['llvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['llsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['llsigma']))))
             obs.data['rlvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['rlsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['rlsigma']))))
             obs.data['lrvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['lrsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['lrsigma']))))
+
+        # flag sites that exceeded the maximum windspeed threshold
+        obs = obs.flag_sites(flagsites)
 
         # restore Stokes polrep
         obs = obs.switch_polrep(polrep_out='stokes')
@@ -926,6 +963,27 @@ def get_unready_sites(sites_in_observ,tech_readiness):
     index = np.random.choice([0, 1], size=(len(sites_in_observ)), p=[p,1-p]).astype(bool)
     sites_to_drop = sites_in_observ[index]
     return sites_to_drop
+
+
+def windspeed_SEFD_modification(windspeed,windspeed_degradation=const.windspeed_degradation,
+                                windspeed_shutdown=const.windspeed_shutdown):
+    """
+    Function to convert a windspeed to an effective SEFD scaling factor.
+    
+    Args:
+      windspeed (float): windspeed value, in m/s
+      windspeed_degradation (float): windspeed value at which to start substantially degrading performance
+      windspeed_shutdown (float): windspeed value at which a site must be shut down
+            
+    Returns:
+      (float): factor by which to scale the SEFD
+    """
+
+    centerpoint = 0.5*(windspeed_degradation + windspeed_shutdown)
+    rate = (windspeed_shutdown - windspeed_degradation) / 10.0
+    scale_factor = 1.0 - (1.0 / (1.0 + np.exp(-(windspeed - centerpoint)/rate)))
+
+    return 1.0/scale_factor
 
 
 def fringegroups(obsgen,obs,snr_ref,tint_ref,return_index=False):
