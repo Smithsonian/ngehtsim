@@ -116,9 +116,11 @@ class obs_generator(object):
     # set random number seed
     def set_seed(self):
         if self.settings['random_seed'] is None:
-            np.random.seed(int(time.time()))
+            self.seed = int(time.time())
+            np.random.seed(self.seed)
         else:
-            np.random.seed(self.settings['random_seed'])
+            self.seed = self.settings['random_seed']
+            np.random.seed(self.seed)
 
     # generate the site list
     def get_sites(self):
@@ -1104,6 +1106,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
     new_settings['frequency'] = freq_ref
     new_settings['bandwidth'] = obsgen.settings['bandwidth'] * (freq_ref/float(obsgen.settings['frequency']))
     new_settings['SNR_cutoff'] = ['fringegroups', [snr_ref, tint_ref]]
+    new_settings['random_seed'] = obsgen.seed
     if ((model_ref is None) | isinstance(model_ref,str)):
         new_settings['model_file'] = model_ref
     obsgen_ref = obs_generator(new_settings)
