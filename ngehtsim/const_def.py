@@ -37,6 +37,8 @@ default_settings = {'model_file': None,
                     'tech_readiness': 1.0,
                     'weather': 'random',
                     'weather_freq': None,
+                    'weather_year': 2015,
+                    'weather_day': 15,
                     'ttype': 'fast',
                     'fft_pad_factor': 2,
                     'random_seed': None}

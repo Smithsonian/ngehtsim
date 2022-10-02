@@ -223,8 +223,8 @@ class obs_generator(object):
                 self.randday = np.random.randint(1,32)
         else:
             # use the specified date
-            self.randyear = int(self.settings['year'])
-            self.randday = int(self.settings['day'])
+            self.randyear = int(self.settings['weather_year'])
+            self.randday = int(self.settings['weather_day'])
 
         # read in the weather info and store it
         for isite, site in enumerate(self.sites):
@@ -1101,7 +1101,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
       (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the thresholded observation
     """
 
-    # create dummy obsgen object
+    # determine settings for dummy obsgen object
     new_settings = copy.deepcopy(obsgen.settings)
     new_settings['frequency'] = freq_ref
     new_settings['bandwidth'] = obsgen.settings['bandwidth'] * (freq_ref/float(obsgen.settings['frequency']))
@@ -1109,6 +1109,12 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
     new_settings['random_seed'] = obsgen.seed
     if ((model_ref is None) | isinstance(model_ref,str)):
         new_settings['model_file'] = model_ref
+    if ((obsgen.weather == 'random') | (obsgen.weather == 'exact')):
+        new_settings['weather'] = 'exact'
+        new_settings['weather_year'] = str(obsgen.randyear)
+        new_settings['weather_day'] = str(obsgen.randday)
+
+    # create dummy obsgen object
     obsgen_ref = obs_generator(new_settings)
     if ((model_ref is not None) & (not isinstance(model_ref,str))):
         obsgen_ref.im = model_ref
