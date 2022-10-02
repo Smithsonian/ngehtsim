@@ -116,7 +116,7 @@ class obs_generator(object):
     # set random number seed
     def set_seed(self):
         if self.settings['random_seed'] is None:
-            self.seed = int(time.time())
+            self.seed = int((time.time() % 100000) * 1000)
             np.random.seed(self.seed)
         else:
             self.seed = self.settings['random_seed']
