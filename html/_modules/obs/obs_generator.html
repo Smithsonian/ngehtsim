@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.93.g1469378 documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.97.g7c8ff32 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.93.g1469378
+                0+untagged.97.g7c8ff32
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -186,9 +186,11 @@
     <span class="c1"># set random number seed</span>
     <span class="k">def</span> <span class="nf">set_seed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;random_seed&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">%</span> <span class="mi">100000</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;random_seed&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;random_seed&#39;</span><span class="p">]</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
 
     <span class="c1"># generate the site list</span>
     <span class="k">def</span> <span class="nf">get_sites</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -272,6 +274,7 @@
         <span class="n">tau_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
         <span class="n">Tatm_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
         <span class="n">Tb_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="n">windspeed_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
 
         <span class="c1"># extract month number</span>
         <span class="n">monthnums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;01&#39;</span><span class="p">,</span><span class="s1">&#39;02&#39;</span><span class="p">,</span><span class="s1">&#39;03&#39;</span><span class="p">,</span><span class="s1">&#39;04&#39;</span><span class="p">,</span><span class="s1">&#39;05&#39;</span><span class="p">,</span><span class="s1">&#39;06&#39;</span><span class="p">,</span><span class="s1">&#39;07&#39;</span><span class="p">,</span><span class="s1">&#39;08&#39;</span><span class="p">,</span><span class="s1">&#39;09&#39;</span><span class="p">,</span><span class="s1">&#39;10&#39;</span><span class="p">,</span><span class="s1">&#39;11&#39;</span><span class="p">,</span><span class="s1">&#39;12&#39;</span><span class="p">])</span>
@@ -290,8 +293,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">32</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># use the specified date</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">randyear</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;day&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">randyear</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_year&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">randday</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;weather_day&#39;</span><span class="p">])</span>
 
         <span class="c1"># read in the weather info and store it</span>
         <span class="k">for</span> <span class="n">isite</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">):</span>
@@ -300,13 +303,15 @@
             <span class="n">pathhere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_to_weather</span>
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
             <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-            <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_SEFD_info_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
+            <span class="n">weather_file</span> <span class="o">=</span> <span class="n">pathhere</span> <span class="o">+</span> <span class="s1">&#39;mean_SEFD_info_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
+            <span class="n">wind_file</span> <span class="o">=</span> <span class="n">pathhere</span> <span class="o">+</span> <span class="s1">&#39;mean_wind_speed.csv&#39;</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reading weather from &#39;</span><span class="o">+</span><span class="n">pathhere</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reading weather from &#39;</span><span class="o">+</span><span class="n">weather_file</span><span class="p">)</span>
             
-            <span class="c1"># read in the table</span>
-            <span class="n">year</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="c1"># read in the tables</span>
+            <span class="n">year_ws</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">day_ws</span><span class="p">,</span> <span class="n">ws</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">wind_file</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="n">year</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">weather_file</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
 
             <span class="c1"># start a count of how many times it breaks</span>
             <span class="n">broken</span> <span class="o">=</span> <span class="mi">0</span>
@@ -327,15 +332,33 @@
                         <span class="k">return</span> <span class="kc">None</span>
                 <span class="n">tau_here</span> <span class="o">=</span> <span class="n">tau</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">Tb</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="c1"># do the same for windspeed</span>
+                <span class="n">index_ws</span> <span class="o">=</span> <span class="p">((</span><span class="n">year_ws</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">day_ws</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">randday</span><span class="p">))</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index_ws</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="n">broken</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Windspeed tabulation broke for the &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">broken</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; time!&#39;</span><span class="p">)</span>
+                    <span class="c1"># if it breaks 10 times, toss an error</span>
+                    <span class="k">if</span> <span class="n">broken</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No windspeed on file for the selected date!  Date is &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">randday</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;, &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Retabulating windspeed...&#39;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">tabulate_weather</span><span class="p">()</span>
+                        <span class="k">return</span> <span class="kc">None</span>
+                <span class="n">ws_here</span> <span class="o">=</span> <span class="n">ws</span><span class="p">[</span><span class="n">index_ws</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;typical&#39;</span><span class="p">):</span>
                 <span class="n">tau_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">tau</span><span class="p">)</span>
                 <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">Tb</span><span class="p">)</span>
+                <span class="n">ws_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
             <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
                 <span class="n">tau_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
                 <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tb</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
+                <span class="n">ws_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
             <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;poor&#39;</span><span class="p">):</span>
                 <span class="n">tau_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tau</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
                 <span class="n">Tb_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tb</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
+                <span class="n">ws_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
 
             <span class="c1"># divide out the opacity term to get the actual atmospheric temperature</span>
             <span class="n">Tatm</span> <span class="o">=</span> <span class="p">(</span><span class="n">Tb_here</span> <span class="o">-</span> <span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">T_CMB_AM</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau_here</span><span class="p">)))</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau_here</span><span class="p">))</span>
@@ -344,11 +367,13 @@
             <span class="n">tau_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="n">tau_here</span>
             <span class="n">Tatm_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tatm</span>
             <span class="n">Tb_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tb_here</span>
+            <span class="n">windspeed_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="n">ws_here</span>
 
         <span class="c1"># store the dictionaries</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tau_dict</span> <span class="o">=</span> <span class="n">tau_dict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Tatm_dict</span> <span class="o">=</span> <span class="n">Tatm_dict</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Tb_dict</span> <span class="o">=</span> <span class="n">Tb_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">windspeed_dict</span> <span class="o">=</span> <span class="n">windspeed_dict</span>
 
     <span class="c1"># generate dictionaries of telescope properties</span>
     <span class="k">def</span> <span class="nf">telescope_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">surf_rms_new</span><span class="p">):</span>
@@ -512,11 +537,17 @@
             <span class="n">gainphase2L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">el2</span><span class="p">)</span>
         
         <span class="c1"># loop through the sites in the array</span>
+        <span class="n">flagsites</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">isite</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">sites_obs</span><span class="p">):</span>
 
-            <span class="c1"># zenith opacity and atmospheric temperature</span>
+            <span class="c1"># zenith opacity, atmospheric temperature, and windspeed</span>
             <span class="n">tau_z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
             <span class="n">Tatm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Tatm_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">windspeed_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+
+            <span class="c1"># if the windspeed exceeds the shutdown threshold, mark the site as to be flagged</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ws</span> <span class="o">&gt;</span> <span class="n">const</span><span class="o">.</span><span class="n">windspeed_shutdown</span><span class="p">):</span>
+                <span class="n">flagsites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">site</span><span class="p">)</span>
 
             <span class="c1"># indices for this site</span>
             <span class="n">ind1</span> <span class="o">=</span> <span class="p">(</span><span class="n">t1</span> <span class="o">==</span> <span class="n">site</span><span class="p">)</span>
@@ -537,6 +568,11 @@
             <span class="c1"># determine SEFDs</span>
             <span class="n">SEFD1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="n">Tsys1</span><span class="p">[</span><span class="n">ind1</span><span class="p">])</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
             <span class="n">SEFD2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="n">Tsys2</span><span class="p">[</span><span class="n">ind2</span><span class="p">])</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="c1"># modify SEFDs to account for wind</span>
+            <span class="n">SEFD_factor</span> <span class="o">=</span> <span class="n">windspeed_SEFD_modification</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span>
+            <span class="n">SEFD1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">*=</span> <span class="n">SEFD_factor</span>
+            <span class="n">SEFD2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">*=</span> <span class="n">SEFD_factor</span>
 
             <span class="c1"># generate gains</span>
             <span class="k">if</span> <span class="n">addgains</span><span class="p">:</span>
@@ -610,6 +646,9 @@
             <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llvis&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">sigma</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llsigma&#39;</span><span class="p">]))</span> <span class="o">+</span> <span class="p">((</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llsigma&#39;</span><span class="p">]))))</span>
             <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlvis&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">sigma</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlsigma&#39;</span><span class="p">]))</span> <span class="o">+</span> <span class="p">((</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlsigma&#39;</span><span class="p">]))))</span>
             <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrvis&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">sigma</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrsigma&#39;</span><span class="p">]))</span> <span class="o">+</span> <span class="p">((</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrsigma&#39;</span><span class="p">]))))</span>
+
+        <span class="c1"># flag sites that exceeded the maximum windspeed threshold</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">flag_sites</span><span class="p">(</span><span class="n">flagsites</span><span class="p">)</span>
 
         <span class="c1"># restore Stokes polrep</span>
         <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">switch_polrep</span><span class="p">(</span><span class="n">polrep_out</span><span class="o">=</span><span class="s1">&#39;stokes&#39;</span><span class="p">)</span>
@@ -998,6 +1037,27 @@
     <span class="k">return</span> <span class="n">sites_to_drop</span></div>
 
 
+<div class="viewcode-block" id="windspeed_SEFD_modification"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.windspeed_SEFD_modification">[docs]</a><span class="k">def</span> <span class="nf">windspeed_SEFD_modification</span><span class="p">(</span><span class="n">windspeed</span><span class="p">,</span><span class="n">windspeed_degradation</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">windspeed_degradation</span><span class="p">,</span>
+                                <span class="n">windspeed_shutdown</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">windspeed_shutdown</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to convert a windspeed to an effective SEFD scaling factor.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      windspeed (float): windspeed value, in m/s</span>
+<span class="sd">      windspeed_degradation (float): windspeed value at which to start substantially degrading performance</span>
+<span class="sd">      windspeed_shutdown (float): windspeed value at which a site must be shut down</span>
+<span class="sd">            </span>
+<span class="sd">    Returns:</span>
+<span class="sd">      (float): factor by which to scale the SEFD</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">centerpoint</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">windspeed_degradation</span> <span class="o">+</span> <span class="n">windspeed_shutdown</span><span class="p">)</span>
+    <span class="n">rate</span> <span class="o">=</span> <span class="p">(</span><span class="n">windspeed_shutdown</span> <span class="o">-</span> <span class="n">windspeed_degradation</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+    <span class="n">scale_factor</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">windspeed</span> <span class="o">-</span> <span class="n">centerpoint</span><span class="p">)</span><span class="o">/</span><span class="n">rate</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">scale_factor</span></div>
+
+
 <div class="viewcode-block" id="fringegroups"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.fringegroups">[docs]</a><span class="k">def</span> <span class="nf">fringegroups</span><span class="p">(</span><span class="n">obsgen</span><span class="p">,</span><span class="n">obs</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">return_index</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to apply the &quot;fringegroups&quot; SNR thresholding scheme to an observation.</span>
@@ -1111,13 +1171,20 @@
 <span class="sd">      (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the thresholded observation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># create dummy obsgen object</span>
+    <span class="c1"># determine settings for dummy obsgen object</span>
     <span class="n">new_settings</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">)</span>
     <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">freq_ref</span>
     <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">freq_ref</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;frequency&#39;</span><span class="p">]))</span>
     <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;SNR_cutoff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fringegroups&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">snr_ref</span><span class="p">,</span> <span class="n">tint_ref</span><span class="p">]]</span>
+    <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;random_seed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">seed</span>
     <span class="k">if</span> <span class="p">((</span><span class="n">model_ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_ref</span><span class="p">,</span><span class="nb">str</span><span class="p">)):</span>
         <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;model_file&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_ref</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">obsgen</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">weather</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">)):</span>
+        <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;weather&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;exact&#39;</span>
+        <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;weather_year&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
+        <span class="n">new_settings</span><span class="p">[</span><span class="s1">&#39;weather_day&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">)</span>
+
+    <span class="c1"># create dummy obsgen object</span>
     <span class="n">obsgen_ref</span> <span class="o">=</span> <span class="n">obs_generator</span><span class="p">(</span><span class="n">new_settings</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">((</span><span class="n">model_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_ref</span><span class="p">,</span><span class="nb">str</span><span class="p">))):</span>
         <span class="n">obsgen_ref</span><span class="o">.</span><span class="n">im</span> <span class="o">=</span> <span class="n">model_ref</span>
