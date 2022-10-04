@@ -1113,9 +1113,14 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
         new_settings['weather'] = 'exact'
         new_settings['weather_year'] = str(obsgen.randyear)
         new_settings['weather_day'] = str(obsgen.randday)
+    new_D_override_dict = obsgen.D_override_dict
+    new_surf_rms_override_dict = obsgen.surf_rms_override_dict
+    new_receiver_override_dict = obsgen.receiver_override_dict
 
     # create dummy obsgen object
-    obsgen_ref = obs_generator(new_settings)
+    obsgen_ref = obs_generator(new_settings,D_override_dict=new_D_override_dict,
+                               receiver_override_dict=new_receiver_override_dict,
+                               surf_rms_override_dict=new_surf_rms_override_dict)
     if ((model_ref is not None) & (not isinstance(model_ref,str))):
         obsgen_ref.im = model_ref
 
