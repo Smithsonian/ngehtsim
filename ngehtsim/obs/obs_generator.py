@@ -343,7 +343,7 @@ class obs_generator(object):
             print('************** Scan start times: {0}'.format(self.t_seg_times))
 
     # generate a raw observation
-    def observe(self,input_model,obsfreq,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None):
+    def observe(self,input_model,obsfreq,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None,flagwind=True):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
@@ -356,6 +356,7 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
+          flagwind (bool): flag for whether to derate sites with high wind
         
         Returns:
           (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation
@@ -477,7 +478,8 @@ class obs_generator(object):
 
             # if the windspeed exceeds the shutdown threshold, mark the site as to be flagged
             if (ws > const.windspeed_shutdown):
-                flagsites.append(site)
+                if flagwind:
+                    flagsites.append(site)
 
             # indices for this site
             ind1 = (t1 == site)
@@ -592,7 +594,7 @@ class obs_generator(object):
             return obs
 
     # generate observation
-    def make_obs(self,input_model=None,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None):
+    def make_obs(self,input_model=None,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None,flagwind=True):
         """
         Generate an observation (possibly multi-band) that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
@@ -605,6 +607,7 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
+          flagwind (bool): flag for whether to derate sites with high wind
 
         Returns:
           (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation
@@ -630,9 +633,9 @@ class obs_generator(object):
 
             # generate raw observation for this band
             if return_SEFDs:
-                obs_seg, SEFD1, SEFD2 = self.observe(input_model,adjusted_frequency,return_SEFDs=True,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p)
+                obs_seg, SEFD1, SEFD2 = self.observe(input_model,adjusted_frequency,return_SEFDs=True,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
             else:
-                obs_seg = self.observe(input_model,adjusted_frequency,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p)
+                obs_seg = self.observe(input_model,adjusted_frequency,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
 
             # apply naive SNR thresholding
             if (snr_algo == 'naive'):
@@ -656,7 +659,7 @@ class obs_generator(object):
                 freq_ref = snr_args[2]
                 model_path_ref = snr_args[3]
 
-                obs_seg = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p)
+                obs_seg = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
 
             # unrecognized SNR thresholding scheme
             else:
