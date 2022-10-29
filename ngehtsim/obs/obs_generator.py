@@ -679,7 +679,9 @@ class obs_generator(object):
             if self.weather_freq not in recs_here:
                 sites_to_remove.append(site)
         if len(sites_to_remove) > 0:
-            obs = obs.flag_sites(sites_to_remove,output='kept')
+            siteshere = np.unique(np.concatenate((obs.data['t1'],obs.data['t2'])))
+            if (len(siteshere) != 0):
+                obs = obs.flag_sites(sites_to_remove,output='kept')
 
         # drop any sites randomly deemed to be technically unready
         sites_in_obs = obs.tarr['site']
