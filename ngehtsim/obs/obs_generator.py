@@ -65,6 +65,11 @@ class obs_generator(object):
         # update the settings with any additional passed information
         self.settings.update(settings)
 
+        # remove array name if sites are specified
+        if (self.settings['sites'] is not None):
+            if (len(self.settings['sites']) > 0):
+                self.settings['array'] = None
+
         # set absolute path to weather
         self.path_to_weather = os.path.abspath(const.path_to_weather)
 
