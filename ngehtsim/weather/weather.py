@@ -52,9 +52,9 @@ def pressure(site, form='mean', month='Apr', day=15, year=2015):
     elif (form == 'median'):
         P = np.median(Pbase)
     elif (form == 'good'):
-        P = np.percentil(Pbase,15.87)
+        P = np.percentile(Pbase,15.87)
     elif (form == 'bad'):
-        P = np.percentil(Pbase,84.13)
+        P = np.percentile(Pbase,84.13)
     elif (form == 'exact'):
         index = ((yeardum == int(year)) & (daydum == int(day)))
         if (np.array(index).sum() == 0):
@@ -108,9 +108,9 @@ def temperature(site, form='mean', month='Apr', day=15, year=2015):
     elif (form == 'median'):
         T = np.median(Tbase)
     elif (form == 'good'):
-        T = np.percentil(Tbase,15.87)
+        T = np.percentile(Tbase,15.87)
     elif (form == 'bad'):
-        T = np.percentil(Tbase,84.13)
+        T = np.percentile(Tbase,84.13)
     elif (form == 'exact'):
         index = ((yeardum == int(year)) & (daydum == int(day)))
         if (np.array(index).sum() == 0):
@@ -164,9 +164,9 @@ def PWV(site, form='mean', month='Apr', day=15, year=2015):
     elif (form == 'median'):
         pwv = np.median(PWVhere)
     elif (form == 'good'):
-        pwv = np.percentil(PWVhere,15.87)
+        pwv = np.percentile(PWVhere,15.87)
     elif (form == 'bad'):
-        pwv = np.percentil(PWVhere,84.13)
+        pwv = np.percentile(PWVhere,84.13)
     elif (form == 'exact'):
         index = ((yeardum == int(year)) & (daydum == int(day)))
         if (np.array(index).sum() == 0):
@@ -220,9 +220,9 @@ def windspeed(site, form='mean', month='Apr', day=15, year=2015):
     elif (form == 'median'):
         WS = np.median(WSbase)
     elif (form == 'good'):
-        WS = np.percentil(WSbase,15.87)
+        WS = np.percentile(WSbase,15.87)
     elif (form == 'bad'):
-        WS = np.percentil(WSbase,84.13)
+        WS = np.percentile(WSbase,84.13)
     elif (form == 'exact'):
         index = ((yeardum == int(year)) & (daydum == int(day)))
         if (np.array(index).sum() == 0):
@@ -276,9 +276,9 @@ def relative_humidity(site, form='mean', month='Apr', day=15, year=2015):
     elif (form == 'median'):
         rh = np.median(RH)
     elif (form == 'good'):
-        rh = np.percentil(RH,15.87)
+        rh = np.percentile(RH,15.87)
     elif (form == 'bad'):
-        rh = np.percentil(RH,84.13)
+        rh = np.percentile(RH,84.13)
     elif (form == 'exact'):
         index = ((yeardum == int(year)) & (daydum == int(day)))
         if (np.array(index).sum() == 0):
