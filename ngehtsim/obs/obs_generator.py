@@ -165,7 +165,8 @@ class obs_generator(object):
                 self.sites[isite] = copy.deepcopy(const.translation_dict[site])
             else:
                 if site not in ng.Station.get_list():
-                    raise Exception(site+' is not a known station.')
+                    if site != 'space':
+                        raise Exception(site+' is not a known station.')
 
     # determine the weather frequency to use
     def set_weather_freq(self):
@@ -234,75 +235,87 @@ class obs_generator(object):
         # read in the weather info and store it
         for isite, site in enumerate(self.sites):
 
-            # determine which table to read
-            pathhere = self.path_to_weather
-            pathhere += site + '/'
-            pathhere += monthnum + self.settings['month'] + '/'
-            weather_file = pathhere + 'mean_SEFD_info_' + self.weather_freq + '.csv'
-            wind_file = pathhere + 'mean_wind_speed.csv'
+            if site != 'space':
 
-            if self.verbosity > 1:
-                print('Reading weather from '+weather_file)
-            
-            # read in the tables
-            year_ws, monthdum, day_ws, ws = np.loadtxt(wind_file,skiprows=6,unpack=True,delimiter=',')
-            year, monthdum, day, tau, Tb = np.loadtxt(weather_file,skiprows=7,unpack=True,delimiter=',')
+                # determine which table to read
+                pathhere = self.path_to_weather
+                pathhere += site + '/'
+                pathhere += monthnum + self.settings['month'] + '/'
+                weather_file = pathhere + 'mean_SEFD_info_' + self.weather_freq + '.csv'
+                wind_file = pathhere + 'mean_wind_speed.csv'
 
-            # start a count of how many times it breaks
-            broken = 0
+                if self.verbosity > 1:
+                    print('Reading weather from '+weather_file)
+                
+                # read in the tables
+                year_ws, monthdum, day_ws, ws = np.loadtxt(wind_file,skiprows=6,unpack=True,delimiter=',')
+                year, monthdum, day, tau, Tb = np.loadtxt(weather_file,skiprows=7,unpack=True,delimiter=',')
 
-            if ((self.weather == 'random') | (self.weather == 'exact')):
-                # pull out the info for the selected date
-                index = ((year == self.randyear) & (day == self.randday))
-                if (np.array(index).sum() == 0):
-                    broken += 1
-                    if self.verbosity > 1:
-                        print('Weather tabulation broke for the '+ str(broken) + ' time!')
-                    # if it breaks 10 times, toss an error
-                    if broken >= 10:
-                        raise Exception('No weather on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
-                    else:
-                        print('Retabulating weather...')
-                        self.tabulate_weather()
-                        return None
-                tau_here = tau[index][0]
-                Tb_here = Tb[index][0]
+                # start a count of how many times it breaks
+                broken = 0
 
-                # do the same for windspeed
-                index_ws = ((year_ws == self.randyear) & (day_ws == self.randday))
-                if (np.array(index_ws).sum() == 0):
-                    broken += 1
-                    if self.verbosity > 1:
-                        print('Windspeed tabulation broke for the '+ str(broken) + ' time!')
-                    # if it breaks 10 times, toss an error
-                    if broken >= 10:
-                        raise Exception('No windspeed on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
-                    else:
-                        print('Retabulating windspeed...')
-                        self.tabulate_weather()
-                        return None
-                ws_here = ws[index_ws][0]
-            elif (self.weather == 'typical'):
-                tau_here = np.median(tau)
-                Tb_here = np.median(Tb)
-                ws_here = np.median(ws)
-            elif (self.weather == 'good'):
-                tau_here = np.percentile(tau,15.87)
-                Tb_here = np.percentile(Tb,15.87)
-                ws_here = np.percentile(ws,15.87)
-            elif (self.weather == 'poor'):
-                tau_here = np.percentile(tau,84.13)
-                Tb_here = np.percentile(Tb,84.13)
-                ws_here = np.percentile(ws,84.13)
+                if ((self.weather == 'random') | (self.weather == 'exact')):
+                    # pull out the info for the selected date
+                    index = ((year == self.randyear) & (day == self.randday))
+                    if (np.array(index).sum() == 0):
+                        broken += 1
+                        if self.verbosity > 1:
+                            print('Weather tabulation broke for the '+ str(broken) + ' time!')
+                        # if it breaks 10 times, toss an error
+                        if broken >= 10:
+                            raise Exception('No weather on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
+                        else:
+                            print('Retabulating weather...')
+                            self.tabulate_weather()
+                            return None
+                    tau_here = tau[index][0]
+                    Tb_here = Tb[index][0]
 
-            # divide out the opacity term to get the actual atmospheric temperature
-            Tatm = (Tb_here - (const.T_CMB_AM*np.exp(-tau_here))) / (1.0 - np.exp(-tau_here))
+                    # do the same for windspeed
+                    index_ws = ((year_ws == self.randyear) & (day_ws == self.randday))
+                    if (np.array(index_ws).sum() == 0):
+                        broken += 1
+                        if self.verbosity > 1:
+                            print('Windspeed tabulation broke for the '+ str(broken) + ' time!')
+                        # if it breaks 10 times, toss an error
+                        if broken >= 10:
+                            raise Exception('No windspeed on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
+                        else:
+                            print('Retabulating windspeed...')
+                            self.tabulate_weather()
+                            return None
+                    ws_here = ws[index_ws][0]
+                elif (self.weather == 'typical'):
+                    tau_here = np.median(tau)
+                    Tb_here = np.median(Tb)
+                    ws_here = np.median(ws)
+                elif (self.weather == 'good'):
+                    tau_here = np.percentile(tau,15.87)
+                    Tb_here = np.percentile(Tb,15.87)
+                    ws_here = np.percentile(ws,15.87)
+                elif (self.weather == 'poor'):
+                    tau_here = np.percentile(tau,84.13)
+                    Tb_here = np.percentile(Tb,84.13)
+                    ws_here = np.percentile(ws,84.13)
 
-            # store the info in the dictionaries
-            tau_dict[site] = tau_here
-            Tatm_dict[site] = Tatm
-            Tb_dict[site] = Tb_here
-            windspeed_dict[site] = ws_here
+                # divide out the opacity term to get the actual atmospheric temperature
+                Tatm = (Tb_here - (const.T_CMB_AM*np.exp(-tau_here))) / (1.0 - np.exp(-tau_here))
+
+                # store the info in the dictionaries
+                tau_dict[site] = tau_here
+                Tatm_dict[site] = Tatm
+                Tb_dict[site] = Tb_here
+                windspeed_dict[site] = ws_here
+
+            else:
+
+                if self.verbosity > 1:
+                    print('For space dish, assuming perfect weather!')
+
+                tau_dict[site] = 0.0
+                Tatm_dict[site] = 0.0
+                Tb_dict[site] = const.T_CMB
+                windspeed_dict[site] = 0.0
 
         # store the dictionaries
         self.tau_dict = tau_dict
@@ -491,12 +504,20 @@ class obs_generator(object):
             ind2 = (t2 == site)
 
             # get opacities at each timestamp
-            tau1[ind1] = tau_z / np.cos((np.pi/2.0) - el1[ind1])
-            tau2[ind2] = tau_z / np.cos((np.pi/2.0) - el2[ind2])
+            if site != 'space':
+                tau1[ind1] = tau_z / np.cos((np.pi/2.0) - el1[ind1])
+                tau2[ind2] = tau_z / np.cos((np.pi/2.0) - el2[ind2])
+            else:
+                tau1[ind1] = 0.0
+                tau2[ind2] = 0.0
 
             # get Tb contributions at each timestamp
-            Tb1[ind1] = (const.T_CMB*np.exp(-tau1[ind1])) + (Tatm*(1.0 - np.exp(-tau1[ind1])))
-            Tb2[ind2] = (const.T_CMB*np.exp(-tau2[ind2])) + (Tatm*(1.0 - np.exp(-tau2[ind2])))
+            if site != 'space':
+                Tb1[ind1] = (const.T_CMB*np.exp(-tau1[ind1])) + (Tatm*(1.0 - np.exp(-tau1[ind1])))
+                Tb2[ind2] = (const.T_CMB*np.exp(-tau2[ind2])) + (Tatm*(1.0 - np.exp(-tau2[ind2])))
+            else:
+                Tb1[ind1] = const.T_CMB
+                Tb2[ind2] = const.T_CMB
 
             # determine system temperatures
             Tsys1[ind1] = self.T_R + Tb1[ind1]
@@ -845,7 +866,7 @@ def determine_mjd(day,month,year):
     return t.mjd
 
 
-def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0):
+def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephemdir='ephemeris'):
     """
     Create ngehtutil and ehtim array objects from a list of sites.
     
@@ -860,21 +881,71 @@ def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0):
       (ngehtutil.array), (ehtim.array.Array): An ngehtutil array object and an ehtim array object
     """
 
-    stations = list()
-    for site in sitelist:
-        stationhere = ng.Station.from_name(site)
-        if stationhere.name in list(D_override_dict.keys()):
-            stationhere.dishes = [ng.station.Dish(diameter=D_override_dict[stationhere.name])]
+    if 'space' not in sitelist:
+        
+        stations = list()
+        for site in sitelist:
+            stationhere = ng.Station.from_name(site)
+            if stationhere.name in list(D_override_dict.keys()):
+                stationhere.dishes = [ng.station.Dish(diameter=D_override_dict[stationhere.name])]
+            else:
+                if (stationhere.existing_dish == False):
+                    stationhere.dishes = [ng.station.Dish(diameter=D_new)]
+            stations.append(stationhere)
+
+        if array_name is not None:
+            array = ng.Array(array_name,stations)
         else:
-            if (stationhere.existing_dish == False):
-                stationhere.dishes = [ng.station.Dish(diameter=D_new)]
+            array = ng.Array('nameless array',stations)
+        arr = array.to_ehtim_array(freq)
+
+    else:
+
+        # first add the non-space dishes
+        stations = list()
+        for site in sitelist:
+            if site != 'space':
+                stationhere = ng.Station.from_name(site)
+                if stationhere.name in list(D_override_dict.keys()):
+                    stationhere.dishes = [ng.station.Dish(diameter=D_override_dict[stationhere.name])]
+                else:
+                    if (stationhere.existing_dish == False):
+                        stationhere.dishes = [ng.station.Dish(diameter=D_new)]
+                stations.append(stationhere)
+
+        if array_name is not None:
+            array = ng.Array(array_name,stations)
+        else:
+            array = ng.Array('nameless array',stations)
+        arr = array.to_ehtim_array(freq)
+
+        # add the space dish
+        stationhere = ng.Station('space')
+        stationhere.dishes = [ng.station.Dish(diameter=D_new)]
         stations.append(stationhere)
 
-    if array_name is not None:
-        array = ng.Array(array_name,stations)
-    else:
-        array = ng.Array('nameless array',stations)
-    arr = array.to_ehtim_array(freq)
+        # now add the space dish
+        space_entry = ('space', 0., 0., 0., 10000., 10000., 0.+0.j, 0.+0.j, 0., 0., 0.)
+        arr_templist = list()
+        for i in range(len(arr.tarr)):
+            arr_templist.append(arr.tarr[i])
+        arr_templist.append(space_entry)
+        arr.tarr = np.array(arr_templist,dtype=eh.const_def.DTARR)
+        arr.tkey['space'] = len(sitelist)-1
+
+        # load the ephemeris
+        edata = {}
+        sitename = 'space'
+        ephempath = ephemdir + '/' + sitename
+        try:
+            edata[sitename] = np.loadtxt(ephempath, dtype=bytes,
+                                         comments='#', delimiter='/').astype(str)
+            print('loaded spacecraft ephemeris %s' % ephempath)
+        except IOError:
+            raise Exception('no ephemeris file %s !' % ephempath)
+
+        # add the ephemeris to the array object
+        arr.ephem = edata
 
     return array, arr
 
