@@ -41,7 +41,8 @@ class obs_generator(object):
 
     # initialize class instantiation
     def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={},
-                 surf_rms_override_dict={}, receiver_override_dict={}, array_name=None):
+                 surf_rms_override_dict={}, receiver_override_dict={}, array_name=None,
+                 ephem='ephemeris/space'):
 
         self.settings_file = settings_file
         self.verbosity = verbose
@@ -102,7 +103,7 @@ class obs_generator(object):
         self.set_TR()
         self.set_coords()
         self.mjd = determine_mjd(self.settings['day'],self.settings['month'],self.settings['year'])
-        self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9))
+        self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9),ephem=ephem)
         self.receiver_setup = set_receivers(self.sites,receiver_override_dict=self.receiver_override_dict)
         self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
         self.tabulate_weather()
@@ -866,7 +867,7 @@ def determine_mjd(day,month,year):
     return t.mjd
 
 
-def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephemdir='ephemeris'):
+def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephem='ephemeris/space'):
     """
     Create ngehtutil and ehtim array objects from a list of sites.
     
@@ -876,6 +877,7 @@ def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephe
       D_override_dict (dict): A dictionary of station names and diameters to override the defaults
       array_name (str): Name to get assigned to the ngehtutil array object
       freq (float): Observing frequency, in GHz
+      ephem (string): path to the ephemeris for a space station
     
     Returns:
       (ngehtutil.array), (ehtim.array.Array): An ngehtutil array object and an ehtim array object
@@ -936,13 +938,12 @@ def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephe
         # load the ephemeris
         edata = {}
         sitename = 'space'
-        ephempath = ephemdir + '/' + sitename
         try:
-            edata[sitename] = np.loadtxt(ephempath, dtype=bytes,
+            edata[sitename] = np.loadtxt(ephem, dtype=bytes,
                                          comments='#', delimiter='/').astype(str)
-            print('loaded spacecraft ephemeris %s' % ephempath)
+            print('loaded spacecraft ephemeris %s' % ephem)
         except IOError:
-            raise Exception('no ephemeris file %s !' % ephempath)
+            raise Exception('no ephemeris file %s !' % ephem)
 
         # add the ephemeris to the array object
         arr.ephem = edata
