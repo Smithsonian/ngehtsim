@@ -923,7 +923,10 @@ def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephe
 
         # add the space dish
         stationhere = ng.Station('space')
-        stationhere.dishes = [ng.station.Dish(diameter=D_new)]
+        if stationhere.name in list(D_override_dict.keys()):
+            stationhere.dishes = [ng.station.Dish(diameter=D_override_dict[stationhere.name])]
+        else:
+            stationhere.dishes = [ng.station.Dish(diameter=D_new)]
         stations.append(stationhere)
 
         # now add the space dish
