@@ -9,7 +9,7 @@ model_file: './M87_230GHz_Chael.fits'
 source: 'M87'       # name of science target
 RA:                 # right ascension of science target, in J2000 hours
 DEC:                # declination of science target, in J2000 degrees
-frequency: 345      # observing frequency, in GHz
+frequency: 230      # observing frequency, in GHz
 bandwidth: 2.0      # fringe-finding bandwidth, in GHz
 nbands: 1           # number of bands
 rf_offset: 0.0      # rf offset, in GHz; should be larger than bandwidth for nbands > 1
@@ -45,4 +45,4 @@ sites:
 weather: 'random'               # way to select the weather ('random', 'exact', 'good', 'typical', or 'poor')
 ttype: 'fast'                   # type of Fourier transform ('direct', 'nfft', or 'fast')
 fft_pad_factor: 2               # zero pad the image to fft_pad_factor * image size in the FFT
-random_seed:                    # random number seed; if blank, will be auto-generated
+random_seed: 12345              # random number seed; if blank, will be auto-generated
