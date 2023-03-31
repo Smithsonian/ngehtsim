@@ -50,6 +50,7 @@ class obs_generator(object):
         self.surf_rms_override_dict = copy.deepcopy(surf_rms_override_dict)
         self.receiver_override_dict = copy.deepcopy(receiver_override_dict)
         self.array_name = array_name
+        self.ephem = ephem
 
         # start with some default settings
         self.settings = copy.deepcopy(const.default_settings)
@@ -103,7 +104,7 @@ class obs_generator(object):
         self.set_TR()
         self.set_coords()
         self.mjd = determine_mjd(self.settings['day'],self.settings['month'],self.settings['year'])
-        self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9),ephem=ephem)
+        self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9),ephem=self.ephem)
         self.receiver_setup = set_receivers(self.sites,receiver_override_dict=self.receiver_override_dict)
         self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
         self.tabulate_weather()
@@ -686,7 +687,7 @@ class obs_generator(object):
                 freq_ref = snr_args[2]
                 model_path_ref = snr_args[3]
 
-                obs_seg = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
+                obs_seg = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind,ephem=self.ephem)
 
             # unrecognized SNR thresholding scheme
             else:
@@ -1168,7 +1169,7 @@ def fringegroups(obsgen,obs,snr_ref,tint_ref,return_index=False):
         return obs
 
 
-def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,**kwargs):
+def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,ephem='ephemeris/space',**kwargs):
     """
     Function to apply the frequency phase transfer ("FPT") SNR thresholding scheme to an observation.
     This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibration pipeline.
@@ -1185,7 +1186,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
     Returns:
       (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the thresholded observation
     """
-
+    
     # determine settings for dummy obsgen object
     new_settings = copy.deepcopy(obsgen.settings)
     new_settings['frequency'] = freq_ref
@@ -1206,7 +1207,8 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
     # create dummy obsgen object
     obsgen_ref = obs_generator(new_settings,D_override_dict=new_D_override_dict,
                                receiver_override_dict=new_receiver_override_dict,
-                               surf_rms_override_dict=new_surf_rms_override_dict)
+                               surf_rms_override_dict=new_surf_rms_override_dict,
+                               ephem=ephem)
     if ((model_ref is not None) & (not isinstance(model_ref,str))):
         obsgen_ref.im = model_ref
 
