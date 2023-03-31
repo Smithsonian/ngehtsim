@@ -1189,7 +1189,8 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,*
     # determine settings for dummy obsgen object
     new_settings = copy.deepcopy(obsgen.settings)
     new_settings['frequency'] = freq_ref
-    new_settings['bandwidth'] = obsgen.settings['bandwidth'] * (freq_ref/float(obsgen.settings['frequency']))
+    # new_settings['bandwidth'] = obsgen.settings['bandwidth'] * (freq_ref/float(obsgen.settings['frequency']))
+    new_settings['bandwidth'] = obsgen.settings['bandwidth']
     new_settings['SNR_cutoff'] = ['fringegroups', [snr_ref, tint_ref]]
     new_settings['random_seed'] = obsgen.seed
     if ((model_ref is None) | isinstance(model_ref,str)):
