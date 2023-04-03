@@ -416,11 +416,11 @@ class obs_generator(object):
                                               elevmax = 90,
                                               fix_theta_GMST = False)             
 
-        # Apply elevation cuts to ground stations
+        # apply elevation cuts to ground stations
         els = self.obs_empty.unpack(['el1','el2'])
-        mask  = (self.obs_empty.data['t1'] == 'space') + (els['el1'] > const.el_min) * (els['el1'] < const.el_max) 
-        mask *= (self.obs_empty.data['t2'] == 'space') + (els['el2'] > const.el_min) * (els['el2'] < const.el_max)
-        self.obs_empty.data = self.obs_empty.data[mask]   
+        mask  = (self.obs_empty.data['t1'] == 'space') | ((els['el1'] > const.el_min) & (els['el1'] < const.el_max))
+        mask &= (self.obs_empty.data['t2'] == 'space') | ((els['el2'] > const.el_min) & (els['el2'] < const.el_max))
+        self.obs_empty.data = self.obs_empty.data[mask]
 
         # observe the source
         if isinstance(input_model, eh.image.Image):
