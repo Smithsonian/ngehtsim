@@ -396,8 +396,8 @@ class obs_generator(object):
                                               polrep = 'stokes',
                                               tau = 0.0,
                                               timetype = 'UTC',
-                                              elevmin = const.el_min,
-                                              elevmax = const.el_max,
+                                              elevmin = -90,
+                                              elevmax = 90,
                                               fix_theta_GMST = False)
         elif (self.obs_empty.rf != obsfreq):
             self.obs_empty = self.arr.obsdata(self.RA,
@@ -412,9 +412,15 @@ class obs_generator(object):
                                               polrep = 'stokes',
                                               tau = 0.0,
                                               timetype = 'UTC',
-                                              elevmin = const.el_min,
-                                              elevmax = const.el_max,
-                                              fix_theta_GMST = False)
+                                              elevmin = -90,
+                                              elevmax = 90,
+                                              fix_theta_GMST = False)             
+
+        # apply elevation cuts to ground stations
+        els = self.obs_empty.unpack(['el1','el2'])
+        mask  = (self.obs_empty.data['t1'] == 'space') | ((els['el1'] > const.el_min) & (els['el1'] < const.el_max))
+        mask &= (self.obs_empty.data['t2'] == 'space') | ((els['el2'] > const.el_min) & (els['el2'] < const.el_max))
+        self.obs_empty.data = self.obs_empty.data[mask]
 
         # observe the source
         if isinstance(input_model, eh.image.Image):
