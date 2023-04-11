@@ -19,8 +19,15 @@ receiver_override_dict = {'ALMA': ['345'],
                           'OVRO': ['86', '230'],
                           'SPT': ['230', '345']}
 
+# some sites can record higher bandwidths
+bandwidth_override_dict = {'HAY': {'86': 8.0, '230': 16.0},
+                           'OVRO': {'86': 8.0, '230': 16.0},
+                           'BAJA': {'86': 8.0, '230': 16.0, '345': 16.0},
+                           'CNI': {'86': 8.0, '230': 16.0, '345': 16.0},
+                           'LAS': {'86': 8.0, '230': 16.0, '345': 16.0}}
+
 # initialize the observation generator
-obsgen_fpt = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict)
+obsgen_fpt = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict,bandwidth_override_dict=bandwidth_override_dict)
 
 # generate the observation
 obs_fpt = obsgen_fpt.make_obs()
@@ -35,7 +42,7 @@ obs_fpt.save_uvfits('./example_datafile_with_fpt.uvfits')
 yamlfile = './settings_no_fpt.yaml'
 
 # initialize the observation generator
-obsgen = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict)
+obsgen = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict,bandwidth_override_dict=bandwidth_override_dict)
 
 # generate the observation
 obs = obsgen.make_obs()
