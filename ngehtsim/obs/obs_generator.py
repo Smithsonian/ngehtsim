@@ -33,22 +33,25 @@ class obs_generator(object):
                            Note that any settings specified by the settings keyword argument will override
                            the corresponding settings from the settings file.
       verbose (float): Set to >0 for more verbose output
-      D_override_dict (dict): A dictionary of station names and diameters to override internal defaults
-      surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override internal defaults
-      receiver_override_dict (dict): A dictionary of station names and available receivers to override internal defaults
+      D_override_dict (dict): A dictionary of station names and diameters to override defaults
+      surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override defaults
+      receiver_override_dict (dict): A dictionary of station names and available receivers to override defaults
+      bandwidth_override_dict (dict): A dictionary of station names and bandwidth values to override defaults
       array_name (str): Name to get assigned to the ngehtutil array object
+      ephem (str): path to the ephemeris for a space station
     """
 
     # initialize class instantiation
     def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={},
-                 surf_rms_override_dict={}, receiver_override_dict={}, array_name=None,
-                 ephem='ephemeris/space'):
+                 surf_rms_override_dict={}, receiver_override_dict={}, bandwidth_override_dict={},
+                 array_name=None, ephem='ephemeris/space'):
 
         self.settings_file = settings_file
         self.verbosity = verbose
         self.D_override_dict = copy.deepcopy(D_override_dict)
         self.surf_rms_override_dict = copy.deepcopy(surf_rms_override_dict)
         self.receiver_override_dict = copy.deepcopy(receiver_override_dict)
+        self.bandwidth_override_dict = copy.deepcopy(bandwidth_override_dict)
         self.array_name = array_name
         self.ephem = ephem
 
@@ -106,6 +109,7 @@ class obs_generator(object):
         self.mjd = determine_mjd(self.settings['day'],self.settings['month'],self.settings['year'])
         self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9),ephem=self.ephem)
         self.receiver_setup = set_receivers(self.sites,receiver_override_dict=self.receiver_override_dict)
+        self.bandwidth_setup, self.unique_bandwidths = set_bandwidths(self.sites,self.settings['bandwidth'],self.receiver_setup,bandwidth_override_dict=self.bandwidth_override_dict)
         self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
         self.tabulate_weather()
         self.telescope_properties(self.settings['surf_rms_new'])
@@ -383,7 +387,7 @@ class obs_generator(object):
         """
 
         # generate an empty obsdata object
-        if (self.obs_empty is None):
+        if ((self.obs_empty is None) or (self.obs_empty.rf != obsfreq)):
             self.obs_empty = self.arr.obsdata(self.RA,
                                               self.DEC,
                                               obsfreq,
@@ -399,22 +403,6 @@ class obs_generator(object):
                                               elevmin = -90,
                                               elevmax = 90,
                                               fix_theta_GMST = False)
-        elif (self.obs_empty.rf != obsfreq):
-            self.obs_empty = self.arr.obsdata(self.RA,
-                                              self.DEC,
-                                              obsfreq,
-                                              (1.0e9)*float(self.settings['bandwidth']),
-                                              self.settings['t_int'],
-                                              self.settings['t_rest'],
-                                              self.settings['t_start'],
-                                              self.settings['t_start'] + self.settings['dt'],
-                                              mjd = self.mjd,
-                                              polrep = 'stokes',
-                                              tau = 0.0,
-                                              timetype = 'UTC',
-                                              elevmin = -90,
-                                              elevmax = 90,
-                                              fix_theta_GMST = False)             
 
         # apply elevation cuts to ground stations
         els = self.obs_empty.unpack(['el1','el2'])
@@ -482,6 +470,8 @@ class obs_generator(object):
         Tsys2 = np.zeros_like(el2)
         SEFD1 = np.zeros_like(el1)
         SEFD2 = np.zeros_like(el2)
+        bw1 = np.zeros_like(el1)
+        bw2 = np.zeros_like(el2)
 
         if addgains:
             gainamp1R = np.zeros_like(el1)
@@ -540,6 +530,16 @@ class obs_generator(object):
             SEFD1[ind1] *= SEFD_factor
             SEFD2[ind2] *= SEFD_factor
 
+            # determine bandwidth
+            bw_setup = self.bandwidth_setup[site]
+            keyhere = str(int(self.freq / (1.0e9)))
+            if keyhere in bw_setup.keys():
+                valhere = bw_setup[keyhere]*(1.0e9)
+            else:
+                valhere = obs.bw
+            bw1[ind1] = valhere
+            bw2[ind2] = valhere
+
             # generate gains
             if addgains:
                 for t in tuniq:
@@ -559,6 +559,14 @@ class obs_generator(object):
         # store opacities as part of the observation
         obs.data['tau1'] = tau1
         obs.data['tau2'] = tau2
+
+        # use the smaller bandwidth on each baseline
+        bw = np.zeros_like(bw1)
+        ind1 = (bw1 <= bw2)
+        ind2 = (bw2 <= bw1)
+        bw[ind1] = bw1[ind1]
+        bw[ind2] = bw2[ind2]
+        self.bandwidths = bw
 
         # store and apply gains
         if addgains:
@@ -584,11 +592,7 @@ class obs_generator(object):
 
             # determine baseline thermal noise levels
             tint = obs.data['tint']
-            sigma = np.sqrt((SEFD1*SEFD2*np.exp(tau1)*np.exp(tau2))/(2.0*obs.bw*tint)) / const.quant_eff
-            obs.data['rrsigma'] = sigma
-            obs.data['llsigma'] = sigma
-            obs.data['rlsigma'] = sigma
-            obs.data['lrsigma'] = sigma
+            sigma = np.sqrt((SEFD1*SEFD2*np.exp(tau1)*np.exp(tau2))/(2.0*bw*tint)) / const.quant_eff
 
         else:
             
@@ -600,11 +604,13 @@ class obs_generator(object):
             
             # determine baseline thermal noise levels
             tint = obs.data['tint']
-            sigma = np.sqrt((SEFD1*SEFD2)/(2.0*obs.bw*tint)) / const.quant_eff
-            obs.data['rrsigma'] = sigma
-            obs.data['llsigma'] = sigma
-            obs.data['rlsigma'] = sigma
-            obs.data['lrsigma'] = sigma
+            sigma = np.sqrt((SEFD1*SEFD2)/(2.0*bw*tint)) / const.quant_eff
+
+        # specify baseline thermal noise levels
+        obs.data['rrsigma'] = sigma
+        obs.data['llsigma'] = sigma
+        obs.data['rlsigma'] = sigma
+        obs.data['lrsigma'] = sigma
 
         # add thermal noise to observations
         if addnoise:
@@ -884,7 +890,7 @@ def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephe
       D_override_dict (dict): A dictionary of station names and diameters to override the defaults
       array_name (str): Name to get assigned to the ngehtutil array object
       freq (float): Observing frequency, in GHz
-      ephem (string): path to the ephemeris for a space station
+      ephem (str): path to the ephemeris for a space station
     
     Returns:
       (ngehtutil.array), (ehtim.array.Array): An ngehtutil array object and an ehtim array object
@@ -982,6 +988,41 @@ def set_receivers(sitelist,receiver_override_dict={}):
             receiver_setup[site] = const.receivers
 
     return receiver_setup
+
+
+def set_bandwidths(sitelist,default_bandwidth,receiver_setup,bandwidth_override_dict={}):
+    """
+    Create a bandwidth dictionary given a list of sites and overrides
+    
+    Args:
+      sitelist (list): A list of site names
+      default_bandwidth (float): A defaul bandwidth value to use, in the absence of overrides
+      receiver_setup (dict): A dictionary of station names and available receivers
+      bandwidth_override_dict (dict): A dictionary of station names and available bandwidths to override the defaults
+    
+    Returns:
+      (dict): A dictionary of station names and available bandwidths
+      (list): A list of all unique bandwidth values available to the stations
+    """
+
+    # set up the bandwidth dictionary
+    bandwidth_setup = {}
+    for site in sitelist:
+        if site in list(bandwidth_override_dict.keys()):
+            bandwidth_setup[site] = bandwidth_override_dict[site]
+        else:
+            bandwidth_setup[site] = {}
+            for key in receiver_setup[site]:
+                bandwidth_setup[site][key] = default_bandwidth
+
+    # determine the unique bandwidths
+    unique_bandwidths = list()
+    for key in bandwidth_setup.keys():
+        for key2 in bandwidth_setup[key].keys():
+            if bandwidth_setup[key][key2] not in unique_bandwidths:
+                unique_bandwidths.append(bandwidth_setup[key][key2])
+
+    return bandwidth_setup, unique_bandwidths
 
 
 def load_image(infile,freq=230.0e9,verbose=0):
@@ -1196,7 +1237,6 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,e
     # determine settings for dummy obsgen object
     new_settings = copy.deepcopy(obsgen.settings)
     new_settings['frequency'] = freq_ref
-    # new_settings['bandwidth'] = obsgen.settings['bandwidth'] * (freq_ref/float(obsgen.settings['frequency']))
     new_settings['bandwidth'] = obsgen.settings['bandwidth']
     new_settings['SNR_cutoff'] = ['fringegroups', [snr_ref, tint_ref]]
     new_settings['random_seed'] = obsgen.seed
@@ -1209,11 +1249,13 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,e
     new_D_override_dict = obsgen.D_override_dict
     new_surf_rms_override_dict = obsgen.surf_rms_override_dict
     new_receiver_override_dict = obsgen.receiver_override_dict
+    new_bandwidth_override_dict = obsgen.bandwidth_override_dict
 
     # create dummy obsgen object
     obsgen_ref = obs_generator(new_settings,D_override_dict=new_D_override_dict,
                                receiver_override_dict=new_receiver_override_dict,
                                surf_rms_override_dict=new_surf_rms_override_dict,
+                               bandwidth_override_dict=new_bandwidth_override_dict,
                                ephem=ephem)
     if ((model_ref is not None) & (not isinstance(model_ref,str))):
         obsgen_ref.im = model_ref
