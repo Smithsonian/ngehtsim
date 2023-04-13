@@ -37,6 +37,7 @@ class obs_generator(object):
       surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override defaults
       receiver_override_dict (dict): A dictionary of station names and available receivers to override defaults
       bandwidth_override_dict (dict): A dictionary of station names and bandwidth values to override defaults
+      T_R_override_dict (dict): A dictionary of station names and receiver temperature values to override defaults
       array_name (str): Name to get assigned to the ngehtutil array object
       ephem (str): path to the ephemeris for a space station
     """
@@ -44,7 +45,7 @@ class obs_generator(object):
     # initialize class instantiation
     def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={},
                  surf_rms_override_dict={}, receiver_override_dict={}, bandwidth_override_dict={},
-                 array_name=None, ephem='ephemeris/space'):
+                 T_R_override_dict={}, array_name=None, ephem='ephemeris/space'):
 
         self.settings_file = settings_file
         self.verbosity = verbose
@@ -52,6 +53,7 @@ class obs_generator(object):
         self.surf_rms_override_dict = copy.deepcopy(surf_rms_override_dict)
         self.receiver_override_dict = copy.deepcopy(receiver_override_dict)
         self.bandwidth_override_dict = copy.deepcopy(bandwidth_override_dict)
+        self.T_R_override_dict = copy.deepcopy(T_R_override_dict)
         self.array_name = array_name
         self.ephem = ephem
 
@@ -104,12 +106,12 @@ class obs_generator(object):
         self.get_sites()
         self.translate_sites()
         self.set_weather_freq()
-        self.set_TR()
         self.set_coords()
         self.mjd = determine_mjd(self.settings['day'],self.settings['month'],self.settings['year'])
         self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9),ephem=self.ephem)
         self.receiver_setup = set_receivers(self.sites,receiver_override_dict=self.receiver_override_dict)
         self.bandwidth_setup, self.unique_bandwidths = set_bandwidths(self.sites,self.settings['bandwidth'],self.receiver_setup,bandwidth_override_dict=self.bandwidth_override_dict)
+        self.T_R_setup = set_TRs(self.sites,self.receiver_setup,T_R_override_dict=self.T_R_override_dict)
         self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
         self.tabulate_weather()
         self.telescope_properties(self.settings['surf_rms_new'])
@@ -186,12 +188,6 @@ class obs_generator(object):
         if self.verbosity > 0:
             print("************** Weather frequency set to " + str(self.weather_freq) + ' GHz.')
 
-    # store receiver temperature
-    def set_TR(self):
-        self.T_R = copy.deepcopy(const.T_R_dict[self.weather_freq])
-        if self.verbosity > 0:
-            print("************** Receiver temperature set to " + str(self.T_R) + ' K.')
-    
     # set source coordinates
     def set_coords(self):
 
@@ -518,8 +514,13 @@ class obs_generator(object):
                 Tb2[ind2] = const.T_CMB
 
             # determine system temperatures
-            Tsys1[ind1] = self.T_R + Tb1[ind1]
-            Tsys2[ind2] = self.T_R + Tb2[ind2]
+            keyhere = self.weather_freq
+            if keyhere in self.T_R_setup[site].keys():
+                T_R = self.T_R_setup[site][keyhere]
+            else:
+                T_R = const.T_R_dict[keyhere]
+            Tsys1[ind1] = T_R + Tb1[ind1]
+            Tsys2[ind2] = T_R + Tb2[ind2]
 
             # determine SEFDs
             SEFD1[ind1] = (2.0*const.k*Tsys1[ind1])/((np.pi/4.0)*self.eta_dict[site]*(self.D_dict[site])**2)
@@ -967,6 +968,32 @@ def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephe
     return array, arr
 
 
+def set_TRs(sitelist,receiver_setup,T_R_override_dict={}):
+    """
+    Create a receiver temperature dictionary given a list of sites and overrides
+    
+    Args:
+      sitelist (list): A list of site names
+      receiver_setup (dict): A dictionary of station names and available receivers
+      T_R_override_dict (dict): A dictionary of station names and receiver noise temperatures to override the defaults
+    
+    Returns:
+      (dict): A dictionary of station names and associated receiver temperatures
+    """
+
+    # set up the T_R dictionary
+    T_R_setup = {}
+    for site in sitelist:
+        if site in list(T_R_override_dict.keys()):
+            T_R_setup[site] = T_R_override_dict[site]
+        else:
+            T_R_setup[site] = {}
+            for key in receiver_setup[site]:
+                T_R_setup[site][key] = const.T_R_dict[key]
+
+    return T_R_setup
+
+
 def set_receivers(sitelist,receiver_override_dict={}):
     """
     Create a receiver suite dictionary given a list of sites and overrides
@@ -996,7 +1023,7 @@ def set_bandwidths(sitelist,default_bandwidth,receiver_setup,bandwidth_override_
     
     Args:
       sitelist (list): A list of site names
-      default_bandwidth (float): A defaul bandwidth value to use, in the absence of overrides
+      default_bandwidth (float): A default bandwidth value to use, in the absence of overrides
       receiver_setup (dict): A dictionary of station names and available receivers
       bandwidth_override_dict (dict): A dictionary of station names and available bandwidths to override the defaults
     
@@ -1250,12 +1277,14 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,e
     new_surf_rms_override_dict = obsgen.surf_rms_override_dict
     new_receiver_override_dict = obsgen.receiver_override_dict
     new_bandwidth_override_dict = obsgen.bandwidth_override_dict
+    new_T_R_override_dict = obsgen.T_R_override_dict
 
     # create dummy obsgen object
     obsgen_ref = obs_generator(new_settings,D_override_dict=new_D_override_dict,
                                receiver_override_dict=new_receiver_override_dict,
                                surf_rms_override_dict=new_surf_rms_override_dict,
                                bandwidth_override_dict=new_bandwidth_override_dict,
+                               T_R_override_dict=new_T_R_override_dict,
                                ephem=ephem)
     if ((model_ref is not None) & (not isinstance(model_ref,str))):
         obsgen_ref.im = model_ref
