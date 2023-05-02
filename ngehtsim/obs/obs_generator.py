@@ -621,6 +621,11 @@ class obs_generator(object):
             obs.data['lrvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['lrsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['lrsigma']))))
 
         # flag sites that exceeded the maximum windspeed threshold
+        t1_list = obs.unpack('t1')['t1']
+        t2_list = obs.unpack('t2')['t2']
+        mask = np.array([t1_list[j] not in flagsites and t2_list[j] not in flagsites for j in range(len(t1_list))])
+        SEFD1 = SEFD1[mask]
+        SEFD2 = SEFD2[mask]
         obs = obs.flag_sites(flagsites)
 
         # restore Stokes polrep
@@ -673,13 +678,13 @@ class obs_generator(object):
             adjusted_frequency = self.freq + self.freq_offsets[i_band]
 
             # generate raw observation for this band
-            if return_SEFDs:
-                obs_seg, SEFD1, SEFD2 = self.observe(input_model,adjusted_frequency,return_SEFDs=True,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
-            else:
-                obs_seg = self.observe(input_model,adjusted_frequency,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
+            obs_seg, SEFD1, SEFD2 = self.observe(input_model,adjusted_frequency,return_SEFDs=True,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
 
             # apply naive SNR thresholding
             if (snr_algo == 'naive'):
+                mask = obs_seg.unpack('snr')['snr'] > snr_args
+                SEFD1 = SEFD1[mask]
+                SEFD2 = SEFD2[mask]
                 obs_seg = obs_seg.flag_low_snr(snr_cut=snr_args,output='kept')
 
             # apply a proxy for fringe-finding in HOPS
@@ -689,6 +694,10 @@ class obs_generator(object):
                 snr_ref = snr_args[0]
                 tint_ref = snr_args[1]
 
+                if return_SEFDs:
+                    mask = fringegroups(self,obs_seg,snr_ref,tint_ref,return_index=True)
+                    SEFD1 = SEFD1[mask]
+                    SEFD2 = SEFD2[mask]
                 obs_seg = fringegroups(self,obs_seg,snr_ref,tint_ref)
 
             # apply an FPT proxy for SNR thresholding
@@ -699,7 +708,11 @@ class obs_generator(object):
                 tint_ref = snr_args[1]
                 freq_ref = snr_args[2]
                 model_path_ref = snr_args[3]
-
+                
+                if return_SEFDs:
+                    mask = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind,ephem=self.ephem,return_index=True)
+                    SEFD1 = SEFD1[mask]
+                    SEFD2 = SEFD2[mask]
                 obs_seg = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind,ephem=self.ephem)
 
             # unrecognized SNR thresholding scheme
@@ -722,12 +735,22 @@ class obs_generator(object):
         if len(sites_to_remove) > 0:
             siteshere = np.unique(np.concatenate((obs.data['t1'],obs.data['t2'])))
             if (len(siteshere) != 0):
-                obs = obs.flag_sites(sites_to_remove,output='kept')
+                t1_list = obs.unpack('t1')['t1']
+                t2_list = obs.unpack('t2')['t2']
+                mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+                SEFD1 = SEFD1[mask]
+                SEFD2 = SEFD2[mask]
+                obs = obs.flag_sites(sites_to_remove)
 
         # drop any sites randomly deemed to be technically unready
         sites_in_obs = obs.tarr['site']
         sites_to_drop = get_unready_sites(sites_in_obs, self.settings['tech_readiness'])
         if len(sites_to_drop) > 0:
+            t1_list = obs.unpack('t1')['t1']
+            t2_list = obs.unpack('t2')['t2']
+            mask = np.array([t1_list[j] not in sites_to_drop and t2_list[j] not in sites_to_drop for j in range(len(t1_list))])
+            SEFD1 = SEFD1[mask]
+            SEFD2 = SEFD2[mask]
             obs = obs.flag_sites(sites_to_drop)
             if self.verbosity > 0:
                 print("Dropping {0} due to technical (un)readiness.".format(sites_to_drop))
