@@ -626,6 +626,8 @@ class obs_generator(object):
         mask = np.array([t1_list[j] not in flagsites and t2_list[j] not in flagsites for j in range(len(t1_list))])
         SEFD1 = SEFD1[mask]
         SEFD2 = SEFD2[mask]
+        tau1 = tau1[mask]
+        tau2 = tau2[mask]
         obs = obs.flag_sites(flagsites)
 
         # restore Stokes polrep
