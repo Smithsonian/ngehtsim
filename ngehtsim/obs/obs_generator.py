@@ -735,22 +735,24 @@ class obs_generator(object):
         if len(sites_to_remove) > 0:
             siteshere = np.unique(np.concatenate((obs.data['t1'],obs.data['t2'])))
             if (len(siteshere) != 0):
-                t1_list = obs.unpack('t1')['t1']
-                t2_list = obs.unpack('t2')['t2']
-                mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
-                SEFD1 = SEFD1[mask]
-                SEFD2 = SEFD2[mask]
+                if return_SEFDs:
+                    t1_list = obs.unpack('t1')['t1']
+                    t2_list = obs.unpack('t2')['t2']
+                    mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+                    SEFD1 = SEFD1[mask]
+                    SEFD2 = SEFD2[mask]
                 obs = obs.flag_sites(sites_to_remove)
 
         # drop any sites randomly deemed to be technically unready
         sites_in_obs = obs.tarr['site']
         sites_to_drop = get_unready_sites(sites_in_obs, self.settings['tech_readiness'])
         if len(sites_to_drop) > 0:
-            t1_list = obs.unpack('t1')['t1']
-            t2_list = obs.unpack('t2')['t2']
-            mask = np.array([t1_list[j] not in sites_to_drop and t2_list[j] not in sites_to_drop for j in range(len(t1_list))])
-            SEFD1 = SEFD1[mask]
-            SEFD2 = SEFD2[mask]
+            if return_SEFDs:
+                t1_list = obs.unpack('t1')['t1']
+                t2_list = obs.unpack('t2')['t2']
+                mask = np.array([t1_list[j] not in sites_to_drop and t2_list[j] not in sites_to_drop for j in range(len(t1_list))])
+                SEFD1 = SEFD1[mask]
+                SEFD2 = SEFD2[mask]
             obs = obs.flag_sites(sites_to_drop)
             if self.verbosity > 0:
                 print("Dropping {0} due to technical (un)readiness.".format(sites_to_drop))
