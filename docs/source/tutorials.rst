@@ -1,0 +1,67 @@
+===============================
+Tutorials
+===============================
+
+Generate an EHT-like dataset
+===============================
+
+The Event Horizon Telescope (`EHT <https://eventhorizontelescope.org/>`_) is a globe-spanning network of radio dishes that is most well-known for having gathered the data that were used to reconstruct the first image of the supermassive black hole in the heart of the M87 galaxy [#EHTM874]_.  The original EHT observations took place in April 2017 [#EHTM873]_, using an array that consisted of 7 distinct radio facilities [#EHTM872]_: `ALMA <https://en.wikipedia.org/wiki/Atacama_Large_Millimeter_Array>`_, `APEX <https://en.wikipedia.org/wiki/Atacama_Pathfinder_Experiment>`_, `IRAM <https://en.wikipedia.org/wiki/IRAM_30m_telescope>`_, `JCMT <https://en.wikipedia.org/wiki/James_Clerk_Maxwell_Telescope>`_, `LMT <https://en.wikipedia.org/wiki/Large_Millimeter_Telescope>`_, `SMA <https://en.wikipedia.org/wiki/Submillimeter_Array>`_, and `SMT <https://en.wikipedia.org/wiki/Heinrich_Hertz_Submillimeter_Telescope>`_.  In this tutorial, we will generate a synthetic dataset that attempts to emulate these 2017 EHT observations of M87.
+
+We'll start by configuring the array appropriately, which in this case means specifying the appropriate ``obs_generator`` object settings.  Relevant fields to specify include:
+
+* the source being observed (M87)
+* the observing frequency (230 GHz)
+* the bandwidth (2 GHz)
+* the date of the observation (April 6, 2017)
+* the starting time (1 UT) and duration (7 hours) of the observation
+* the telescopes participating in the observation
+
+We can package all of these settings into a dictionary::
+   
+   settings = {'source': 'M87',
+               'frequency': 230.0,
+               'bandwidth': 2.0,
+               'month': 'Apr',
+               'day': '6',
+               'year': '2017',
+               't_start': 1.0,
+               'dt': 7.0,
+               'weather': 'exact',
+               'sites': ['ALMA', 'APEX', 'IRAM', 'JCMT', 'LMT', 'SMA', 'SMT']}
+
+.. note::
+   Note the specification of the "weather" field in this dictionary, which tells ngehtsim that we want to use the actual weather conditions specific to the selected date (rather than having the weather be randomly instantiated, which is the default behavior).
+
+Once the settings have been specified, we can instantiate an ``obs_generator`` object::
+
+   import ngehtsim.obs.obs_generator as og
+   obsgen = og.obs_generator(settings)
+
+Now we need to specify the emission structure of the source that will be observed.  For this example, we'll treat the M87 black hole image as being a simple ring-like structure with an azimuthal brightness modulation.  The flux density of the ring is about 0.6 Jy, its angular diameter is about 40 microarcseconds, and its thickness is about 10 microarcseconds.  We can use `ehtim <https://github.com/achael/eht-imaging>`_ to produce the source model::
+
+   import ehtim as eh
+   mod = eh.model.Model()
+   mod = mod.add_thick_mring(F0 = 0.6,
+                             d = 40.0*eh.RADPERUAS,
+                             alpha = 10.0*eh.RADPERUAS,
+                             beta_list=[-0.4])
+
+.. image:: EHT2017_tutorial_images/M87_mock.png
+   :align: left
+   :alt: A mock image of the M87 black hole.
+
+We can now observe this source model with the specified array::
+
+   obs = obsgen.make_obs(mod)
+
+Continued...
+
+
+References
+========================
+
+.. [#EHTM874] Event Horizon Telescope Collaboration et al. (2019) *First M87 Event Horizon Telescope Results. IV. Imaging the Central Supermassive Black Hole*, ApJL, 875, L4, DOI: `10.3847/2041-8213/ab0e85 <https://iopscience.iop.org/article/10.3847/2041-8213/ab0e85>`_
+
+.. [#EHTM873] Event Horizon Telescope Collaboration et al. (2019) *First M87 Event Horizon Telescope Results. III. Data Processing and Calibration*, ApJL, 875, L3, DOI: `10.3847/2041-8213/ab0c57 <https://iopscience.iop.org/article/10.3847/2041-8213/ab0c57>`_
+
+.. [#EHTM872] Event Horizon Telescope Collaboration et al. (2019) *First M87 Event Horizon Telescope Results. II. Array and Instrumentation*, ApJL, 875, L2, DOI: `10.3847/2041-8213/ab0c96 <https://iopscience.iop.org/article/10.3847/2041-8213/ab0c96>`_

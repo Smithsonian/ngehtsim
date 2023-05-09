@@ -15,6 +15,7 @@ meqsilhouette_path = '/usr/local/src/MeqSilhouette/meqsilhouette/data'
 weather_type = 'typical'
 addnoise = False
 addgains = False
+use_two_letter = False
 
 #######################################################
 # produce material
@@ -40,7 +41,7 @@ obs.save_uvfits('example_dataset.uvfits')
 master_input_args = {'rpicard_path': rpicard_path,
                      'meqsilhouette_path': meqsilhouette_path,
                      'add_thermal_noise': str(addnoise)}
-obsgen.export_SYMBA(symba_workdir=symba_workdir,master_input_args=master_input_args)
+obsgen.export_SYMBA(symba_workdir=symba_workdir,master_input_args=master_input_args,use_two_letter=use_two_letter)
 
 # move image file to SYMBA working directory
 os.system('mv ' + imfilename + ' ' + symba_workdir + '/symba_input/' + imfilename)

@@ -1,10 +1,11 @@
+========================
 Introduction
 ========================
 
-The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the `ehtim <https://github.com/achael/eht-imaging>`_ [Chael2016]_[Chael2018]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.
+The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the `ehtim <https://github.com/achael/eht-imaging>`_ [#Chael2016]_ [#Chael2018]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.
 
 Basic framework
-------------------------
+========================
 
 The primary functionality provided by the ngehtsim package is synthetic data generation, whose properties are determined by an ``obs_generator`` object.  The ``obs_generator`` object is initialized with a number of settings, many of which come with reasonable default values but several of which the user will typically want to specify.  To initialize an ``obs_generator`` object, simply call the initialization function::
    
@@ -35,7 +36,7 @@ The ``make_obs()`` function returns an `ehtim <https://github.com/achael/eht-ima
    obs.save_uvfits('synthetic_observation.uvfits')
 
 Site information
-------------------------
+========================
 
 The ngehtsim package contains a library of existing and potential telescope sites whose locations and atmospheric properties are used during synthetic data generation.  The list of available sites can be accessed using::
 
@@ -49,20 +50,19 @@ For sites with existing telescopes, such as the LMT, the telescope information i
 
 The `ngehtutil <https://github.com/Smithsonian/ngehtutil>`_ library provides information such as the dish size, surface accuracy, location, and level of local infrastructure at the selected site.
 
-The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database [Rienecker2011]_[Molod2015]_[Gelaro2017]_.
-
-
+The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database [#Rienecker2011]_ [#Molod2015]_ [#Gelaro2017]_.  The atmospheric state data from MERRA-2 have been processed through the *am* radiative transfer code [#Paine2022]_ to determine opacities and brightness temperatures as a function of time and observing frequency.  This information is used internally by ngehtsim to determine the sensitivity of each site during observation generation.
 
 References
-------------------------
+========================
 
-.. [Chael2016] Chael, A. A. et al. *High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope*  2016, ApJ, 829, 11
+.. [#Chael2016] Chael, A. A. et al. (2016) *High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope*, ApJ, 829, 11, DOI: `10.3847/0004-637X/829/1/11 <https://iopscience.iop.org/article/10.3847/0004-637X/829/1/11>`_
 
-.. [Chael2018] Chael, A. A. et al. *Interferometric Imaging Directly with Closure Phases and Closure Amplitudes*  2018, ApJ, 857, 23
+.. [#Chael2018] Chael, A. A. et al. (2018) *Interferometric Imaging Directly with Closure Phases and Closure Amplitudes*, ApJ, 857, 23, DOI: `10.3847/1538-4357/aab6a8 <https://iopscience.iop.org/article/10.3847/1538-4357/aab6a8>`_
 
-.. [Gelaro2017] Gelaro, R. et al. *The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2)*  2017, Journal of Climate, 30, 5419
+.. [#Rienecker2011] Rienecker, M. M. et al. (2011) *MERRA: NASA’s Modern-Era Retrospective Analysis for Research and Applications*, Journal of Climate, 24, 3624, DOI: `10.1175/JCLI-D-11-00015.1 <https://journals.ametsoc.org/view/journals/clim/24/14/jcli-d-11-00015.1.xml>`_
 
-.. [Molod2015] Molod, A. et al. *Development of the GEOS-5 atmospheric general circulation model: evolution from MERRA to MERRA2*  2015, Geoscientific Model Development, 8, 1339
+.. [#Molod2015] Molod, A. et al. (2015) *Development of the GEOS-5 atmospheric general circulation model: evolution from MERRA to MERRA2*, Geoscientific Model Development, 8, 1339, DOI: `10.5194/gmd-8-1339-2015 <https://gmd.copernicus.org/articles/8/1339/2015/>`_
 
-.. [Rienecker2011] Rienecker, M. M. et al. *MERRA: NASA’s Modern-Era Retrospective Analysis for Research and Applications*  2011, Journal of Climate, 24, 3624
+.. [#Gelaro2017] Gelaro, R. et al. (2017) *The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2)*, Journal of Climate, 30, 5419, DOI: `10.1175/JCLI-D-16-0758.1 <https://journals.ametsoc.org/view/journals/clim/30/14/jcli-d-16-0758.1.xml>`_
 
+.. [#Paine2022] Paine, S. (2022) *The am atmospheric model*, 12.2, Zenodo, DOI: `10.5281/zenodo.6774378 <https://zenodo.org/record/6774378>`_

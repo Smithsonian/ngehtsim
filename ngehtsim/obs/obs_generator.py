@@ -767,8 +767,8 @@ class obs_generator(object):
     # export SYMBA-compatible input files
     def export_SYMBA(self, symba_workdir='./data',
                      output_filenames=['obsgen.antennas','master_input.txt'],
-                     t_coh=10.0, RMS_point=0.0, PB_model='gaussian', gain_mean=1.0,
-                     leak_mean=0.0j, master_input_args={}, master_input_comments={}):
+                     t_coh=10.0, RMS_point=0.0, PB_model='gaussian', use_two_letter=True,
+                     gain_mean=1.0, leak_mean=0.0j, master_input_args={}, master_input_comments={}):
         """
         Export SYMBA-compatible directory structure and input files from the obs_generator object.
 
@@ -778,6 +778,7 @@ class obs_generator(object):
           t_coh (float): default coherence time, in seconds
           RMS_point (float): default RMS pointing uncertainty, in arcseconds
           PB_model (str): primary beam model to use; only option right now is 'gaussian'
+          use_two_letter (bool): convert all station names to two-letter codes
           gain_mean (float, complex, dict): Value of the mean gain offset for each station.
                                            If float or complex, will apply to all stations;
                                            if a dict, should be indexed by station name
@@ -810,13 +811,17 @@ class obs_generator(object):
                               t_coh=t_coh,
                               RMS_point=RMS_point,
                               PB_model=PB_model,
+                              use_two_letter=use_two_letter,
                               gain_mean=gain_mean,
                               leak_mean=leak_mean)
 
         # export master_input.txt file
-        master_input_args.update({'outdirname': outdir,
-                                  'ms_antenna_table': output_filenames[0],
-                                  'input_fitsimage': inpdir + '/*.fits'})
+        if 'outdirname' not in master_input_args.keys():
+            master_input_args.update({'outdirname': outdir})
+        if 'ms_antenna_table' not in master_input_args.keys():
+            master_input_args.update({'ms_antenna_table': output_filenames[0]})
+        if 'input_fitsimage' not in master_input_args.keys():
+            master_input_args.update({'input_fitsimage': inpdir + '/*.fits'})
         export_SYMBA_master_input(self,
                                   input_args=master_input_args,
                                   input_comments=master_input_comments,
@@ -1345,7 +1350,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,e
 
 
 def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0, RMS_point=1.0,
-                              PB_model='gaussian', gain_mean=1.0, leak_mean=0.0j):
+                          PB_model='gaussian', use_two_letter=True, gain_mean=1.0, leak_mean=0.0j):
         """
         Export a SYMBA-compatible .antennas file from the obs_generator object.
 
@@ -1355,6 +1360,7 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
           t_coh (float): default coherence time, in seconds
           RMS_point (float): default RMS pointing uncertainty, in arcseconds
           PB_model (str): primary beam model to use; only option right now is 'gaussian'
+          use_two_letter (bool): convert all station names to two-letter codes
           gain_mean (float, complex, dict): Value of the mean gain offset for each station.
                                            If float or complex, will apply to all stations;
                                            if a dict, should be indexed by station name
@@ -1413,10 +1419,13 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
                 strhere = ''
 
                 # add station name as a two-letter code
-                strhere += const.two_letter_station_codes[site].ljust(9)
+                if use_two_letter:
+                    strhere += const.two_letter_station_codes[site].ljust(9)
+                else:
+                    strhere += site.ljust(9)
 
                 # add receiver SEFD, in Jy
-                SEFD_R = (2.0*const.k*obsgen.T_R)/((np.pi/4.0)*obsgen.eta_dict[site]*(obsgen.D_dict[site])**2)
+                SEFD_R = (2.0*const.k*obsgen.T_R_setup[site][str(int(obsgen.freq/(1.0e9)))])/((np.pi/4.0)*obsgen.eta_dict[site]*(obsgen.D_dict[site])**2)
                 strhere += str(np.round(SEFD_R,2)).ljust(11)
 
                 # add PWV, in mm
