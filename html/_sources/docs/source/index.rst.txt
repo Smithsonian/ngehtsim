@@ -17,7 +17,8 @@ Contents:
 
     ./installation
     ./introduction
-    ./packages
+    ./tutorials
+    ./api
 
 Indices and tables
 ====================================

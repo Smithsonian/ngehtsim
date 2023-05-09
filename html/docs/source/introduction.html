@@ -19,7 +19,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Packages" href="packages.html" />
+    <link rel="next" title="Tutorials" href="tutorials.html" />
     <link rel="prev" title="Installation Guide" href="installation.html" /> 
 </head>
 
@@ -49,7 +49,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="packages.html">Packages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
 </ul>
 
         </div>
@@ -78,7 +79,7 @@
              
   <section id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h1>
-<p>The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> <a class="footnote-reference brackets" href="#chael2016" id="id1">1</a> <a class="footnote-reference brackets" href="#chael2018" id="id2">2</a> library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.</p>
+<p>The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the <a href="#id1"><span class="problematic" id="id2">`</span></a>ehtim &lt;<a class="reference external" href="https://github.com/achael/eht-imaging">https://github.com/achael/eht-imaging</a>&gt;`_[#Chael2016]_[#Chael2018]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.</p>
 <section id="basic-framework">
 <h2>Basic framework<a class="headerlink" href="#basic-framework" title="Permalink to this heading"></a></h2>
 <p>The primary functionality provided by the ngehtsim package is synthetic data generation, whose properties are determined by an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object.  The <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object is initialized with a number of settings, many of which come with reasonable default values but several of which the user will typically want to specify.  To initialize an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object, simply call the initialization function:</p>
@@ -122,27 +123,27 @@
 </pre></div>
 </div>
 <p>The <a class="reference external" href="https://github.com/Smithsonian/ngehtutil">ngehtutil</a> library provides information such as the dish size, surface accuracy, location, and level of local infrastructure at the selected site.</p>
-<p>The ngehtsim package also contains historical weather information at every site that has been tabulated from the <a class="reference external" href="https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/">MERRA-2</a> database <a class="footnote-reference brackets" href="#rienecker2011" id="id8">3</a> <a class="footnote-reference brackets" href="#molod2015" id="id9">4</a> <a class="footnote-reference brackets" href="#gelaro2017" id="id10">5</a>.  The atmospheric state data from MERRA-2 have been processed through the <em>am</em> radiative transfer code <a class="footnote-reference brackets" href="#paine2022" id="id11">6</a> to determine opacities and brightness temperatures as a function of time and observing frequency.</p>
+<p>The ngehtsim package also contains historical weather information at every site that has been tabulated from the <a class="reference external" href="https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/">MERRA-2</a> database[#Rienecker2011]_[#Molod2015]_[#Gelaro2017]_.  The atmospheric state data from MERRA-2 have been processed through the <em>am</em> radiative transfer code[#Paine2022]_ to determine opacities and brightness temperatures as a function of time and observing frequency.  This information is used internally by ngehtsim to determine the sensitivity of each site during observation generation.</p>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this heading"></a></h2>
 <dl class="footnote brackets">
-<dt class="label" id="chael2016"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dt class="label" id="chael2016"><span class="brackets">1</span></dt>
 <dd><p>Chael, A. A. et al. (2016) <em>High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope</em>, ApJ, 829, 11, DOI: <a class="reference external" href="https://iopscience.iop.org/article/10.3847/0004-637X/829/1/11">10.3847/0004-637X/829/1/11</a></p>
 </dd>
-<dt class="label" id="chael2018"><span class="brackets"><a class="fn-backref" href="#id2">2</a></span></dt>
+<dt class="label" id="chael2018"><span class="brackets">2</span></dt>
 <dd><p>Chael, A. A. et al. (2018) <em>Interferometric Imaging Directly with Closure Phases and Closure Amplitudes</em>, ApJ, 857, 23, DOI: <a class="reference external" href="https://iopscience.iop.org/article/10.3847/1538-4357/aab6a8">10.3847/1538-4357/aab6a8</a></p>
 </dd>
-<dt class="label" id="rienecker2011"><span class="brackets"><a class="fn-backref" href="#id8">3</a></span></dt>
+<dt class="label" id="rienecker2011"><span class="brackets">3</span></dt>
 <dd><p>Rienecker, M. M. et al. (2011) <em>MERRA: NASA’s Modern-Era Retrospective Analysis for Research and Applications</em>, Journal of Climate, 24, 3624, DOI: <a class="reference external" href="https://journals.ametsoc.org/view/journals/clim/24/14/jcli-d-11-00015.1.xml">10.1175/JCLI-D-11-00015.1</a></p>
 </dd>
-<dt class="label" id="molod2015"><span class="brackets"><a class="fn-backref" href="#id9">4</a></span></dt>
+<dt class="label" id="molod2015"><span class="brackets">4</span></dt>
 <dd><p>Molod, A. et al. (2015) <em>Development of the GEOS-5 atmospheric general circulation model: evolution from MERRA to MERRA2</em>, Geoscientific Model Development, 8, 1339, DOI: <a class="reference external" href="https://gmd.copernicus.org/articles/8/1339/2015/">10.5194/gmd-8-1339-2015</a></p>
 </dd>
-<dt class="label" id="gelaro2017"><span class="brackets"><a class="fn-backref" href="#id10">5</a></span></dt>
+<dt class="label" id="gelaro2017"><span class="brackets">5</span></dt>
 <dd><p>Gelaro, R. et al. (2017) <em>The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2)</em>, Journal of Climate, 30, 5419, DOI: <a class="reference external" href="https://journals.ametsoc.org/view/journals/clim/30/14/jcli-d-16-0758.1.xml">10.1175/JCLI-D-16-0758.1</a></p>
 </dd>
-<dt class="label" id="paine2022"><span class="brackets"><a class="fn-backref" href="#id11">6</a></span></dt>
+<dt class="label" id="paine2022"><span class="brackets">6</span></dt>
 <dd><p>Paine, S. (2022) <em>The am atmospheric model</em>, 12.2, Zenodo, DOI: <a class="reference external" href="https://zenodo.org/record/6774378">10.5281/zenodo.6774378</a></p>
 </dd>
 </dl>
@@ -154,7 +155,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="installation.html" class="btn btn-neutral float-left" title="Installation Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="packages.html" class="btn btn-neutral float-right" title="Packages" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="tutorials.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

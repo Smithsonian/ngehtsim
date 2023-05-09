@@ -1,10 +1,11 @@
+========================
 Introduction
 ========================
 
-The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the `ehtim <https://github.com/achael/eht-imaging>`_ [#Chael2016]_ [#Chael2018]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.
+The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the `ehtim <https://github.com/achael/eht-imaging>`_[#Chael2016]_[#Chael2018]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.
 
 Basic framework
-------------------------
+========================
 
 The primary functionality provided by the ngehtsim package is synthetic data generation, whose properties are determined by an ``obs_generator`` object.  The ``obs_generator`` object is initialized with a number of settings, many of which come with reasonable default values but several of which the user will typically want to specify.  To initialize an ``obs_generator`` object, simply call the initialization function::
    
@@ -35,7 +36,7 @@ The ``make_obs()`` function returns an `ehtim <https://github.com/achael/eht-ima
    obs.save_uvfits('synthetic_observation.uvfits')
 
 Site information
-------------------------
+========================
 
 The ngehtsim package contains a library of existing and potential telescope sites whose locations and atmospheric properties are used during synthetic data generation.  The list of available sites can be accessed using::
 
@@ -49,13 +50,10 @@ For sites with existing telescopes, such as the LMT, the telescope information i
 
 The `ngehtutil <https://github.com/Smithsonian/ngehtutil>`_ library provides information such as the dish size, surface accuracy, location, and level of local infrastructure at the selected site.
 
-The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database [#Rienecker2011]_ [#Molod2015]_ [#Gelaro2017]_.  The atmospheric state data from MERRA-2 have been processed through the *am* radiative transfer code [#Paine2022]_ to determine opacities and brightness temperatures as a function of time and observing frequency.
-
-
-
+The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database[#Rienecker2011]_[#Molod2015]_[#Gelaro2017]_.  The atmospheric state data from MERRA-2 have been processed through the *am* radiative transfer code[#Paine2022]_ to determine opacities and brightness temperatures as a function of time and observing frequency.  This information is used internally by ngehtsim to determine the sensitivity of each site during observation generation.
 
 References
-------------------------
+========================
 
 .. [#Chael2016] Chael, A. A. et al. (2016) *High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope*, ApJ, 829, 11, DOI: `10.3847/0004-637X/829/1/11 <https://iopscience.iop.org/article/10.3847/0004-637X/829/1/11>`_
 

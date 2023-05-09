@@ -1,0 +1,16 @@
+===============================
+Tutorials
+===============================
+
+Generate an EHT-like dataset
+===============================
+
+The Event Horizon Telescope (EHT) is a globe-spanning network of radio dishes that is most well-known for having gathered the data that were used to reconstruct the first image of a black hole[#EHTM874]_.
+
+
+
+References
+========================
+
+.. [#EHTM874] Event Horizon Telescope Collaboration et al. (2019) *First M87 Event Horizon Telescope Results. IV. Imaging the Central Supermassive Black Hole*, ApJL, 875, L4, DOI: `10.3847/2041-8213/ab0e85 <https://iopscience.iop.org/article/10.3847/2041-8213/ab0e85>`_
+
