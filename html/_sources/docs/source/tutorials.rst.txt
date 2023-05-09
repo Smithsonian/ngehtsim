@@ -47,7 +47,7 @@ Now we need to specify the emission structure of the source that will be observe
                              beta_list=[-0.4])
 
 .. image:: EHT2017_tutorial_images/M87_mock.png
-   :width: 200 px
+   :width: 600 px
    :align: left
    :alt: A mock image of the M87 black hole.
 
