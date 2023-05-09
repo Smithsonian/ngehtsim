@@ -41,9 +41,13 @@ Now we need to specify the emission structure of the source that will be observe
 
    import ehtim as eh
    mod = eh.model.Model()
-   mod = mod.add_thick_mring(F0=0.6, d=40.0*eh.RADPERUAS, alpha = 10.0*eh.RADPERUAS, beta_list=[-0.4])
+   mod = mod.add_thick_mring(F0 = 0.6,
+                             d = 40.0*eh.RADPERUAS,
+                             alpha = 10.0*eh.RADPERUAS,
+                             beta_list=[-0.4])
 
 .. image:: EHT2017_tutorial_images/M87_mock.png
+   :width: 200 px
    :align: left
    :alt: A mock image of the M87 black hole.
 
