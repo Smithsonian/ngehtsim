@@ -1,7 +1,7 @@
 Introduction
 ========================
 
-The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the `ehtim <https://github.com/achael/eht-imaging>`_ [Chael2016]_[Chael2018]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.
+The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the `ehtim <https://github.com/achael/eht-imaging>`_ [Chael2016]_ [Chael2018]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.
 
 Basic framework
 ------------------------
@@ -49,20 +49,20 @@ For sites with existing telescopes, such as the LMT, the telescope information i
 
 The `ngehtutil <https://github.com/Smithsonian/ngehtutil>`_ library provides information such as the dish size, surface accuracy, location, and level of local infrastructure at the selected site.
 
-The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database [Rienecker2011]_[Molod2015]_[Gelaro2017]_.
+The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database [Rienecker2011]_ [Molod2015]_ [Gelaro2017]_.
 
 
 
 References
 ------------------------
 
-.. [Chael2016] Chael, A. A. et al. *High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope*  2016, ApJ, 829, 11
+.. [Chael2016] Chael, A. A. et al. (2016) *High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope*, ApJ, 829, 11
 
-.. [Chael2018] Chael, A. A. et al. *Interferometric Imaging Directly with Closure Phases and Closure Amplitudes*  2018, ApJ, 857, 23
+.. [Chael2018] Chael, A. A. et al. (2018) *Interferometric Imaging Directly with Closure Phases and Closure Amplitudes*, ApJ, 857, 23
 
-.. [Gelaro2017] Gelaro, R. et al. *The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2)*  2017, Journal of Climate, 30, 5419
+.. [Gelaro2017] Gelaro, R. et al. (2017) *The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2)*, Journal of Climate, 30, 5419
 
-.. [Molod2015] Molod, A. et al. *Development of the GEOS-5 atmospheric general circulation model: evolution from MERRA to MERRA2*  2015, Geoscientific Model Development, 8, 1339
+.. [Molod2015] Molod, A. et al. (2015) *Development of the GEOS-5 atmospheric general circulation model: evolution from MERRA to MERRA2*, Geoscientific Model Development, 8, 1339
 
-.. [Rienecker2011] Rienecker, M. M. et al. *MERRA: NASA’s Modern-Era Retrospective Analysis for Research and Applications*  2011, Journal of Climate, 24, 3624
+.. [Rienecker2011] Rienecker, M. M. et al. (2011) *MERRA: NASA’s Modern-Era Retrospective Analysis for Research and Applications*, Journal of Climate, 24, 3624
 
