@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.117.g1cf0891 documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.126.gf859371 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.117.g1cf0891
+                0+untagged.126.gf859371
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -40,6 +40,7 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../docs/source/installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/introduction.html">Introduction and examples</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../docs/source/packages.html">Packages</a></li>
 </ul>
 
@@ -107,6 +108,7 @@
 <span class="sd">      surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override defaults</span>
 <span class="sd">      receiver_override_dict (dict): A dictionary of station names and available receivers to override defaults</span>
 <span class="sd">      bandwidth_override_dict (dict): A dictionary of station names and bandwidth values to override defaults</span>
+<span class="sd">      T_R_override_dict (dict): A dictionary of station names and receiver temperature values to override defaults</span>
 <span class="sd">      array_name (str): Name to get assigned to the ngehtutil array object</span>
 <span class="sd">      ephem (str): path to the ephemeris for a space station</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -114,7 +116,7 @@
     <span class="c1"># initialize class instantiation</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="o">=</span><span class="p">{},</span> <span class="n">settings_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">D_override_dict</span><span class="o">=</span><span class="p">{},</span>
                  <span class="n">surf_rms_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">receiver_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">bandwidth_override_dict</span><span class="o">=</span><span class="p">{},</span>
-                 <span class="n">array_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ephem</span><span class="o">=</span><span class="s1">&#39;ephemeris/space&#39;</span><span class="p">):</span>
+                 <span class="n">T_R_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">array_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ephem</span><span class="o">=</span><span class="s1">&#39;ephemeris/space&#39;</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">settings_file</span> <span class="o">=</span> <span class="n">settings_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="n">verbose</span>
@@ -122,6 +124,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">surf_rms_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">surf_rms_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">receiver_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">receiver_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bandwidth_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">bandwidth_override_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T_R_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">T_R_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">array_name</span> <span class="o">=</span> <span class="n">array_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ephem</span> <span class="o">=</span> <span class="n">ephem</span>
 
@@ -174,12 +177,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">get_sites</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">translate_sites</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_weather_freq</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">set_TR</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_coords</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mjd</span> <span class="o">=</span> <span class="n">determine_mjd</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;day&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;year&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">make_array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;D_new&#39;</span><span class="p">],</span><span class="n">D_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">D_override_dict</span><span class="p">,</span><span class="n">array_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">array_name</span><span class="p">,</span><span class="n">freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0e9</span><span class="p">),</span><span class="n">ephem</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ephem</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">receiver_setup</span> <span class="o">=</span> <span class="n">set_receivers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="n">receiver_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bandwidth_setup</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_bandwidths</span> <span class="o">=</span> <span class="n">set_bandwidths</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_setup</span><span class="p">,</span><span class="n">bandwidth_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bandwidth_override_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T_R_setup</span> <span class="o">=</span> <span class="n">set_TRs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_setup</span><span class="p">,</span><span class="n">T_R_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">T_R_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">im</span> <span class="o">=</span> <span class="n">load_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_file</span><span class="p">,</span><span class="n">freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tabulate_weather</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">telescope_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;surf_rms_new&#39;</span><span class="p">])</span>
@@ -256,12 +259,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;************** Weather frequency set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; GHz.&#39;</span><span class="p">)</span>
 
-    <span class="c1"># store receiver temperature</span>
-    <span class="k">def</span> <span class="nf">set_TR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span><span class="p">])</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;************** Receiver temperature set to &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">T_R</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; K.&#39;</span><span class="p">)</span>
-    
     <span class="c1"># set source coordinates</span>
     <span class="k">def</span> <span class="nf">set_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
@@ -588,8 +585,13 @@
                 <span class="n">Tb2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_CMB</span>
 
             <span class="c1"># determine system temperatures</span>
-            <span class="n">Tsys1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">+</span> <span class="n">Tb1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span>
-            <span class="n">Tsys2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T_R</span> <span class="o">+</span> <span class="n">Tb2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span>
+            <span class="n">keyhere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span>
+            <span class="k">if</span> <span class="n">keyhere</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">T_R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">keyhere</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">T_R</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="n">keyhere</span><span class="p">]</span>
+            <span class="n">Tsys1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">T_R</span> <span class="o">+</span> <span class="n">Tb1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span>
+            <span class="n">Tsys2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">T_R</span> <span class="o">+</span> <span class="n">Tb2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span>
 
             <span class="c1"># determine SEFDs</span>
             <span class="n">SEFD1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="n">Tsys1</span><span class="p">[</span><span class="n">ind1</span><span class="p">])</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -690,6 +692,13 @@
             <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrvis&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">sigma</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrsigma&#39;</span><span class="p">]))</span> <span class="o">+</span> <span class="p">((</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrsigma&#39;</span><span class="p">]))))</span>
 
         <span class="c1"># flag sites that exceeded the maximum windspeed threshold</span>
+        <span class="n">t1_list</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;t1&#39;</span><span class="p">)[</span><span class="s1">&#39;t1&#39;</span><span class="p">]</span>
+        <span class="n">t2_list</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;t2&#39;</span><span class="p">)[</span><span class="s1">&#39;t2&#39;</span><span class="p">]</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t1_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flagsites</span> <span class="ow">and</span> <span class="n">t2_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flagsites</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t1_list</span><span class="p">))])</span>
+        <span class="n">SEFD1</span> <span class="o">=</span> <span class="n">SEFD1</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="n">SEFD2</span> <span class="o">=</span> <span class="n">SEFD2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="n">tau1</span> <span class="o">=</span> <span class="n">tau1</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="n">tau2</span> <span class="o">=</span> <span class="n">tau2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
         <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">flag_sites</span><span class="p">(</span><span class="n">flagsites</span><span class="p">)</span>
 
         <span class="c1"># restore Stokes polrep</span>
@@ -742,13 +751,13 @@
             <span class="n">adjusted_frequency</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq_offsets</span><span class="p">[</span><span class="n">i_band</span><span class="p">]</span>
 
             <span class="c1"># generate raw observation for this band</span>
-            <span class="k">if</span> <span class="n">return_SEFDs</span><span class="p">:</span>
-                <span class="n">obs_seg</span><span class="p">,</span> <span class="n">SEFD1</span><span class="p">,</span> <span class="n">SEFD2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">input_model</span><span class="p">,</span><span class="n">adjusted_frequency</span><span class="p">,</span><span class="n">return_SEFDs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span><span class="n">flagwind</span><span class="o">=</span><span class="n">flagwind</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">obs_seg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">input_model</span><span class="p">,</span><span class="n">adjusted_frequency</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span><span class="n">flagwind</span><span class="o">=</span><span class="n">flagwind</span><span class="p">)</span>
+            <span class="n">obs_seg</span><span class="p">,</span> <span class="n">SEFD1</span><span class="p">,</span> <span class="n">SEFD2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">input_model</span><span class="p">,</span><span class="n">adjusted_frequency</span><span class="p">,</span><span class="n">return_SEFDs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span><span class="n">flagwind</span><span class="o">=</span><span class="n">flagwind</span><span class="p">)</span>
 
             <span class="c1"># apply naive SNR thresholding</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">snr_algo</span> <span class="o">==</span> <span class="s1">&#39;naive&#39;</span><span class="p">):</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">obs_seg</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;snr&#39;</span><span class="p">)[</span><span class="s1">&#39;snr&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">snr_args</span>
+                <span class="n">SEFD1</span> <span class="o">=</span> <span class="n">SEFD1</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                <span class="n">SEFD2</span> <span class="o">=</span> <span class="n">SEFD2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
                 <span class="n">obs_seg</span> <span class="o">=</span> <span class="n">obs_seg</span><span class="o">.</span><span class="n">flag_low_snr</span><span class="p">(</span><span class="n">snr_cut</span><span class="o">=</span><span class="n">snr_args</span><span class="p">,</span><span class="n">output</span><span class="o">=</span><span class="s1">&#39;kept&#39;</span><span class="p">)</span>
 
             <span class="c1"># apply a proxy for fringe-finding in HOPS</span>
@@ -758,6 +767,10 @@
                 <span class="n">snr_ref</span> <span class="o">=</span> <span class="n">snr_args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">tint_ref</span> <span class="o">=</span> <span class="n">snr_args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
+                <span class="k">if</span> <span class="n">return_SEFDs</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">fringegroups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">obs_seg</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">SEFD1</span> <span class="o">=</span> <span class="n">SEFD1</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                    <span class="n">SEFD2</span> <span class="o">=</span> <span class="n">SEFD2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
                 <span class="n">obs_seg</span> <span class="o">=</span> <span class="n">fringegroups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">obs_seg</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">)</span>
 
             <span class="c1"># apply an FPT proxy for SNR thresholding</span>
@@ -768,7 +781,11 @@
                 <span class="n">tint_ref</span> <span class="o">=</span> <span class="n">snr_args</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
                 <span class="n">freq_ref</span> <span class="o">=</span> <span class="n">snr_args</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
                 <span class="n">model_path_ref</span> <span class="o">=</span> <span class="n">snr_args</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
-
+                
+                <span class="k">if</span> <span class="n">return_SEFDs</span><span class="p">:</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">FPT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">obs_seg</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">freq_ref</span><span class="p">,</span><span class="n">model_path_ref</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span><span class="n">flagwind</span><span class="o">=</span><span class="n">flagwind</span><span class="p">,</span><span class="n">ephem</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ephem</span><span class="p">,</span><span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">SEFD1</span> <span class="o">=</span> <span class="n">SEFD1</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                    <span class="n">SEFD2</span> <span class="o">=</span> <span class="n">SEFD2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
                 <span class="n">obs_seg</span> <span class="o">=</span> <span class="n">FPT</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">obs_seg</span><span class="p">,</span><span class="n">snr_ref</span><span class="p">,</span><span class="n">tint_ref</span><span class="p">,</span><span class="n">freq_ref</span><span class="p">,</span><span class="n">model_path_ref</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span><span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span><span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span><span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">,</span><span class="n">flagwind</span><span class="o">=</span><span class="n">flagwind</span><span class="p">,</span><span class="n">ephem</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ephem</span><span class="p">)</span>
 
             <span class="c1"># unrecognized SNR thresholding scheme</span>
@@ -791,12 +808,24 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sites_to_remove</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">siteshere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t1&#39;</span><span class="p">],</span><span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t2&#39;</span><span class="p">])))</span>
             <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">siteshere</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
-                <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">flag_sites</span><span class="p">(</span><span class="n">sites_to_remove</span><span class="p">,</span><span class="n">output</span><span class="o">=</span><span class="s1">&#39;kept&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">return_SEFDs</span><span class="p">:</span>
+                    <span class="n">t1_list</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;t1&#39;</span><span class="p">)[</span><span class="s1">&#39;t1&#39;</span><span class="p">]</span>
+                    <span class="n">t2_list</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;t2&#39;</span><span class="p">)[</span><span class="s1">&#39;t2&#39;</span><span class="p">]</span>
+                    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t1_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sites_to_remove</span> <span class="ow">and</span> <span class="n">t2_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sites_to_remove</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t1_list</span><span class="p">))])</span>
+                    <span class="n">SEFD1</span> <span class="o">=</span> <span class="n">SEFD1</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                    <span class="n">SEFD2</span> <span class="o">=</span> <span class="n">SEFD2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">flag_sites</span><span class="p">(</span><span class="n">sites_to_remove</span><span class="p">)</span>
 
         <span class="c1"># drop any sites randomly deemed to be technically unready</span>
         <span class="n">sites_in_obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">tarr</span><span class="p">[</span><span class="s1">&#39;site&#39;</span><span class="p">]</span>
         <span class="n">sites_to_drop</span> <span class="o">=</span> <span class="n">get_unready_sites</span><span class="p">(</span><span class="n">sites_in_obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;tech_readiness&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sites_to_drop</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">return_SEFDs</span><span class="p">:</span>
+                <span class="n">t1_list</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;t1&#39;</span><span class="p">)[</span><span class="s1">&#39;t1&#39;</span><span class="p">]</span>
+                <span class="n">t2_list</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;t2&#39;</span><span class="p">)[</span><span class="s1">&#39;t2&#39;</span><span class="p">]</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t1_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sites_to_drop</span> <span class="ow">and</span> <span class="n">t2_list</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sites_to_drop</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t1_list</span><span class="p">))])</span>
+                <span class="n">SEFD1</span> <span class="o">=</span> <span class="n">SEFD1</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                <span class="n">SEFD2</span> <span class="o">=</span> <span class="n">SEFD2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
             <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">flag_sites</span><span class="p">(</span><span class="n">sites_to_drop</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Dropping </span><span class="si">{0}</span><span class="s2"> due to technical (un)readiness.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sites_to_drop</span><span class="p">))</span>
@@ -1037,6 +1066,32 @@
     <span class="k">return</span> <span class="n">array</span><span class="p">,</span> <span class="n">arr</span></div>
 
 
+<div class="viewcode-block" id="set_TRs"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.set_TRs">[docs]</a><span class="k">def</span> <span class="nf">set_TRs</span><span class="p">(</span><span class="n">sitelist</span><span class="p">,</span><span class="n">receiver_setup</span><span class="p">,</span><span class="n">T_R_override_dict</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a receiver temperature dictionary given a list of sites and overrides</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      sitelist (list): A list of site names</span>
+<span class="sd">      receiver_setup (dict): A dictionary of station names and available receivers</span>
+<span class="sd">      T_R_override_dict (dict): A dictionary of station names and receiver noise temperatures to override the defaults</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">      (dict): A dictionary of station names and associated receiver temperatures</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># set up the T_R dictionary</span>
+    <span class="n">T_R_setup</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sitelist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">T_R_override_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="n">T_R_override_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">receiver_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]:</span>
+                <span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">T_R_setup</span></div>
+
+
 <div class="viewcode-block" id="set_receivers"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.set_receivers">[docs]</a><span class="k">def</span> <span class="nf">set_receivers</span><span class="p">(</span><span class="n">sitelist</span><span class="p">,</span><span class="n">receiver_override_dict</span><span class="o">=</span><span class="p">{}):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a receiver suite dictionary given a list of sites and overrides</span>
@@ -1066,7 +1121,7 @@
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">      sitelist (list): A list of site names</span>
-<span class="sd">      default_bandwidth (float): A defaul bandwidth value to use, in the absence of overrides</span>
+<span class="sd">      default_bandwidth (float): A default bandwidth value to use, in the absence of overrides</span>
 <span class="sd">      receiver_setup (dict): A dictionary of station names and available receivers</span>
 <span class="sd">      bandwidth_override_dict (dict): A dictionary of station names and available bandwidths to override the defaults</span>
 <span class="sd">    </span>
@@ -1320,12 +1375,14 @@
     <span class="n">new_surf_rms_override_dict</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">surf_rms_override_dict</span>
     <span class="n">new_receiver_override_dict</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">receiver_override_dict</span>
     <span class="n">new_bandwidth_override_dict</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">bandwidth_override_dict</span>
+    <span class="n">new_T_R_override_dict</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">T_R_override_dict</span>
 
     <span class="c1"># create dummy obsgen object</span>
     <span class="n">obsgen_ref</span> <span class="o">=</span> <span class="n">obs_generator</span><span class="p">(</span><span class="n">new_settings</span><span class="p">,</span><span class="n">D_override_dict</span><span class="o">=</span><span class="n">new_D_override_dict</span><span class="p">,</span>
                                <span class="n">receiver_override_dict</span><span class="o">=</span><span class="n">new_receiver_override_dict</span><span class="p">,</span>
                                <span class="n">surf_rms_override_dict</span><span class="o">=</span><span class="n">new_surf_rms_override_dict</span><span class="p">,</span>
                                <span class="n">bandwidth_override_dict</span><span class="o">=</span><span class="n">new_bandwidth_override_dict</span><span class="p">,</span>
+                               <span class="n">T_R_override_dict</span><span class="o">=</span><span class="n">new_T_R_override_dict</span><span class="p">,</span>
                                <span class="n">ephem</span><span class="o">=</span><span class="n">ephem</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">((</span><span class="n">model_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_ref</span><span class="p">,</span><span class="nb">str</span><span class="p">))):</span>
         <span class="n">obsgen_ref</span><span class="o">.</span><span class="n">im</span> <span class="o">=</span> <span class="n">model_ref</span>

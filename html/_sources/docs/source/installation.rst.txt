@@ -4,7 +4,7 @@ Installation Guide
 Getting ngehtsim
 ------------------------
 
-The latest version of ngehtsim can be obtained from https://github.com/Smithsonian/ngeht-sims.
+The latest version of ngehtsim can be obtained from https://github.com/Smithsonian/ngehtsim.
 
 Installation
 ------------------------
@@ -22,6 +22,7 @@ ngehtsim uses the following packages:
 
 * `python <https://www.python.org/downloads>`_ >=3.8
 * `ehtim <https://github.com/achael/eht-imaging>`_
+* `ngehtutil <https://github.com/Smithsonian/ngehtutil>`_
 * `numpy <https://numpy.org>`_
 * `matplotlib <https://matplotlib.org>`_
 * `scipy <https://www.scipy.org>`_
