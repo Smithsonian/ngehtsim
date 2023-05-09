@@ -78,7 +78,7 @@
              
   <section id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h1>
-<p>The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> <a class="reference internal" href="#chael2016" id="id1"><span>[Chael2016]</span></a> <a class="reference internal" href="#chael2018" id="id2"><span>[Chael2018]</span></a> <a class="footnote-reference brackets" href="#f1" id="id3">1</a> library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.</p>
+<p>The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> <a class="footnote-reference brackets" href="#chael2016" id="id1">1</a> <a class="footnote-reference brackets" href="#chael2018" id="id2">2</a> library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.</p>
 <section id="basic-framework">
 <h2>Basic framework<a class="headerlink" href="#basic-framework" title="Permalink to this heading"></a></h2>
 <p>The primary functionality provided by the ngehtsim package is synthetic data generation, whose properties are determined by an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object.  The <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object is initialized with a number of settings, many of which come with reasonable default values but several of which the user will typically want to specify.  To initialize an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object, simply call the initialization function:</p>
@@ -122,30 +122,25 @@
 </pre></div>
 </div>
 <p>The <a class="reference external" href="https://github.com/Smithsonian/ngehtutil">ngehtutil</a> library provides information such as the dish size, surface accuracy, location, and level of local infrastructure at the selected site.</p>
-<p>The ngehtsim package also contains historical weather information at every site that has been tabulated from the <a class="reference external" href="https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/">MERRA-2</a> database <a class="reference internal" href="#rienecker2011" id="id9"><span>[Rienecker2011]</span></a> <a class="reference internal" href="#molod2015" id="id10"><span>[Molod2015]</span></a> <a class="reference internal" href="#gelaro2017" id="id11"><span>[Gelaro2017]</span></a>.</p>
-<dl class="footnote brackets">
-<dt class="label" id="f1"><span class="brackets"><a class="fn-backref" href="#id3">1</a></span></dt>
-<dd><p>Chael, A. A. et al. (2016) <em>High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope</em>, ApJ, 829, 11, DOI: <a class="reference external" href="https://iopscience.iop.org/article/10.3847/0004-637X/829/1/11">10.3847/0004-637X/829/1/11</a></p>
-</dd>
-</dl>
+<p>The ngehtsim package also contains historical weather information at every site that has been tabulated from the <a class="reference external" href="https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/">MERRA-2</a> database <a class="footnote-reference brackets" href="#rienecker2011" id="id8">5</a> <a class="footnote-reference brackets" href="#molod2015" id="id9">4</a> <a class="footnote-reference brackets" href="#gelaro2017" id="id10">3</a>.</p>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this heading"></a></h2>
-<dl class="citation">
-<dt class="label" id="chael2016"><span class="brackets"><a class="fn-backref" href="#id1">Chael2016</a></span></dt>
-<dd><p>Chael, A. A. et al. (2016) <em>High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope</em>, ApJ, 829, 11</p>
+<dl class="footnote brackets">
+<dt class="label" id="chael2016"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dd><p>Chael, A. A. et al. (2016) <em>High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope</em>, ApJ, 829, 11, DOI: <a class="reference external" href="https://iopscience.iop.org/article/10.3847/0004-637X/829/1/11">10.3847/0004-637X/829/1/11</a></p>
 </dd>
-<dt class="label" id="chael2018"><span class="brackets"><a class="fn-backref" href="#id2">Chael2018</a></span></dt>
-<dd><p>Chael, A. A. et al. (2018) <em>Interferometric Imaging Directly with Closure Phases and Closure Amplitudes</em>, ApJ, 857, 23</p>
+<dt class="label" id="chael2018"><span class="brackets"><a class="fn-backref" href="#id2">2</a></span></dt>
+<dd><p>Chael, A. A. et al. (2018) <em>Interferometric Imaging Directly with Closure Phases and Closure Amplitudes</em>, ApJ, 857, 23, DOI: <a class="reference external" href="https://iopscience.iop.org/article/10.3847/1538-4357/aab6a8">10.3847/1538-4357/aab6a8</a></p>
 </dd>
-<dt class="label" id="gelaro2017"><span class="brackets"><a class="fn-backref" href="#id11">Gelaro2017</a></span></dt>
-<dd><p>Gelaro, R. et al. (2017) <em>The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2)</em>, Journal of Climate, 30, 5419</p>
+<dt class="label" id="gelaro2017"><span class="brackets"><a class="fn-backref" href="#id10">3</a></span></dt>
+<dd><p>Gelaro, R. et al. (2017) <em>The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2)</em>, Journal of Climate, 30, 5419, DOI: <a class="reference external" href="https://journals.ametsoc.org/view/journals/clim/30/14/jcli-d-16-0758.1.xml">10.1175/JCLI-D-16-0758.1</a></p>
 </dd>
-<dt class="label" id="molod2015"><span class="brackets"><a class="fn-backref" href="#id10">Molod2015</a></span></dt>
-<dd><p>Molod, A. et al. (2015) <em>Development of the GEOS-5 atmospheric general circulation model: evolution from MERRA to MERRA2</em>, Geoscientific Model Development, 8, 1339</p>
+<dt class="label" id="molod2015"><span class="brackets"><a class="fn-backref" href="#id9">4</a></span></dt>
+<dd><p>Molod, A. et al. (2015) <em>Development of the GEOS-5 atmospheric general circulation model: evolution from MERRA to MERRA2</em>, Geoscientific Model Development, 8, 1339, DOI: <a class="reference external" href="https://gmd.copernicus.org/articles/8/1339/2015/">10.5194/gmd-8-1339-2015</a></p>
 </dd>
-<dt class="label" id="rienecker2011"><span class="brackets"><a class="fn-backref" href="#id9">Rienecker2011</a></span></dt>
-<dd><p>Rienecker, M. M. et al. (2011) <em>MERRA: NASA’s Modern-Era Retrospective Analysis for Research and Applications</em>, Journal of Climate, 24, 3624</p>
+<dt class="label" id="rienecker2011"><span class="brackets"><a class="fn-backref" href="#id8">5</a></span></dt>
+<dd><p>Rienecker, M. M. et al. (2011) <em>MERRA: NASA’s Modern-Era Retrospective Analysis for Research and Applications</em>, Journal of Climate, 24, 3624, DOI: <a class="reference external" href="https://journals.ametsoc.org/view/journals/clim/24/14/jcli-d-11-00015.1.xml">10.1175/JCLI-D-11-00015.1</a></p>
 </dd>
 </dl>
 </section>
