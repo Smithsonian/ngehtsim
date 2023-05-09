@@ -5,7 +5,10 @@ Tutorials
 Generate an EHT-like dataset
 ===============================
 
-The Event Horizon Telescope (EHT) is a globe-spanning network of radio dishes that is most well-known for having gathered the data that were used to reconstruct the first image of a black hole[#EHTM874]_.
+The Event Horizon Telescope (EHT) is a globe-spanning network of radio dishes that is most well-known for having gathered the data that were used to reconstruct the first image of the supermassive black hole in the heart of the M87 galaxy [#EHTM874]_.  The original EHT observations took place in April 2017 [#EHTM873]_, using an array that consisted of 7 distinct radio facilities: `ALMA <https://en.wikipedia.org/wiki/Atacama_Large_Millimeter_Array>`_, `APEX <https://en.wikipedia.org/wiki/Atacama_Pathfinder_Experiment>`_, `IRAM <https://en.wikipedia.org/wiki/IRAM_30m_telescope>`_, `JCMT <https://en.wikipedia.org/wiki/James_Clerk_Maxwell_Telescope>`_, `LMT <https://en.wikipedia.org/wiki/Large_Millimeter_Telescope>`_, `SMA <https://en.wikipedia.org/wiki/Submillimeter_Array>`_, and `SMT <https://en.wikipedia.org/wiki/Heinrich_Hertz_Submillimeter_Telescope>`_ [#EHTM872]_.  In this tutorial, we will generate synthetic data that attempt to emulate the 2017 EHT observations of M87.
+
+
+
 
 
 
@@ -14,3 +17,6 @@ References
 
 .. [#EHTM874] Event Horizon Telescope Collaboration et al. (2019) *First M87 Event Horizon Telescope Results. IV. Imaging the Central Supermassive Black Hole*, ApJL, 875, L4, DOI: `10.3847/2041-8213/ab0e85 <https://iopscience.iop.org/article/10.3847/2041-8213/ab0e85>`_
 
+.. [#EHTM873] Event Horizon Telescope Collaboration et al. (2019) *First M87 Event Horizon Telescope Results. III. Data Processing and Calibration*, ApJL, 875, L3, DOI: `10.3847/2041-8213/ab0c57 <https://iopscience.iop.org/article/10.3847/2041-8213/ab0c57>`_
+
+.. [#EHTM872] Event Horizon Telescope Collaboration et al. (2019) *First M87 Event Horizon Telescope Results. II. Array and Instrumentation*, ApJL, 875, L2, DOI: `10.3847/2041-8213/ab0c96 <https://iopscience.iop.org/article/10.3847/2041-8213/ab0c96>`_
