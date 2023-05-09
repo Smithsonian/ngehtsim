@@ -46,15 +46,32 @@ Now we need to specify the emission structure of the source that will be observe
                              alpha = 10.0*eh.RADPERUAS,
                              beta_list=[-0.4])
 
-.. image:: EHT2017_tutorial_images/M87_mock.png
+.. image:: EHT2017_tutorial/M87_mock.png
    :align: left
-   :alt: A mock image of the M87 black hole.
+   :alt: A simple mock image of the M87 black hole.
 
 We can now observe this source model with the specified array::
 
    obs = obsgen.make_obs(mod)
 
-Continued...
+From here, we're able to carry out image reconstruction or any other analysis on the generated data, just as we would with real EHT data.
+
+But how does this synthetic dataset compare to the actual observations?  To answer that, we'll first need to grab the actual EHT data, which is publicly available; the April 6 dataset can be found at `this link <https://datacommons.cyverse.org/browse/iplant/home/shared/commons_repo/curated/EHTC_FirstM87Results_Apr2019/uvfits/SR1_M87_2017_096_lo_hops_netcal_StokesI.uvfits>`_.  Let's read the uvfits file into an ehtim ``obsdata`` object and then carry out scan-averaging::
+
+   obs_real = eh.obsdata.load_uvfits('SR1_M87_2017_096_lo_hops_netcal_StokesI.uvfits')
+   obs_real.add_scans()
+   obs_real = obs_real.avg_coherent(0.0,scan_avg=True)
+
+And now we can compare the properties of the real and simulated datasets!  Let's first take a look at the `(u,v)`-coverage:
+
+.. image:: EHT2017_tutorial/uv-coverage.png
+   :align: left
+   :alt: Comparison of simulated and real 2017 EHT (u,v)-coverage on M87.
+
+The agreement here looks pretty good; the main difference is that the synthetic dataset shows some tracks extending a bit further than the real dataset actually obtained.  It turns out that during the actual April 6, 2017 EHT observations, the SMT station suffered from some technical issues towards the beginning of the observing track that resulted in less data getting collected.  These technical issues are not simulated by ngehtsim, so it overpredicts the amount of data on baselines containing the SMT.
+
+
+
 
 
 References

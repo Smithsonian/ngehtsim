@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorials &mdash; ngehtsim 0+untagged.129.g080dfe2 documentation</title>
+  <title>Tutorials &mdash; ngehtsim 0+untagged.129.g080dfe2.dirty documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.129.g080dfe2
+                0+untagged.129.g080dfe2.dirty
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -121,12 +121,21 @@
                           <span class="n">beta_list</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.4</span><span class="p">])</span>
 </pre></div>
 </div>
-<img alt="A mock image of the M87 black hole." class="align-left" src="../../_images/M87_mock.png" />
+<img alt="A simple mock image of the M87 black hole." class="align-left" src="../../_images/M87_mock.png" />
 <p>We can now observe this source model with the specified array:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obs</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">make_obs</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Continued…</p>
+<p>From here, we’re able to carry out image reconstruction or any other analysis on the generated data, just as we would with real EHT data.</p>
+<p>But how does this synthetic dataset compare to the actual observations?  To answer that, we’ll first need to grab the actual EHT data, which is publicly available; the April 6 dataset can be found at <a class="reference external" href="https://datacommons.cyverse.org/browse/iplant/home/shared/commons_repo/curated/EHTC_FirstM87Results_Apr2019/uvfits/SR1_M87_2017_096_lo_hops_netcal_StokesI.uvfits">this link</a>.  Let’s read the uvfits file into an ehtim <code class="docutils literal notranslate"><span class="pre">obsdata</span></code> object and then carry out scan-averaging:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obs_real</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">obsdata</span><span class="o">.</span><span class="n">load_uvfits</span><span class="p">(</span><span class="s1">&#39;SR1_M87_2017_096_lo_hops_netcal_StokesI.uvfits&#39;</span><span class="p">)</span>
+<span class="n">obs_real</span><span class="o">.</span><span class="n">add_scans</span><span class="p">()</span>
+<span class="n">obs_real</span> <span class="o">=</span> <span class="n">obs_real</span><span class="o">.</span><span class="n">avg_coherent</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="n">scan_avg</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And now we can compare the properties of the real and simulated datasets!  Let’s first take a look at the <cite>(u,v)</cite>-coverage:</p>
+<img alt="Comparison of simulated and real 2017 EHT (u,v)-coverage on M87." class="align-left" src="../../_images/uv-coverage.png" />
+<p>The agreement here looks pretty good; the main difference is that the synthetic dataset shows some tracks extending a bit further than the real dataset actually obtained.  It turns out that during the actual April 6, 2017 EHT observations, the SMT station suffered from some technical issues towards the beginning of the observing track that resulted in less data getting collected.  These technical issues are not simulated by ngehtsim, so it overpredicts the amount of data on baselines containing the SMT.</p>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this heading"></a></h2>
