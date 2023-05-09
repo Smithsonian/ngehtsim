@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Observation utilities &mdash; ngehtsim 0+untagged.128.gf0da3ca.dirty documentation</title>
+  <title>Observation utilities &mdash; ngehtsim 0+untagged.129.g080dfe2 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -21,7 +21,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Observation quality metrics" href="metrics.html" />
-    <link rel="prev" title="Packages" href="packages.html" /> 
+    <link rel="prev" title="API" href="api.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -32,7 +32,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.128.gf0da3ca.dirty
+                0+untagged.129.g080dfe2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -45,7 +45,8 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="packages.html">Packages</a><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Observation utilities</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#observation-generation">Observation generation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#observation-plotting">Observation plotting</a></li>
@@ -71,7 +72,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="packages.html">Packages</a> &raquo;</li>
+          <li><a href="api.html">API</a> &raquo;</li>
       <li>Observation utilities</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/docs/source/obsgen.rst.txt" rel="nofollow"> View page source</a>
@@ -157,7 +158,7 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 
 <dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_generator.export_SYMBA_antennas">
-<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">export_SYMBA_antennas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obsgen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'obsgen.antennas'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_coh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">RMS_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PB_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gaussian'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leak_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0j</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#export_SYMBA_antennas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.export_SYMBA_antennas" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">export_SYMBA_antennas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obsgen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'obsgen.antennas'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_coh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">RMS_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PB_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gaussian'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_two_letter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leak_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0j</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#export_SYMBA_antennas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.export_SYMBA_antennas" title="Permalink to this definition"></a></dt>
 <dd><p>Export a SYMBA-compatible .antennas file from the obs_generator object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -167,6 +168,7 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 <li><p><strong>t_coh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – default coherence time, in seconds</p></li>
 <li><p><strong>RMS_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – default RMS pointing uncertainty, in arcseconds</p></li>
 <li><p><strong>PB_model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – primary beam model to use; only option right now is ‘gaussian’</p></li>
+<li><p><strong>use_two_letter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – convert all station names to two-letter codes</p></li>
 <li><p><strong>gain_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) – Value of the mean gain offset for each station.
 If float or complex, will apply to all stations;
 if a dict, should be indexed by station name</p></li>
@@ -437,7 +439,7 @@ the corresponding settings from the settings file.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator.export_SYMBA">
-<span class="sig-name descname"><span class="pre">export_SYMBA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symba_workdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filenames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['obsgen.antennas',</span> <span class="pre">'master_input.txt']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_coh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">RMS_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PB_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gaussian'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leak_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">master_input_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">master_input_comments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator.export_SYMBA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator.export_SYMBA" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">export_SYMBA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symba_workdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./data'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filenames</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['obsgen.antennas',</span> <span class="pre">'master_input.txt']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_coh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">RMS_point</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">PB_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gaussian'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_two_letter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leak_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">master_input_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">master_input_comments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator.export_SYMBA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator.export_SYMBA" title="Permalink to this definition"></a></dt>
 <dd><p>Export SYMBA-compatible directory structure and input files from the obs_generator object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -447,6 +449,7 @@ the corresponding settings from the settings file.</p>
 <li><p><strong>t_coh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – default coherence time, in seconds</p></li>
 <li><p><strong>RMS_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – default RMS pointing uncertainty, in arcseconds</p></li>
 <li><p><strong>PB_model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – primary beam model to use; only option right now is ‘gaussian’</p></li>
+<li><p><strong>use_two_letter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – convert all station names to two-letter codes</p></li>
 <li><p><strong>gain_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.11)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) – Value of the mean gain offset for each station.
 If float or complex, will apply to all stations;
 if a dict, should be indexed by station name</p></li>
@@ -703,7 +706,7 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="packages.html" class="btn btn-neutral float-left" title="Packages" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-left" title="API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="metrics.html" class="btn btn-neutral float-right" title="Observation quality metrics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

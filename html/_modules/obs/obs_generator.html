@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.126.gf859371 documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.129.g080dfe2 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.126.gf859371
+                0+untagged.129.g080dfe2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -40,8 +40,9 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../docs/source/installation.html">Installation Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../docs/source/introduction.html">Introduction and examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../docs/source/packages.html">Packages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/api.html">API</a></li>
 </ul>
 
         </div>
@@ -838,8 +839,8 @@
     <span class="c1"># export SYMBA-compatible input files</span>
 <div class="viewcode-block" id="obs_generator.export_SYMBA"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.export_SYMBA">[docs]</a>    <span class="k">def</span> <span class="nf">export_SYMBA</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symba_workdir</span><span class="o">=</span><span class="s1">&#39;./data&#39;</span><span class="p">,</span>
                      <span class="n">output_filenames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;obsgen.antennas&#39;</span><span class="p">,</span><span class="s1">&#39;master_input.txt&#39;</span><span class="p">],</span>
-                     <span class="n">t_coh</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">RMS_point</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">PB_model</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">gain_mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-                     <span class="n">leak_mean</span><span class="o">=</span><span class="mf">0.0</span><span class="n">j</span><span class="p">,</span> <span class="n">master_input_args</span><span class="o">=</span><span class="p">{},</span> <span class="n">master_input_comments</span><span class="o">=</span><span class="p">{}):</span>
+                     <span class="n">t_coh</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">RMS_point</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">PB_model</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">use_two_letter</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">gain_mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">leak_mean</span><span class="o">=</span><span class="mf">0.0</span><span class="n">j</span><span class="p">,</span> <span class="n">master_input_args</span><span class="o">=</span><span class="p">{},</span> <span class="n">master_input_comments</span><span class="o">=</span><span class="p">{}):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Export SYMBA-compatible directory structure and input files from the obs_generator object.</span>
 
@@ -849,6 +850,7 @@
 <span class="sd">          t_coh (float): default coherence time, in seconds</span>
 <span class="sd">          RMS_point (float): default RMS pointing uncertainty, in arcseconds</span>
 <span class="sd">          PB_model (str): primary beam model to use; only option right now is &#39;gaussian&#39;</span>
+<span class="sd">          use_two_letter (bool): convert all station names to two-letter codes</span>
 <span class="sd">          gain_mean (float, complex, dict): Value of the mean gain offset for each station.</span>
 <span class="sd">                                           If float or complex, will apply to all stations;</span>
 <span class="sd">                                           if a dict, should be indexed by station name</span>
@@ -881,13 +883,17 @@
                               <span class="n">t_coh</span><span class="o">=</span><span class="n">t_coh</span><span class="p">,</span>
                               <span class="n">RMS_point</span><span class="o">=</span><span class="n">RMS_point</span><span class="p">,</span>
                               <span class="n">PB_model</span><span class="o">=</span><span class="n">PB_model</span><span class="p">,</span>
+                              <span class="n">use_two_letter</span><span class="o">=</span><span class="n">use_two_letter</span><span class="p">,</span>
                               <span class="n">gain_mean</span><span class="o">=</span><span class="n">gain_mean</span><span class="p">,</span>
                               <span class="n">leak_mean</span><span class="o">=</span><span class="n">leak_mean</span><span class="p">)</span>
 
         <span class="c1"># export master_input.txt file</span>
-        <span class="n">master_input_args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;outdirname&#39;</span><span class="p">:</span> <span class="n">outdir</span><span class="p">,</span>
-                                  <span class="s1">&#39;ms_antenna_table&#39;</span><span class="p">:</span> <span class="n">output_filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                                  <span class="s1">&#39;input_fitsimage&#39;</span><span class="p">:</span> <span class="n">inpdir</span> <span class="o">+</span> <span class="s1">&#39;/*.fits&#39;</span><span class="p">})</span>
+        <span class="k">if</span> <span class="s1">&#39;outdirname&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">master_input_args</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">master_input_args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;outdirname&#39;</span><span class="p">:</span> <span class="n">outdir</span><span class="p">})</span>
+        <span class="k">if</span> <span class="s1">&#39;ms_antenna_table&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">master_input_args</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">master_input_args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;ms_antenna_table&#39;</span><span class="p">:</span> <span class="n">output_filenames</span><span class="p">[</span><span class="mi">0</span><span class="p">]})</span>
+        <span class="k">if</span> <span class="s1">&#39;input_fitsimage&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">master_input_args</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">master_input_args</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;input_fitsimage&#39;</span><span class="p">:</span> <span class="n">inpdir</span> <span class="o">+</span> <span class="s1">&#39;/*.fits&#39;</span><span class="p">})</span>
         <span class="n">export_SYMBA_master_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                                   <span class="n">input_args</span><span class="o">=</span><span class="n">master_input_args</span><span class="p">,</span>
                                   <span class="n">input_comments</span><span class="o">=</span><span class="n">master_input_comments</span><span class="p">,</span>
@@ -1416,7 +1422,7 @@
 
 
 <div class="viewcode-block" id="export_SYMBA_antennas"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.export_SYMBA_antennas">[docs]</a><span class="k">def</span> <span class="nf">export_SYMBA_antennas</span><span class="p">(</span><span class="n">obsgen</span><span class="p">,</span> <span class="n">output_filename</span><span class="o">=</span><span class="s1">&#39;obsgen.antennas&#39;</span><span class="p">,</span> <span class="n">t_coh</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">RMS_point</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
-                              <span class="n">PB_model</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">gain_mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">leak_mean</span><span class="o">=</span><span class="mf">0.0</span><span class="n">j</span><span class="p">):</span>
+                          <span class="n">PB_model</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">use_two_letter</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">gain_mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">leak_mean</span><span class="o">=</span><span class="mf">0.0</span><span class="n">j</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Export a SYMBA-compatible .antennas file from the obs_generator object.</span>
 
@@ -1426,6 +1432,7 @@
 <span class="sd">          t_coh (float): default coherence time, in seconds</span>
 <span class="sd">          RMS_point (float): default RMS pointing uncertainty, in arcseconds</span>
 <span class="sd">          PB_model (str): primary beam model to use; only option right now is &#39;gaussian&#39;</span>
+<span class="sd">          use_two_letter (bool): convert all station names to two-letter codes</span>
 <span class="sd">          gain_mean (float, complex, dict): Value of the mean gain offset for each station.</span>
 <span class="sd">                                           If float or complex, will apply to all stations;</span>
 <span class="sd">                                           if a dict, should be indexed by station name</span>
@@ -1484,10 +1491,13 @@
                 <span class="n">strhere</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
                 <span class="c1"># add station name as a two-letter code</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">two_letter_station_codes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">use_two_letter</span><span class="p">:</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">two_letter_station_codes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">site</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
 
                 <span class="c1"># add receiver SEFD, in Jy</span>
-                <span class="n">SEFD_R</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">T_R</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">SEFD_R</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0e9</span><span class="p">)))])</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
                 <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">SEFD_R</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
 
                 <span class="c1"># add PWV, in mm</span>
