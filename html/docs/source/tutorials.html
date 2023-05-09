@@ -80,15 +80,17 @@
 <h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this heading"></a></h1>
 <section id="generate-an-eht-like-dataset">
 <h2>Generate an EHT-like dataset<a class="headerlink" href="#generate-an-eht-like-dataset" title="Permalink to this heading"></a></h2>
-<p>The Event Horizon Telescope (<a class="reference external" href="https://eventhorizontelescope.org/">EHT</a>) is a globe-spanning network of radio dishes that is most well-known for having gathered the data that were used to reconstruct the first image of the supermassive black hole in the heart of the M87 galaxy <a class="footnote-reference brackets" href="#ehtm874" id="id1">1</a>.  The original EHT observations took place in April 2017 <a class="footnote-reference brackets" href="#ehtm873" id="id2">2</a>, using an array that consisted of 7 distinct radio facilities <a class="footnote-reference brackets" href="#ehtm872" id="id3">3</a>: <a class="reference external" href="https://en.wikipedia.org/wiki/Atacama_Large_Millimeter_Array">ALMA</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/Atacama_Pathfinder_Experiment">APEX</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/IRAM_30m_telescope">IRAM</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/James_Clerk_Maxwell_Telescope">JCMT</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/Large_Millimeter_Telescope">LMT</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/Submillimeter_Array">SMA</a>, and <a class="reference external" href="https://en.wikipedia.org/wiki/Heinrich_Hertz_Submillimeter_Telescope">SMT</a>.  In this tutorial, we will generate a synthetic dataset that attempts to emulate the 2017 EHT observations of M87.</p>
-<p>We’ll start by configuring the array appropriately, which in this case means specifying the appropriate <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object settings.  Relevant fields to specify include:
-* the source being observed (M87)
-* the observing frequency (230 GHz)
-* the bandwidth (2 GHz)
-* the date of the observation (April 6, 2017)
-* the starting time (1 UT) and duration (7 hours) of the observation
-* the telescopes participating in the observation
-We can package all of these settings into a dictionary:</p>
+<p>The Event Horizon Telescope (<a class="reference external" href="https://eventhorizontelescope.org/">EHT</a>) is a globe-spanning network of radio dishes that is most well-known for having gathered the data that were used to reconstruct the first image of the supermassive black hole in the heart of the M87 galaxy[#EHTM874]_.  The original EHT observations took place in April 2017[#EHTM873]_, using an array that consisted of 7 distinct radio facilities[#EHTM872]_: <a class="reference external" href="https://en.wikipedia.org/wiki/Atacama_Large_Millimeter_Array">ALMA</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/Atacama_Pathfinder_Experiment">APEX</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/IRAM_30m_telescope">IRAM</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/James_Clerk_Maxwell_Telescope">JCMT</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/Large_Millimeter_Telescope">LMT</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/Submillimeter_Array">SMA</a>, and <a class="reference external" href="https://en.wikipedia.org/wiki/Heinrich_Hertz_Submillimeter_Telescope">SMT</a>.  In this tutorial, we will generate a synthetic dataset that attempts to emulate these 2017 EHT observations of M87.</p>
+<p>We’ll start by configuring the array appropriately, which in this case means specifying the appropriate <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object settings.  Relevant fields to specify include:</p>
+<ul class="simple">
+<li><p>the source being observed (M87)</p></li>
+<li><p>the observing frequency (230 GHz)</p></li>
+<li><p>the bandwidth (2 GHz)</p></li>
+<li><p>the date of the observation (April 6, 2017)</p></li>
+<li><p>the starting time (1 UT) and duration (7 hours) of the observation</p></li>
+<li><p>the telescopes participating in the observation</p></li>
+</ul>
+<p>We can package all of these settings into a dictionary:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;M87&#39;</span><span class="p">,</span>
             <span class="s1">&#39;frequency&#39;</span><span class="p">:</span> <span class="mf">230.0</span><span class="p">,</span>
             <span class="s1">&#39;bandwidth&#39;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
@@ -110,17 +112,18 @@ We can package all of these settings into a dictionary:</p>
 <span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>Now we need to specify the emission structure of the source that will be observed.  For this example, we’ll treat the M87 black hole image as being a simple ring-like structure with an azimuthal brightness modulation.</p>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this heading"></a></h2>
 <dl class="footnote brackets">
-<dt class="label" id="ehtm874"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dt class="label" id="ehtm874"><span class="brackets">1</span></dt>
 <dd><p>Event Horizon Telescope Collaboration et al. (2019) <em>First M87 Event Horizon Telescope Results. IV. Imaging the Central Supermassive Black Hole</em>, ApJL, 875, L4, DOI: <a class="reference external" href="https://iopscience.iop.org/article/10.3847/2041-8213/ab0e85">10.3847/2041-8213/ab0e85</a></p>
 </dd>
-<dt class="label" id="ehtm873"><span class="brackets"><a class="fn-backref" href="#id2">2</a></span></dt>
+<dt class="label" id="ehtm873"><span class="brackets">2</span></dt>
 <dd><p>Event Horizon Telescope Collaboration et al. (2019) <em>First M87 Event Horizon Telescope Results. III. Data Processing and Calibration</em>, ApJL, 875, L3, DOI: <a class="reference external" href="https://iopscience.iop.org/article/10.3847/2041-8213/ab0c57">10.3847/2041-8213/ab0c57</a></p>
 </dd>
-<dt class="label" id="ehtm872"><span class="brackets"><a class="fn-backref" href="#id3">3</a></span></dt>
+<dt class="label" id="ehtm872"><span class="brackets">3</span></dt>
 <dd><p>Event Horizon Telescope Collaboration et al. (2019) <em>First M87 Event Horizon Telescope Results. II. Array and Instrumentation</em>, ApJL, 875, L2, DOI: <a class="reference external" href="https://iopscience.iop.org/article/10.3847/2041-8213/ab0c96">10.3847/2041-8213/ab0c96</a></p>
 </dd>
 </dl>

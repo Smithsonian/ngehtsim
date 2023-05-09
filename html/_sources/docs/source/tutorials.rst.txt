@@ -5,15 +5,17 @@ Tutorials
 Generate an EHT-like dataset
 ===============================
 
-The Event Horizon Telescope (`EHT <https://eventhorizontelescope.org/>`_) is a globe-spanning network of radio dishes that is most well-known for having gathered the data that were used to reconstruct the first image of the supermassive black hole in the heart of the M87 galaxy [#EHTM874]_.  The original EHT observations took place in April 2017 [#EHTM873]_, using an array that consisted of 7 distinct radio facilities [#EHTM872]_: `ALMA <https://en.wikipedia.org/wiki/Atacama_Large_Millimeter_Array>`_, `APEX <https://en.wikipedia.org/wiki/Atacama_Pathfinder_Experiment>`_, `IRAM <https://en.wikipedia.org/wiki/IRAM_30m_telescope>`_, `JCMT <https://en.wikipedia.org/wiki/James_Clerk_Maxwell_Telescope>`_, `LMT <https://en.wikipedia.org/wiki/Large_Millimeter_Telescope>`_, `SMA <https://en.wikipedia.org/wiki/Submillimeter_Array>`_, and `SMT <https://en.wikipedia.org/wiki/Heinrich_Hertz_Submillimeter_Telescope>`_.  In this tutorial, we will generate a synthetic dataset that attempts to emulate the 2017 EHT observations of M87.
+The Event Horizon Telescope (`EHT <https://eventhorizontelescope.org/>`_) is a globe-spanning network of radio dishes that is most well-known for having gathered the data that were used to reconstruct the first image of the supermassive black hole in the heart of the M87 galaxy[#EHTM874]_.  The original EHT observations took place in April 2017[#EHTM873]_, using an array that consisted of 7 distinct radio facilities[#EHTM872]_: `ALMA <https://en.wikipedia.org/wiki/Atacama_Large_Millimeter_Array>`_, `APEX <https://en.wikipedia.org/wiki/Atacama_Pathfinder_Experiment>`_, `IRAM <https://en.wikipedia.org/wiki/IRAM_30m_telescope>`_, `JCMT <https://en.wikipedia.org/wiki/James_Clerk_Maxwell_Telescope>`_, `LMT <https://en.wikipedia.org/wiki/Large_Millimeter_Telescope>`_, `SMA <https://en.wikipedia.org/wiki/Submillimeter_Array>`_, and `SMT <https://en.wikipedia.org/wiki/Heinrich_Hertz_Submillimeter_Telescope>`_.  In this tutorial, we will generate a synthetic dataset that attempts to emulate these 2017 EHT observations of M87.
 
 We'll start by configuring the array appropriately, which in this case means specifying the appropriate ``obs_generator`` object settings.  Relevant fields to specify include:
+
 * the source being observed (M87)
 * the observing frequency (230 GHz)
 * the bandwidth (2 GHz)
 * the date of the observation (April 6, 2017)
 * the starting time (1 UT) and duration (7 hours) of the observation
 * the telescopes participating in the observation
+
 We can package all of these settings into a dictionary::
    
    settings = {'source': 'M87',
@@ -35,7 +37,7 @@ Once the settings have been specified, we can instantiate an ``obs_generator`` o
    import ngehtsim.obs.obs_generator as og
    obsgen = og.obs_generator(settings)
 
-
+Now we need to specify the emission structure of the source that will be observed.  For this example, we'll treat the M87 black hole image as being a simple ring-like structure with an azimuthal brightness modulation.
 
 
 
