@@ -1,7 +1,7 @@
 Introduction
 ========================
 
-The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the `ehtim <https://github.com/achael/eht-imaging>`_ [Chael2016]_ [Chael2018]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.
+The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the `ehtim <https://github.com/achael/eht-imaging>`_ [Chael2016]_ [Chael2018]_ [#f1]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.
 
 Basic framework
 ------------------------
@@ -52,6 +52,8 @@ The `ngehtutil <https://github.com/Smithsonian/ngehtutil>`_ library provides inf
 The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database [Rienecker2011]_ [Molod2015]_ [Gelaro2017]_.
 
 
+
+.. [#f1] Chael, A. A. et al. (2016) *High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope*, ApJ, 829, 11, DOI: `10.3847/0004-637X/829/1/11 <https://iopscience.iop.org/article/10.3847/0004-637X/829/1/11>`_
 
 References
 ------------------------
