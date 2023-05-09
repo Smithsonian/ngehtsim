@@ -37,11 +37,21 @@ Once the settings have been specified, we can instantiate an ``obs_generator`` o
    import ngehtsim.obs.obs_generator as og
    obsgen = og.obs_generator(settings)
 
-Now we need to specify the emission structure of the source that will be observed.  For this example, we'll treat the M87 black hole image as being a simple ring-like structure with an azimuthal brightness modulation.
+Now we need to specify the emission structure of the source that will be observed.  For this example, we'll treat the M87 black hole image as being a simple ring-like structure with an azimuthal brightness modulation.  The flux density of the ring is about 0.6 Jy, its angular diameter is about 40 microarcseconds, and its thickness is about 10 microarcseconds.  We can use `ehtim <https://github.com/achael/eht-imaging>`_ to produce the source model::
 
+   import ehtim as eh
+   mod = eh.model.Model()
+   mod = mod.add_thick_mring(F0=0.6, d=40.0*eh.RADPERUAS, alpha = 10.0*eh.RADPERUAS, beta_list=[-0.4])
 
+.. image:: EHT2017_tutorial_images/M87_mock.png
+   :align: left
+   :alt: A mock image of the M87 black hole.
 
+We can now observe this source model with the specified array::
 
+   obs = obsgen.make_obs(mod)
+
+Continued...
 
 
 References
