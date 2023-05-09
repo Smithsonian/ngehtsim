@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Introduction and examples &mdash; ngehtsim 0+untagged.126.gf859371 documentation</title>
+  <title>Introduction &mdash; ngehtsim 0+untagged.127.gf74054b documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.126.gf859371
+                0+untagged.127.gf74054b
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -43,8 +43,9 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction and examples</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#basic-framework">Basic framework</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sites">Sites</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="packages.html">Packages</a></li>
@@ -64,7 +65,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Introduction and examples</li>
+      <li>Introduction</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/docs/source/introduction.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -74,8 +75,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="introduction-and-examples">
-<h1>Introduction and examples<a class="headerlink" href="#introduction-and-examples" title="Permalink to this heading"></a></h1>
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h1>
 <p>The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.</p>
 <section id="basic-framework">
 <h2>Basic framework<a class="headerlink" href="#basic-framework" title="Permalink to this heading"></a></h2>
@@ -84,7 +85,32 @@
 <span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>When called with no arguments, this function will return an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> with the default settings, which are stored in <cite>obsgen.settings</cite>.  To specify non-default settings during initializion, a user can either provide a dictionary or the path to a YAML file to the initialization function.</p>
+<p>When called with no arguments, this function will return an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object with the default settings, which are stored in <code class="docutils literal notranslate"><span class="pre">obsgen.settings</span></code>.  To specify non-default settings during initializion, a user can either provide path to a YAML file or else pass a dictionary to the initialization function.  For instance, to specify the right ascension and declination of a target source while also aiming to observe with only a small array consisting of the ALMA, LMT, and SMT telescopes, we could pass a settings dictionary:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;RA&#39;</span><span class="p">:</span> <span class="mf">12.5137</span><span class="p">,</span>
+            <span class="s1">&#39;DEC&#39;</span><span class="p">:</span> <span class="mf">12.3911</span><span class="p">,</span>
+            <span class="s1">&#39;sites&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;ALMA&#39;</span><span class="p">,</span> <span class="s1">&#39;LMT&#39;</span><span class="p">,</span> <span class="s1">&#39;SMT&#39;</span><span class="p">]}</span>
+<span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>These specified settings will override the corresponding default values.</p>
+<p>To generate a synthetic observation using this <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object, we need to first supply the emission structure of the source that is to be observed.  The ngehtsim package supports a number of different formats for the specified emission structure.  For instance, we could use <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> to create a ring-like emission model:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ehtim</span> <span class="k">as</span> <span class="nn">eh</span>
+<span class="n">mod</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+<span class="n">mod</span> <span class="o">=</span> <span class="n">mod</span><span class="o">.</span><span class="n">add_ring</span><span class="p">(</span><span class="n">F0</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mf">40.</span><span class="o">*</span><span class="n">eh</span><span class="o">.</span><span class="n">RADPERUAS</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Generating a dataset using the array settings specified in the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object and the source properties contained in the ring-like emission model then simply requires calling the <code class="docutils literal notranslate"><span class="pre">make_obs()</span></code> function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obs</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">make_obs</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">make_obs()</span></code> function returns an <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a>-compatible <code class="docutils literal notranslate"><span class="pre">obsdata</span></code> object, which can be saved, imaged, or otherwise manipulated using all of the tools in the <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> library.  For instance, to save the observation as a uvfits file, we simply call:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obs</span><span class="o">.</span><span class="n">save_uvfits</span><span class="p">(</span><span class="s1">&#39;synthetic_observation.uvfits&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="sites">
+<h2>Sites<a class="headerlink" href="#sites" title="Permalink to this heading"></a></h2>
+<p>The ngehtsim package contains a library of existing and potential telescope sites whose locations and atmospheric properties have been tabulated.</p>
 </section>
 </section>
 
