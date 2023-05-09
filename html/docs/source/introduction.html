@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Introduction &mdash; ngehtsim 0+untagged.127.gf74054b documentation</title>
+  <title>Introduction &mdash; ngehtsim 0+untagged.128.gf0da3ca documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.127.gf74054b
+                0+untagged.128.gf0da3ca
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -45,7 +45,8 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#basic-framework">Basic framework</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#sites">Sites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#site-information">Site information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="packages.html">Packages</a></li>
@@ -77,7 +78,7 @@
              
   <section id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h1>
-<p>The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.</p>
+<p>The ngehtsim package is intended to provide a fast and flexible way to generate synthetic interferometric data.  It inherits much of its core functionality from the <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> [Chael2016]_[Chael2018]_ library but adds to it a number of relevant data corruption effects and fringe-fitting emulation.  The ngehtsim package also provides substantial flexibility to generate data from a highly heterogeneous array, with properties such as dish size, surface accuracy, bandwidth, and receiver noise temperatures being specifiable at a per-site level.</p>
 <section id="basic-framework">
 <h2>Basic framework<a class="headerlink" href="#basic-framework" title="Permalink to this heading"></a></h2>
 <p>The primary functionality provided by the ngehtsim package is synthetic data generation, whose properties are determined by an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object.  The <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object is initialized with a number of settings, many of which come with reasonable default values but several of which the user will typically want to specify.  To initialize an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object, simply call the initialization function:</p>
@@ -103,14 +104,45 @@
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obs</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">make_obs</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">make_obs()</span></code> function returns an <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a>-compatible <code class="docutils literal notranslate"><span class="pre">obsdata</span></code> object, which can be saved, imaged, or otherwise manipulated using all of the tools in the <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> library.  For instance, to save the observation as a uvfits file, we simply call:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">make_obs()</span></code> function returns an <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a>-compatible <code class="docutils literal notranslate"><span class="pre">obsdata</span></code> object, which can be saved, imaged, or otherwise manipulated using any of the tools in the <a class="reference external" href="https://github.com/achael/eht-imaging">ehtim</a> library.  For instance, to save the observation as a uvfits file, we simply call:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obs</span><span class="o">.</span><span class="n">save_uvfits</span><span class="p">(</span><span class="s1">&#39;synthetic_observation.uvfits&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
-<section id="sites">
-<h2>Sites<a class="headerlink" href="#sites" title="Permalink to this heading"></a></h2>
-<p>The ngehtsim package contains a library of existing and potential telescope sites whose locations and atmospheric properties have been tabulated.</p>
+<section id="site-information">
+<h2>Site information<a class="headerlink" href="#site-information" title="Permalink to this heading"></a></h2>
+<p>The ngehtsim package contains a library of existing and potential telescope sites whose locations and atmospheric properties are used during synthetic data generation.  The list of available sites can be accessed using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ngehtsim.obs.obs_generator</span> <span class="k">as</span> <span class="nn">og</span>
+<span class="n">site_list</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">get_site_list</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>For sites with existing telescopes, such as the LMT, the telescope information is inherited from the <a class="reference external" href="https://github.com/Smithsonian/ngehtutil">ngehtutil</a> library.  We can pull up the associated <a class="reference external" href="https://github.com/Smithsonian/ngehtutil">ngehtutil</a> <code class="docutils literal notranslate"><span class="pre">Station</span></code> object using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ngehtutil</span> <span class="k">as</span> <span class="nn">ng</span>
+<span class="n">LMT</span> <span class="o">=</span> <span class="n">ng</span><span class="o">.</span><span class="n">Station</span><span class="o">.</span><span class="n">from_name</span><span class="p">(</span><span class="s1">&#39;LMT&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <a class="reference external" href="https://github.com/Smithsonian/ngehtutil">ngehtutil</a> library provides information such as the dish size, surface accuracy, location, and level of local infrastructure at the selected site.</p>
+<p>The ngehtsim package also contains historical weather information at every site that has been tabulated from the <a class="reference external" href="https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/">MERRA-2</a> database [Rienecker2011]_[Molod2015]_[Gelaro2017]_.</p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading"></a></h2>
+<dl class="citation">
+<dt class="label" id="chael2016"><span class="brackets">Chael2016</span></dt>
+<dd><p>Chael, A. A. et al. <em>High-resolution Linear Polarimetric Imaging for the Event Horizon Telescope</em>  2016, ApJ, 829, 11</p>
+</dd>
+<dt class="label" id="chael2018"><span class="brackets">Chael2018</span></dt>
+<dd><p>Chael, A. A. et al. <em>Interferometric Imaging Directly with Closure Phases and Closure Amplitudes</em>  2018, ApJ, 857, 23</p>
+</dd>
+<dt class="label" id="gelaro2017"><span class="brackets">Gelaro2017</span></dt>
+<dd><p>Gelaro, R. et al. <em>The Modern-Era Retrospective Analysis for Research and Applications, Version 2 (MERRA-2)</em>  2017, Journal of Climate, 30, 5419</p>
+</dd>
+<dt class="label" id="molod2015"><span class="brackets">Molod2015</span></dt>
+<dd><p>Molod, A. et al. <em>Development of the GEOS-5 atmospheric general circulation model: evolution from MERRA to MERRA2</em>  2015, Geoscientific Model Development, 8, 1339</p>
+</dd>
+<dt class="label" id="rienecker2011"><span class="brackets">Rienecker2011</span></dt>
+<dd><p>Rienecker, M. M. et al. <em>MERRA: NASA’s Modern-Era Retrospective Analysis for Research and Applications</em>  2011, Journal of Climate, 24, 3624</p>
+</dd>
+</dl>
 </section>
 </section>
 
