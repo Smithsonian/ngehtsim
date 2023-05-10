@@ -569,6 +569,18 @@ class obs_generator(object):
         bw[ind2] = bw2[ind2]
         self.bandwidths = bw
 
+
+        #########################
+        # TO BE REMOVED
+        self.Tsys1 = Tsys1
+        self.Tsys2 = Tsys2
+        self.tau1 = tau1
+        self.tau2 = tau2
+        self.Tb1 = Tb1
+        self.Tb2 = Tb2
+        #########################
+
+
         # store and apply gains
         if addgains:
             g1R = gainamp1R*np.exp((1.0j)*gainphase1R)
@@ -825,7 +837,8 @@ class obs_generator(object):
         export_SYMBA_master_input(self,
                                   input_args=master_input_args,
                                   input_comments=master_input_comments,
-                                  output_filename=output_filenames[1])
+                                  output_filename=output_filenames[1],
+                                  use_two_letter=use_two_letter)
 
 ###################################################
 # other functions
@@ -1415,106 +1428,109 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
 
             for site in obsgen.sites:
 
-                # initialize empty string
-                strhere = ''
+                freqhere = str(int(obsgen.freq/(1.0e9)))
+                if freqhere in obsgen.T_R_setup[site].keys():
 
-                # add station name as a two-letter code
-                if use_two_letter:
-                    strhere += const.two_letter_station_codes[site].ljust(9)
-                else:
-                    strhere += site.ljust(9)
+                    # initialize empty string
+                    strhere = ''
 
-                # add receiver SEFD, in Jy
-                SEFD_R = (2.0*const.k*obsgen.T_R_setup[site][str(int(obsgen.freq/(1.0e9)))])/((np.pi/4.0)*obsgen.eta_dict[site]*(obsgen.D_dict[site])**2)
-                strhere += str(np.round(SEFD_R,2)).ljust(11)
+                    # add station name as a two-letter code
+                    if use_two_letter:
+                        strhere += const.two_letter_station_codes[site].ljust(9)
+                    else:
+                        strhere += site.ljust(9)
 
-                # add PWV, in mm
-                PWV = nw.PWV(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
-                strhere += str(np.round(PWV,4)).ljust(9)
+                    # add receiver SEFD, in Jy
+                    SEFD_R = (2.0*const.k*obsgen.T_R_setup[site][freqhere])/((np.pi/4.0)*obsgen.eta_dict[site]*(obsgen.D_dict[site])**2)
+                    strhere += str(np.round(SEFD_R,2)).ljust(11)
 
-                # add surface pressure, in mbar
-                pres = nw.pressure(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
-                strhere += str(np.round(pres,2)).ljust(12)
+                    # add PWV, in mm
+                    PWV = nw.PWV(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
+                    strhere += str(np.round(PWV,4)).ljust(9)
 
-                # add surface temperature, in K
-                temp = nw.temperature(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
-                strhere += str(np.round(temp,2)).ljust(10)
+                    # add surface pressure, in mbar
+                    pres = nw.pressure(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
+                    strhere += str(np.round(pres,2)).ljust(12)
 
-                # add coherence time, in seconds
-                strhere += str(np.round(t_coh,2)).ljust(13)
+                    # add surface temperature, in K
+                    temp = nw.temperature(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
+                    strhere += str(np.round(temp,2)).ljust(10)
 
-                # add RMS pointing uncertainty, in seconds
-                strhere += str(np.round(RMS_point,2)).ljust(17)
+                    # add coherence time, in seconds
+                    strhere += str(np.round(t_coh,2)).ljust(13)
 
-                # add 230GHz FWHM primary beam size
-                ind = (stationnames == site)
-                stat = np.array(obsgen.array.stations())[ind][0]
-                diam = stat.dishes[0].diameter
-                pb = ((180.0/np.pi)*3600.0)*((const.c / (230.0e9)) / diam)
-                strhere += str(np.round(pb,2)).ljust(20)
+                    # add RMS pointing uncertainty, in seconds
+                    strhere += str(np.round(RMS_point,2)).ljust(17)
 
-                # add the primary beam model
-                strhere += PB_model.ljust(12)
+                    # add 230GHz FWHM primary beam size
+                    ind = (stationnames == site)
+                    stat = np.array(obsgen.array.stations())[ind][0]
+                    diam = stat.dishes[0].diameter
+                    pb = ((180.0/np.pi)*3600.0)*((const.c / (230.0e9)) / diam)
+                    strhere += str(np.round(pb,2)).ljust(20)
 
-                # add the aperture efficiency
-                strhere += str(np.round(obsgen.eta_dict[site],4)).ljust(9)
+                    # add the primary beam model
+                    strhere += PB_model.ljust(12)
 
-                # add gain means and stds
-                if isinstance(gain_mean,float) or isinstance(gain_mean,complex):
-                    gain_here = gain_mean
-                elif isinstance(gain_mean,dict):
-                    gain_here = gain_mean[site]
-                if isinstance(gain_here,complex):
-                    gain_str = str(gain_here)[1:-1]
-                else:
-                    gain_str = str(gain_here)
-                strhere += gain_str.ljust(11)
-                strhere += str(0.0).ljust(12)
-                strhere += gain_str.ljust(11)
-                strhere += str(0.0).ljust(12)
+                    # add the aperture efficiency
+                    strhere += str(np.round(obsgen.eta_dict[site],4)).ljust(9)
 
-                # add leakage means and stds
-                if isinstance(leak_mean,float) or isinstance(leak_mean,complex):
-                    leak_here = leak_mean
-                elif isinstance(leak_mean,dict):
-                    leak_here = leak_mean[site]
-                if isinstance(leak_here,complex):
-                    leak_str = str(leak_here)[1:-1]
-                else:
-                    leak_str = str(leak_here)
-                strhere += leak_str.ljust(12)
-                strhere += str(0.0).ljust(12)
-                strhere += leak_str.ljust(12)
-                strhere += str(0.0).ljust(12)
+                    # add gain means and stds
+                    if isinstance(gain_mean,float) or isinstance(gain_mean,complex):
+                        gain_here = gain_mean
+                    elif isinstance(gain_mean,dict):
+                        gain_here = gain_mean[site]
+                    if isinstance(gain_here,complex):
+                        gain_str = str(gain_here)[1:-1]
+                    else:
+                        gain_str = str(gain_here)
+                    strhere += gain_str.ljust(11)
+                    strhere += str(0.0).ljust(12)
+                    strhere += gain_str.ljust(11)
+                    strhere += str(0.0).ljust(12)
 
-                # add feed angle
-                if site in const.known_feed_angles.keys():
-                    strhere += str(const.known_feed_angles[site]).ljust(20)
-                else:
-                    strhere += str(const.feed_angle).ljust(20)
+                    # add leakage means and stds
+                    if isinstance(leak_mean,float) or isinstance(leak_mean,complex):
+                        leak_here = leak_mean
+                    elif isinstance(leak_mean,dict):
+                        leak_here = leak_mean[site]
+                    if isinstance(leak_here,complex):
+                        leak_str = str(leak_here)[1:-1]
+                    else:
+                        leak_str = str(leak_here)
+                    strhere += leak_str.ljust(12)
+                    strhere += str(0.0).ljust(12)
+                    strhere += leak_str.ljust(12)
+                    strhere += str(0.0).ljust(12)
 
-                # add mount type
-                if site in const.known_mount_types.keys():
-                    strhere += const.known_mount_types[site].ljust(18)
-                else:
-                    strhere += const.mount_type.ljust(18)
+                    # add feed angle
+                    if site in const.known_feed_angles.keys():
+                        strhere += str(const.known_feed_angles[site]).ljust(20)
+                    else:
+                        strhere += str(const.feed_angle).ljust(20)
 
-                # add dish diameter
-                diam = stat.diameter()
-                strhere += str(np.round(diam,2)).ljust(17)
+                    # add mount type
+                    if site in const.known_mount_types.keys():
+                        strhere += const.known_mount_types[site].ljust(18)
+                    else:
+                        strhere += const.mount_type.ljust(18)
 
-                # add xyz coordinates
-                coords = stat.xyz()
-                strhere += str(np.round(coords[0],8)) + ',' 
-                strhere += str(np.round(coords[1],8)) + ',' 
-                strhere += str(np.round(coords[2],8))
+                    # add dish diameter
+                    diam = stat.diameter()
+                    strhere += str(np.round(diam,2)).ljust(17)
 
-                # write line
-                strhere += '\n'
-                outfile.write(strhere)
+                    # add xyz coordinates
+                    coords = stat.xyz()
+                    strhere += str(np.round(coords[0],8)) + ',' 
+                    strhere += str(np.round(coords[1],8)) + ',' 
+                    strhere += str(np.round(coords[2],8))
+
+                    # write line
+                    strhere += '\n'
+                    outfile.write(strhere)
 
 
-def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_filename='master_input.txt'):
+def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_filename='master_input.txt',use_two_letter=True):
     """
     Export a SYMBA-compatible master_input.txt file from the obs_generator object.
 
@@ -1523,6 +1539,7 @@ def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_file
       input_args (dict): dictionary of input arguments
       input_comments (dict): dictionary of comments associated with input arguments
       output_filename (str): name of master_input.txt file to save
+      use_two_letter (bool): convert all station names to two-letter codes
 
     Returns:
       SYMBA-compatible master_input.txt file containing the observation information
@@ -1536,12 +1553,23 @@ def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_file
     # overwrite various defaults using the obsgen information
 
     # determine the top 5 most sensitive sites in the array
-    indices = np.argsort(list(obsgen.D_dict.values()))[-5:]
+    freqhere = str(int(obsgen.freq/(1.0e9)))
+    indices = np.argsort(list(obsgen.D_dict.values()))
     sitenames = np.array(list(obsgen.D_dict.keys()))[indices][::-1]
     strsites = ''
+    count = 0
     for site in sitenames:
-        strsites += const.two_letter_station_codes[site] + ', '
-    args['rpicard_refants'] = strsites[:-2]
+        if freqhere in obsgen.T_R_setup[site].keys():
+            count += 1
+            if use_two_letter:
+                strsites += const.two_letter_station_codes[site]
+            else:
+                strsites += site
+            if count < 5:
+                strsites += ', '
+            else:
+                break
+    args['rpicard_refants'] = strsites
 
     # source name
     args['vex_source'] = obsgen.settings['source']
