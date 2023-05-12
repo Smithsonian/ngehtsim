@@ -73,8 +73,9 @@ def test_eta_dish():
     freq = 230.0e9
     sigma = 60.0e-6
     offset = 60.0e-6
-    trueval = np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/(const.c/freq))**2)
-    assert og.eta_dish(freq, sigma, offset) == trueval
+    ap_eff = 1.0
+    trueval = ap_eff*np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/(const.c/freq))**2)
+    assert og.eta_dish(freq, sigma, offset, ap_eff) == trueval
 
 # #######################################################
 # # test weather data availability
