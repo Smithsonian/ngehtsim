@@ -33,6 +33,7 @@ class obs_generator(object):
                            Note that any settings specified by the settings keyword argument will override
                            the corresponding settings from the settings file.
       verbose (float): Set to >0 for more verbose output
+      heavy (float): Set to >0 to store more information in the obs_generator object
       D_override_dict (dict): A dictionary of station names and diameters to override defaults
       surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override defaults
       receiver_override_dict (dict): A dictionary of station names and available receivers to override defaults
@@ -45,13 +46,14 @@ class obs_generator(object):
     """
 
     # initialize class instantiation
-    def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={},
+    def __init__(self, settings={}, settings_file=None, verbose=0, heavy=0, D_override_dict={},
                  surf_rms_override_dict={}, receiver_override_dict={}, bandwidth_override_dict={},
                  T_R_override_dict={}, sideband_ratio_override_dict={}, ap_eff_override_dict={},
                  array_name=None, ephem='ephemeris/space'):
 
         self.settings_file = settings_file
         self.verbosity = verbose
+        self.weight = heavy
         self.D_override_dict = copy.deepcopy(D_override_dict)
         self.surf_rms_override_dict = copy.deepcopy(surf_rms_override_dict)
         self.receiver_override_dict = copy.deepcopy(receiver_override_dict)
@@ -588,19 +590,16 @@ class obs_generator(object):
         ind2 = (bw2 <= bw1)
         bw[ind1] = bw1[ind1]
         bw[ind2] = bw2[ind2]
-        self.bandwidths = bw
 
-
-        #########################
-        # TO BE REMOVED
-        self.Tsys1 = Tsys1
-        self.Tsys2 = Tsys2
-        self.tau1 = tau1
-        self.tau2 = tau2
-        self.Tb1 = Tb1
-        self.Tb2 = Tb2
-        #########################
-
+        # store additional info if requested
+        if self.weight > 0:
+            self.bandwidths = bw
+            self.Tsys1 = Tsys1
+            self.Tsys2 = Tsys2
+            self.tau1 = tau1
+            self.tau2 = tau2
+            self.Tb1 = Tb1
+            self.Tb2 = Tb2
 
         # store and apply gains
         if addgains:
@@ -608,10 +607,11 @@ class obs_generator(object):
             g2R = gainamp2R*np.exp((1.0j)*gainphase2R)
             g1L = gainamp1R*np.exp((1.0j)*gainphase1L)
             g2L = gainamp2R*np.exp((1.0j)*gainphase2L)
-            self.station_gains1R = g1R
-            self.station_gains2R = g2R
-            self.station_gains1L = g1L
-            self.station_gains2L = g2L
+            if self.weight > 0:
+                self.station_gains1R = g1R
+                self.station_gains2R = g2R
+                self.station_gains1L = g1L
+                self.station_gains2L = g2L
             obs.data['rrvis'] *= g1R*np.conj(g2R)
             obs.data['llvis'] *= g1L*np.conj(g2L)
             obs.data['rlvis'] *= g1R*np.conj(g2L)
