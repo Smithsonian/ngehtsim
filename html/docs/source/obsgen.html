@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Observation utilities &mdash; ngehtsim 0+untagged.129.g080dfe2.dirty documentation</title>
+  <title>Observation utilities &mdash; ngehtsim 0+untagged.131.g12daafc documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -32,7 +32,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.129.g080dfe2.dirty
+                0+untagged.131.g12daafc
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -137,18 +137,19 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 
 <dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_generator.eta_dish">
-<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">eta_dish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#eta_dish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.eta_dish" title="Permalink to this definition"></a></dt>
-<dd><p>Function for computing aperture efficiency.</p>
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">eta_dish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ap_eff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#eta_dish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.eta_dish" title="Permalink to this definition"></a></dt>
+<dd><p>Function for computing overall antenna aperture efficiency.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – observing frequency, in Hz</p></li>
 <li><p><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – surface RMS, in meters</p></li>
 <li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – focus offset, in equivalent surface RMS units</p></li>
+<li><p><strong>ap_eff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)"><em>float</em></a>) – nominal aperture efficiency</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>aperture efficiency</p>
+<dd class="field-even"><p>overall aperture efficiency</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.11)">float</a>)</p>
@@ -185,7 +186,7 @@ if a dict, should be indexed by station name</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_generator.export_SYMBA_master_input">
-<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">export_SYMBA_master_input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obsgen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_comments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'master_input.txt'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#export_SYMBA_master_input"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.export_SYMBA_master_input" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">export_SYMBA_master_input</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obsgen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_comments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'master_input.txt'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_two_letter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#export_SYMBA_master_input"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.export_SYMBA_master_input" title="Permalink to this definition"></a></dt>
 <dd><p>Export a SYMBA-compatible master_input.txt file from the obs_generator object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -194,6 +195,7 @@ if a dict, should be indexed by station name</p></li>
 <li><p><strong>input_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) – dictionary of input arguments</p></li>
 <li><p><strong>input_comments</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) – dictionary of comments associated with input arguments</p></li>
 <li><p><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – name of master_input.txt file to save</p></li>
+<li><p><strong>use_two_letter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – convert all station names to two-letter codes</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -322,7 +324,7 @@ takes on a value between 0 and 1</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">obs_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surf_rms_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bandwidth_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_R_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ephem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ephemeris/space'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">obs_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surf_rms_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bandwidth_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_R_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sideband_ratio_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ap_eff_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ephem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ephemeris/space'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator" title="Permalink to this definition"></a></dt>
 <dd><p>Class that organizes information for generating synthetic observations.  Typically initialized by
 passing a settings file.</p>
 <dl class="py attribute">
@@ -408,6 +410,28 @@ the corresponding settings from the settings file.</p>
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator.T_R_override_dict">
 <span class="sig-name descname"><span class="pre">T_R_override_dict</span></span><a class="headerlink" href="#obs.obs_generator.obs_generator.T_R_override_dict" title="Permalink to this definition"></a></dt>
 <dd><p>A dictionary of station names and receiver temperature values to override defaults</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="obs.obs_generator.obs_generator.sideband_ratio_override_dict">
+<span class="sig-name descname"><span class="pre">sideband_ratio_override_dict</span></span><a class="headerlink" href="#obs.obs_generator.obs_generator.sideband_ratio_override_dict" title="Permalink to this definition"></a></dt>
+<dd><p>A dictionary of station names and sideband ratio values to override defaults</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="obs.obs_generator.obs_generator.ap_eff_override_dict">
+<span class="sig-name descname"><span class="pre">ap_eff_override_dict</span></span><a class="headerlink" href="#obs.obs_generator.obs_generator.ap_eff_override_dict" title="Permalink to this definition"></a></dt>
+<dd><p>A dictionary of station names and aperture efficiency values to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a></p>
@@ -544,6 +568,27 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="obs.obs_generator.set_ap_effs">
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">set_ap_effs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver_setup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ap_eff_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#set_ap_effs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.set_ap_effs" title="Permalink to this definition"></a></dt>
+<dd><p>Create an aperture efficiency dictionary given a list of sites and overrides</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sitelist</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a>) – A list of site names</p></li>
+<li><p><strong>receiver_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) – A dictionary of station names and available receivers</p></li>
+<li><p><strong>ap_eff_override_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) – A dictionary of station names and aperture efficiencies to override the defaults</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dictionary of station names and associated aperture efficiencies</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_generator.set_bandwidths">
 <span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">set_bandwidths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_bandwidth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver_setup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bandwidth_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#set_bandwidths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.set_bandwidths" title="Permalink to this definition"></a></dt>
 <dd><p>Create a bandwidth dictionary given a list of sites and overrides</p>
@@ -579,6 +624,27 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>A dictionary of station names and available receivers</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="obs.obs_generator.set_sideband_ratios">
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">set_sideband_ratios</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sitelist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver_setup</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sideband_ratio_override_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#set_sideband_ratios"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.set_sideband_ratios" title="Permalink to this definition"></a></dt>
+<dd><p>Create a sideband ratio dictionary given a list of sites and overrides</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sitelist</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a>) – A list of site names</p></li>
+<li><p><strong>receiver_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) – A dictionary of station names and available receivers</p></li>
+<li><p><strong>sideband_ratio_override_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) – A dictionary of station names and sideband ratios to override the defaults</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dictionary of station names and associated sideband ratios</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a>)</p>

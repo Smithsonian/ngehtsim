@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorials &mdash; ngehtsim 0+untagged.129.g080dfe2.dirty documentation</title>
+  <title>Tutorials &mdash; ngehtsim 0+untagged.131.g12daafc documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.129.g080dfe2.dirty
+                0+untagged.131.g12daafc
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -45,7 +45,10 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#generate-an-eht-like-dataset">Generate an EHT-like dataset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#generating-an-eht-like-dataset">Generating an EHT-like dataset</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#additional-effects">Additional effects</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
 </ul>
 </li>
@@ -78,8 +81,8 @@
              
   <section id="tutorials">
 <h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this heading"></a></h1>
-<section id="generate-an-eht-like-dataset">
-<h2>Generate an EHT-like dataset<a class="headerlink" href="#generate-an-eht-like-dataset" title="Permalink to this heading"></a></h2>
+<section id="generating-an-eht-like-dataset">
+<h2>Generating an EHT-like dataset<a class="headerlink" href="#generating-an-eht-like-dataset" title="Permalink to this heading"></a></h2>
 <p>The Event Horizon Telescope (<a class="reference external" href="https://eventhorizontelescope.org/">EHT</a>) is a globe-spanning network of radio dishes that is most well-known for having gathered the data that were used to reconstruct the first image of the supermassive black hole in the heart of the M87 galaxy <a class="footnote-reference brackets" href="#ehtm874" id="id1">1</a>.  The original EHT observations took place in April 2017 <a class="footnote-reference brackets" href="#ehtm873" id="id2">2</a>, using an array that consisted of 7 distinct radio facilities <a class="footnote-reference brackets" href="#ehtm872" id="id3">3</a>: <a class="reference external" href="https://en.wikipedia.org/wiki/Atacama_Large_Millimeter_Array">ALMA</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/Atacama_Pathfinder_Experiment">APEX</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/IRAM_30m_telescope">IRAM</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/James_Clerk_Maxwell_Telescope">JCMT</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/Large_Millimeter_Telescope">LMT</a>, <a class="reference external" href="https://en.wikipedia.org/wiki/Submillimeter_Array">SMA</a>, and <a class="reference external" href="https://en.wikipedia.org/wiki/Heinrich_Hertz_Submillimeter_Telescope">SMT</a>.  In this tutorial, we will generate a synthetic dataset that attempts to emulate these 2017 EHT observations of M87.</p>
 <p>We’ll start by configuring the array appropriately, which in this case means specifying the appropriate <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object settings.  Relevant fields to specify include:</p>
 <ul class="simple">
@@ -135,7 +138,115 @@
 </div>
 <p>And now we can compare the properties of the real and simulated datasets!  Let’s first take a look at the <cite>(u,v)</cite>-coverage:</p>
 <img alt="Comparison of simulated and real 2017 EHT (u,v)-coverage on M87." class="align-left" src="../../_images/uv-coverage.png" />
-<p>The agreement here looks pretty good; the main difference is that the synthetic dataset shows some tracks extending a bit further than the real dataset actually obtained.  It turns out that during the actual April 6, 2017 EHT observations, the SMT station suffered from some technical issues towards the beginning of the observing track that resulted in less data getting collected.  These technical issues are not simulated by ngehtsim, so it overpredicts the amount of data on baselines containing the SMT.</p>
+<p>The agreement here looks pretty good; the main difference is that there are some tracks that are a bit longer in the synthetic data than they are in the real data.  It turns out that during the actual April 6, 2017 EHT observations, the SMT station suffered from some technical issues towards the beginning of the observing track that resulted in less data getting collected.  These technical issues are not simulated by ngehtsim, so it overpredicts the amount of data on baselines containing the SMT.</p>
+<p>And how does the array sensitivity compare between the simulated and real datasets?  This question is a bit trickier to quantify, because we have not simulated the exact timestamps and detailed integration times, and so we expect the baseline sensitivities to fluctuate more in the real data than in the simulated data.  However, we can attempt to compensate for this effect by scaling the simulated dataset noise levels by the integration times achieved in the real data.  A short script that does some nearest-neighbor matching and integration time rescaling might look like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># set up a dictionary to translate between the</span>
+<span class="c1"># station codes used in the real data and the</span>
+<span class="c1"># station codes used in our simulation</span>
+<span class="n">station_translation_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;AA&#39;</span><span class="p">:</span> <span class="s1">&#39;ALMA&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;AP&#39;</span><span class="p">:</span> <span class="s1">&#39;APEX&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;PV&#39;</span><span class="p">:</span> <span class="s1">&#39;IRAM&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;JC&#39;</span><span class="p">:</span> <span class="s1">&#39;JCMT&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;LM&#39;</span><span class="p">:</span> <span class="s1">&#39;LMT&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;SM&#39;</span><span class="p">:</span> <span class="s1">&#39;SMA&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;AZ&#39;</span><span class="p">:</span> <span class="s1">&#39;SMT&#39;</span><span class="p">}</span>
+
+<span class="c1"># extract the relevant simulated metadata</span>
+<span class="n">simulated_timestamps</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
+<span class="n">simulated_station1</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t1&#39;</span><span class="p">]</span>
+<span class="n">simulated_station2</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t2&#39;</span><span class="p">]</span>
+
+<span class="c1"># loop through the real data</span>
+<span class="n">datalength</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs_real</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+<span class="n">real_noise_level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">datalength</span><span class="p">)</span>
+<span class="n">simulated_noise_level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">datalength</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">datalength</span><span class="p">):</span>
+
+    <span class="c1"># match the baseline</span>
+    <span class="n">real_station1</span> <span class="o">=</span> <span class="n">station_translation_dict</span><span class="p">[</span><span class="n">obs_real</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t1&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]]</span>
+    <span class="n">real_station2</span> <span class="o">=</span> <span class="n">station_translation_dict</span><span class="p">[</span><span class="n">obs_real</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t2&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]]</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">simulated_station1</span> <span class="o">==</span> <span class="n">real_station1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">simulated_station2</span> <span class="o">==</span> <span class="n">real_station2</span><span class="p">))</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">simulated_station1</span> <span class="o">==</span> <span class="n">real_station2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">simulated_station2</span> <span class="o">==</span> <span class="n">real_station1</span><span class="p">))</span>
+
+    <span class="c1"># match the timestamp as closely as possible</span>
+    <span class="n">real_timestamp</span> <span class="o">=</span> <span class="n">obs_real</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">simulated_timestamp</span> <span class="o">=</span> <span class="n">simulated_timestamps</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">simulated_timestamps</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">-</span> <span class="n">real_timestamp</span><span class="p">))]</span>
+    <span class="n">index</span> <span class="o">&amp;=</span> <span class="p">(</span><span class="n">simulated_timestamps</span> <span class="o">==</span> <span class="n">simulated_timestamp</span><span class="p">)</span>
+
+    <span class="c1"># retrieve the noise levels</span>
+    <span class="n">real_noise_level</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs_real</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">simulated_noise_level</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="c1"># scale by the relative integration times</span>
+    <span class="n">simulated_noise_level</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">obs_real</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tint&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;tint&#39;</span><span class="p">][</span><span class="n">index</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Plotting the resulting simulated noise levels versus the real ones, we find:</p>
+<img alt="Comparison of simulated and real 2017 EHT noise levels, prior to folding in a number of relevant data degradation effects." class="align-left" src="../../_images/noise_levels_original.png" />
+<p>The dashed red line here marks the equality point, and we can see that the simulated data have a systematically lower noise level than the the real data.  What are we missing?  It turns out that there are a number of relevant elements of realism that we have left out of this simulation thus far, and to add them in we’ll need to make some further refinements to the array characteristics.</p>
+<section id="additional-effects">
+<h3>Additional effects<a class="headerlink" href="#additional-effects" title="Permalink to this heading"></a></h3>
+<p>The calibration of the 2017 EHT data is comprehensively covered in <a class="reference external" href="https://iopscience.iop.org/article/10.3847/2041-8213/ab0c57">M87 Paper 3</a>, and a number of practical details are relevant for closing the sensitivity gap between our synthetic data and the real data.  Here, we use the information from that paper (particularly Table 2) to improve our simulation of the EHT 2017 observing campaign.</p>
+<p>Though ngehtsim contains information about the diameter of each dish in the EHT array, not all dishes are always able to use their full collecting area.  For instance, during the 2017 EHT observing campaign, the ALMA array observed with only 37 dishes (out of ~60 in total), and the LMT was not able to use its full diameter of 50 meters.  To override the default dish sizes when simulating data with ngehtsim, we can specify a dictionary that gets passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">D_override_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ALMA&#39;</span><span class="p">:</span> <span class="mf">73.0</span><span class="p">,</span>
+                   <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="mf">32.5</span><span class="p">,</span>
+                   <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="mf">14.7</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Another relevant factor is that not all stations have the same backend equipment.  The default receiver setup assumed within ngehtsim is a “sideband separated” receiver, but there during the 2017 EHT campaign the JCMT, LMT, and SMA sites all used “double sideband” receiver setups.  This means that they were operating with twice the system temperature as they would otherwise have done, which impacts their sensitivities.  To override the default sideband setup within ngehtsim, we can specify another dictionary that gets passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sideband_ratio_override_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;IRAM&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">2.663</span><span class="p">},</span>
+                                <span class="s1">&#39;JCMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">1.25</span><span class="p">},</span>
+                                <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+                                <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}}</span>
+</pre></div>
+</div>
+<p>The sideband ratio effectively sets a multiplier on the system temperature, such that a value of 0 corresponds to a perfectly sideband-separated receiver and a value of 1 corresponds to a perfect double sideband receiver.  Note that here we’ve also specified a nonzero sideband ratio for the IRAM 30-meter dish.  The IRAM dish in fact uses a sideband separated receiver, but this specification allows us to impart a multiplicative factor to the system temperature; such a factor is necessary because during the 2017 EHT observations, the IRAM dish suffered from instabilities in the signal chain that led to substantial amplitude loss.</p>
+<p>Another relevant factor for station sensitivities is the receiver temperature.  The default assumed 230GHz receiver temperature within ngehtsim is 50K, which is the ALMA specification (see, e.g., <a class="reference external" href="http://www.ece.virginia.edu/sis/Papers/band6.pdf">here</a>).  However, several of the sites during the 2017 EHT campaign observed using receivers with worse performance than the ALMA specification:</p>
+<ul class="simple">
+<li><p>The APEX receiver temperature is about 90K (see <a class="reference external" href="https://www.apex-telescope.org/heterodyne/shfi/het230/characteristics/index.php#trec">here</a>).</p></li>
+<li><p>The IRAM receiver temperature is about 80K (see <a class="reference external" href="https://www.iram.fr/GENERAL/calls/w21/30mCapabilities.pdf">here</a>)</p></li>
+<li><p>The LMT receiver temperature is about 70K (see <a class="reference external" href="http://lmtgtm.org/single-pixel-1mm-receiver/">here</a>).</p></li>
+<li><p>The SMA receiver temperature is about 66K (see <a class="reference external" href="https://lweb.cfa.harvard.edu/sma/memos/125.pdf">here</a>).</p></li>
+<li><p>The SMT receiver temperature is about 66K (see <a class="reference external" href="https://aro.as.arizona.edu/?q=facilities/submillimeter-telescope">here</a>).</p></li>
+</ul>
+<p>Within ngehtsim, we can override the defaul receiver temperatures by specifying yet another dictionary that will get passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">T_R_override_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;APEX&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">90.0</span><span class="p">},</span>
+                     <span class="s1">&#39;IRAM&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">},</span>
+                     <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">70.0</span><span class="p">},</span>
+                     <span class="s1">&#39;SMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">66.0</span><span class="p">},</span>
+                     <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">66.0</span><span class="p">}}</span>
+</pre></div>
+</div>
+<p>Given all of the above corrections, we can now re-generate the observations.  This time, we will pass additional arguments to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object that capture the above effects:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span>
+                          <span class="n">D_override_dict</span><span class="o">=</span><span class="n">D_override_dict</span><span class="p">,</span>
+                          <span class="n">sideband_ratio_override_dict</span><span class="o">=</span><span class="n">sideband_ratio_override_dict</span><span class="p">,</span>
+                          <span class="n">T_R_override_dict</span><span class="o">=</span><span class="n">T_R_override_dict</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And then after re-generating the observation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obs</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">make_obs</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can re-examine the relative sensitivities between the simulated data and the real data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">..</span> <span class="n">image</span><span class="p">::</span> <span class="n">EHT2017_tutorial</span><span class="o">/</span><span class="n">noise_levels</span><span class="o">.</span><span class="n">png</span>
+</pre></div>
+</div>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">align</dt>
+<dd class="field-odd"><p>left</p>
+</dd>
+<dt class="field-even">alt</dt>
+<dd class="field-even"><p>Comparison of simulated and real 2017 EHT noise levels.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>This looks much better!  There are clearly some remaining unaccounted-for imperfections in the real data, but incorporating the above effects has removed the bulk of the large offset between the simulated and real noise levels.</p>
+</section>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this heading"></a></h2>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.129.g080dfe2 documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.131.g12daafc documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.129.g080dfe2
+                0+untagged.131.g12daafc
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -110,6 +110,8 @@
 <span class="sd">      receiver_override_dict (dict): A dictionary of station names and available receivers to override defaults</span>
 <span class="sd">      bandwidth_override_dict (dict): A dictionary of station names and bandwidth values to override defaults</span>
 <span class="sd">      T_R_override_dict (dict): A dictionary of station names and receiver temperature values to override defaults</span>
+<span class="sd">      sideband_ratio_override_dict (dict): A dictionary of station names and sideband ratio values to override defaults</span>
+<span class="sd">      ap_eff_override_dict (dict): A dictionary of station names and aperture efficiency values to override defaults</span>
 <span class="sd">      array_name (str): Name to get assigned to the ngehtutil array object</span>
 <span class="sd">      ephem (str): path to the ephemeris for a space station</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -117,7 +119,8 @@
     <span class="c1"># initialize class instantiation</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="o">=</span><span class="p">{},</span> <span class="n">settings_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">D_override_dict</span><span class="o">=</span><span class="p">{},</span>
                  <span class="n">surf_rms_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">receiver_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">bandwidth_override_dict</span><span class="o">=</span><span class="p">{},</span>
-                 <span class="n">T_R_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">array_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ephem</span><span class="o">=</span><span class="s1">&#39;ephemeris/space&#39;</span><span class="p">):</span>
+                 <span class="n">T_R_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">sideband_ratio_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">ap_eff_override_dict</span><span class="o">=</span><span class="p">{},</span>
+                 <span class="n">array_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ephem</span><span class="o">=</span><span class="s1">&#39;ephemeris/space&#39;</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">settings_file</span> <span class="o">=</span> <span class="n">settings_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="n">verbose</span>
@@ -126,6 +129,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">receiver_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">receiver_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bandwidth_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">bandwidth_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">T_R_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">T_R_override_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sideband_ratio_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">sideband_ratio_override_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ap_eff_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">ap_eff_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">array_name</span> <span class="o">=</span> <span class="n">array_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ephem</span> <span class="o">=</span> <span class="n">ephem</span>
 
@@ -184,6 +189,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">receiver_setup</span> <span class="o">=</span> <span class="n">set_receivers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="n">receiver_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bandwidth_setup</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_bandwidths</span> <span class="o">=</span> <span class="n">set_bandwidths</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bandwidth&#39;</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_setup</span><span class="p">,</span><span class="n">bandwidth_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bandwidth_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">T_R_setup</span> <span class="o">=</span> <span class="n">set_TRs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_setup</span><span class="p">,</span><span class="n">T_R_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">T_R_override_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sideband_ratio_setup</span> <span class="o">=</span> <span class="n">set_sideband_ratios</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_setup</span><span class="p">,</span><span class="n">sideband_ratio_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sideband_ratio_override_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ap_eff_setup</span> <span class="o">=</span> <span class="n">set_ap_effs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sites</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">receiver_setup</span><span class="p">,</span><span class="n">ap_eff_override_dict</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ap_eff_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">im</span> <span class="o">=</span> <span class="n">load_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_file</span><span class="p">,</span><span class="n">freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tabulate_weather</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">telescope_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;surf_rms_new&#39;</span><span class="p">])</span>
@@ -401,20 +408,26 @@
     <span class="k">def</span> <span class="nf">telescope_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">surf_rms_new</span><span class="p">):</span>
 
         <span class="c1"># aperture efficiency of new dishes</span>
-        <span class="n">eta_new</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">surf_rms_new</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">)</span>
+        <span class="n">freqhere</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0e9</span><span class="p">)))</span>
+        <span class="n">ap_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">ap_eff_dict</span><span class="p">[</span><span class="n">freqhere</span><span class="p">]</span>
+        <span class="n">eta_new</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">surf_rms_new</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">,</span><span class="n">ap_eff</span><span class="p">)</span>
 
         <span class="n">D_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">eta_dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">station</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">stations</span><span class="p">():</span>
             <span class="n">D_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">diameter</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">freqhere</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ap_eff_setup</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">ap_eff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ap_eff_setup</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="n">freqhere</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ap_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">ap_eff_dict</span><span class="p">[</span><span class="n">freqhere</span><span class="p">]</span>
 
             <span class="c1"># recompute aperture efficiency for stations with known or overridden surface RMSs</span>
             <span class="n">known</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">if</span> <span class="n">station</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_surf_rms</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">eta_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">known_surf_rms</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">],</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">)</span>
+                <span class="n">eta_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">known_surf_rms</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">],</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">,</span><span class="n">ap_eff</span><span class="p">)</span>
                 <span class="n">known</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">if</span> <span class="n">station</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">surf_rms_override_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">eta_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_rms_override_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">],</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">)</span>
+                <span class="n">eta_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta_dish</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">surf_rms_override_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">],</span><span class="n">const</span><span class="o">.</span><span class="n">focus_offset</span><span class="p">,</span><span class="n">ap_eff</span><span class="p">)</span>
                 <span class="n">known</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">known</span><span class="p">:</span>
                 <span class="n">eta_dict</span><span class="p">[</span><span class="n">station</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">eta_new</span>
@@ -585,14 +598,22 @@
                 <span class="n">Tb1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_CMB</span>
                 <span class="n">Tb2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_CMB</span>
 
-            <span class="c1"># determine system temperatures</span>
+            <span class="c1"># determine receiver temperatures</span>
             <span class="n">keyhere</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weather_freq</span>
             <span class="k">if</span> <span class="n">keyhere</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">T_R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">keyhere</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">T_R</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="n">keyhere</span><span class="p">]</span>
-            <span class="n">Tsys1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">T_R</span> <span class="o">+</span> <span class="n">Tb1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span>
-            <span class="n">Tsys2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">T_R</span> <span class="o">+</span> <span class="n">Tb2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span>
+            
+            <span class="c1"># determine sideband separation ratio</span>
+            <span class="k">if</span> <span class="n">keyhere</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sideband_ratio_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">sideband_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sideband_ratio_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">keyhere</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sideband_ratio</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">sideband_ratio_dict</span><span class="p">[</span><span class="n">keyhere</span><span class="p">]</span>
+
+            <span class="c1"># determine system temperatures</span>
+            <span class="n">Tsys1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">T_R</span> <span class="o">+</span> <span class="n">Tb1</span><span class="p">[</span><span class="n">ind1</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">sideband_ratio</span><span class="p">)</span>
+            <span class="n">Tsys2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">T_R</span> <span class="o">+</span> <span class="n">Tb2</span><span class="p">[</span><span class="n">ind2</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">sideband_ratio</span><span class="p">)</span>
 
             <span class="c1"># determine SEFDs</span>
             <span class="n">SEFD1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="n">Tsys1</span><span class="p">[</span><span class="n">ind1</span><span class="p">])</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
@@ -640,6 +661,18 @@
         <span class="n">bw</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">bw1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span>
         <span class="n">bw</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">bw2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bandwidths</span> <span class="o">=</span> <span class="n">bw</span>
+
+
+        <span class="c1">#########################</span>
+        <span class="c1"># TO BE REMOVED</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tsys1</span> <span class="o">=</span> <span class="n">Tsys1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tsys2</span> <span class="o">=</span> <span class="n">Tsys2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau1</span> <span class="o">=</span> <span class="n">tau1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau2</span> <span class="o">=</span> <span class="n">tau2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tb1</span> <span class="o">=</span> <span class="n">Tb1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Tb2</span> <span class="o">=</span> <span class="n">Tb2</span>
+        <span class="c1">#########################</span>
+
 
         <span class="c1"># store and apply gains</span>
         <span class="k">if</span> <span class="n">addgains</span><span class="p">:</span>
@@ -897,7 +930,8 @@
         <span class="n">export_SYMBA_master_input</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                                   <span class="n">input_args</span><span class="o">=</span><span class="n">master_input_args</span><span class="p">,</span>
                                   <span class="n">input_comments</span><span class="o">=</span><span class="n">master_input_comments</span><span class="p">,</span>
-                                  <span class="n">output_filename</span><span class="o">=</span><span class="n">output_filenames</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div></div>
+                                  <span class="n">output_filename</span><span class="o">=</span><span class="n">output_filenames</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                  <span class="n">use_two_letter</span><span class="o">=</span><span class="n">use_two_letter</span><span class="p">)</span></div></div>
 
 <span class="c1">###################################################</span>
 <span class="c1"># other functions</span>
@@ -1085,17 +1119,75 @@
 <span class="sd">      (dict): A dictionary of station names and associated receiver temperatures</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># set up the T_R dictionary</span>
+    <span class="c1"># initialize the T_R dictionary</span>
     <span class="n">T_R_setup</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sitelist</span><span class="p">:</span>
+        <span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">receiver_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]:</span>
+            <span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="c1"># update according to overrides</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sitelist</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">T_R_override_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-            <span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="n">T_R_override_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">receiver_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]:</span>
-                <span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">T_R_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">T_R_override_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span>
 
     <span class="k">return</span> <span class="n">T_R_setup</span></div>
+
+
+<div class="viewcode-block" id="set_sideband_ratios"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.set_sideband_ratios">[docs]</a><span class="k">def</span> <span class="nf">set_sideband_ratios</span><span class="p">(</span><span class="n">sitelist</span><span class="p">,</span><span class="n">receiver_setup</span><span class="p">,</span><span class="n">sideband_ratio_override_dict</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a sideband ratio dictionary given a list of sites and overrides</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      sitelist (list): A list of site names</span>
+<span class="sd">      receiver_setup (dict): A dictionary of station names and available receivers</span>
+<span class="sd">      sideband_ratio_override_dict (dict): A dictionary of station names and sideband ratios to override the defaults</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">      (dict): A dictionary of station names and associated sideband ratios</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># initialize the sideband ratio dictionary</span>
+    <span class="n">sideband_ratio_setup</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sitelist</span><span class="p">:</span>
+        <span class="n">sideband_ratio_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">receiver_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]:</span>
+                <span class="n">sideband_ratio_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">sideband_ratio_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="c1"># update according to overrides</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sitelist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">sideband_ratio_override_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">sideband_ratio_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sideband_ratio_override_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">sideband_ratio_setup</span></div>
+
+
+<div class="viewcode-block" id="set_ap_effs"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.set_ap_effs">[docs]</a><span class="k">def</span> <span class="nf">set_ap_effs</span><span class="p">(</span><span class="n">sitelist</span><span class="p">,</span><span class="n">receiver_setup</span><span class="p">,</span><span class="n">ap_eff_override_dict</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create an aperture efficiency dictionary given a list of sites and overrides</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">      sitelist (list): A list of site names</span>
+<span class="sd">      receiver_setup (dict): A dictionary of station names and available receivers</span>
+<span class="sd">      ap_eff_override_dict (dict): A dictionary of station names and aperture efficiencies to override the defaults</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">      (dict): A dictionary of station names and associated aperture efficiencies</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># initialize the aperture efficiency dictionary</span>
+    <span class="n">ap_eff_setup</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sitelist</span><span class="p">:</span>
+        <span class="n">ap_eff_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">receiver_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]:</span>
+                <span class="n">ap_eff_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">ap_eff_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+    <span class="c1"># update according to overrides</span>
+    <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sitelist</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">ap_eff_override_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">ap_eff_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">ap_eff_override_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">ap_eff_setup</span></div>
 
 
 <div class="viewcode-block" id="set_receivers"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.set_receivers">[docs]</a><span class="k">def</span> <span class="nf">set_receivers</span><span class="p">(</span><span class="n">sitelist</span><span class="p">,</span><span class="n">receiver_override_dict</span><span class="o">=</span><span class="p">{}):</span>
@@ -1192,20 +1284,26 @@
         <span class="k">return</span> <span class="n">im</span></div>
 
 
-<div class="viewcode-block" id="eta_dish"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.eta_dish">[docs]</a><span class="k">def</span> <span class="nf">eta_dish</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span><span class="n">sigma</span><span class="p">,</span><span class="n">offset</span><span class="p">):</span>
+<div class="viewcode-block" id="eta_dish"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.eta_dish">[docs]</a><span class="k">def</span> <span class="nf">eta_dish</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span><span class="n">sigma</span><span class="p">,</span><span class="n">offset</span><span class="p">,</span><span class="n">ap_eff</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Function for computing aperture efficiency.</span>
+<span class="sd">    Function for computing overall antenna aperture efficiency.</span>
 <span class="sd">    </span>
 <span class="sd">    Args:</span>
 <span class="sd">      freq (float): observing frequency, in Hz</span>
 <span class="sd">      sigma (float): surface RMS, in meters</span>
 <span class="sd">      offset (float): focus offset, in equivalent surface RMS units</span>
+<span class="sd">      ap_eff (float): nominal aperture efficiency</span>
 <span class="sd">    </span>
 <span class="sd">    Returns:</span>
-<span class="sd">      (float): aperture efficiency</span>
+<span class="sd">      (float): overall aperture efficiency</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="c1"># Ruze&#39;s law for surface + focus</span>
     <span class="n">etahere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="mi">4</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">sigma</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">c</span><span class="o">/</span><span class="n">freq</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># additional aperture inefficiency</span>
+    <span class="n">etahere</span> <span class="o">*=</span> <span class="n">ap_eff</span>
+
     <span class="k">return</span> <span class="n">etahere</span></div>
 
 
@@ -1487,106 +1585,109 @@
 
             <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">sites</span><span class="p">:</span>
 
-                <span class="c1"># initialize empty string</span>
-                <span class="n">strhere</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="n">freqhere</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0e9</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="n">freqhere</span> <span class="ow">in</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
 
-                <span class="c1"># add station name as a two-letter code</span>
-                <span class="k">if</span> <span class="n">use_two_letter</span><span class="p">:</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">two_letter_station_codes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">site</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+                    <span class="c1"># initialize empty string</span>
+                    <span class="n">strhere</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
 
-                <span class="c1"># add receiver SEFD, in Jy</span>
-                <span class="n">SEFD_R</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0e9</span><span class="p">)))])</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">SEFD_R</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+                    <span class="c1"># add station name as a two-letter code</span>
+                    <span class="k">if</span> <span class="n">use_two_letter</span><span class="p">:</span>
+                        <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">two_letter_station_codes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">strhere</span> <span class="o">+=</span> <span class="n">site</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
 
-                <span class="c1"># add PWV, in mm</span>
-                <span class="n">PWV</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">PWV</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">PWV</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+                    <span class="c1"># add receiver SEFD, in Jy</span>
+                    <span class="n">SEFD_R</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">const</span><span class="o">.</span><span class="n">k</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">][</span><span class="n">freqhere</span><span class="p">])</span><span class="o">/</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">4.0</span><span class="p">)</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">SEFD_R</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
 
-                <span class="c1"># add surface pressure, in mbar</span>
-                <span class="n">pres</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">pressure</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pres</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                    <span class="c1"># add PWV, in mm</span>
+                    <span class="n">PWV</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">PWV</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">PWV</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
 
-                <span class="c1"># add surface temperature, in K</span>
-                <span class="n">temp</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+                    <span class="c1"># add surface pressure, in mbar</span>
+                    <span class="n">pres</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">pressure</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pres</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
 
-                <span class="c1"># add coherence time, in seconds</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">t_coh</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
+                    <span class="c1"># add surface temperature, in K</span>
+                    <span class="n">temp</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">weather_translation</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;month&#39;</span><span class="p">],</span> <span class="n">day</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randday</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">obsgen</span><span class="o">.</span><span class="n">randyear</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 
-                <span class="c1"># add RMS pointing uncertainty, in seconds</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">RMS_point</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+                    <span class="c1"># add coherence time, in seconds</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">t_coh</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span>
 
-                <span class="c1"># add 230GHz FWHM primary beam size</span>
-                <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span><span class="n">stationnames</span> <span class="o">==</span> <span class="n">site</span><span class="p">)</span>
-                <span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">stations</span><span class="p">())[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">diam</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">dishes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">diameter</span>
-                <span class="n">pb</span> <span class="o">=</span> <span class="p">((</span><span class="mf">180.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">*</span><span class="mf">3600.0</span><span class="p">)</span><span class="o">*</span><span class="p">((</span><span class="n">const</span><span class="o">.</span><span class="n">c</span> <span class="o">/</span> <span class="p">(</span><span class="mf">230.0e9</span><span class="p">))</span> <span class="o">/</span> <span class="n">diam</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pb</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+                    <span class="c1"># add RMS pointing uncertainty, in seconds</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">RMS_point</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
 
-                <span class="c1"># add the primary beam model</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">PB_model</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                    <span class="c1"># add 230GHz FWHM primary beam size</span>
+                    <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span><span class="n">stationnames</span> <span class="o">==</span> <span class="n">site</span><span class="p">)</span>
+                    <span class="n">stat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">stations</span><span class="p">())[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">diam</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">dishes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">diameter</span>
+                    <span class="n">pb</span> <span class="o">=</span> <span class="p">((</span><span class="mf">180.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">*</span><span class="mf">3600.0</span><span class="p">)</span><span class="o">*</span><span class="p">((</span><span class="n">const</span><span class="o">.</span><span class="n">c</span> <span class="o">/</span> <span class="p">(</span><span class="mf">230.0e9</span><span class="p">))</span> <span class="o">/</span> <span class="n">diam</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pb</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
 
-                <span class="c1"># add the aperture efficiency</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">],</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+                    <span class="c1"># add the primary beam model</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">PB_model</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
 
-                <span class="c1"># add gain means and stds</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
-                    <span class="n">gain_here</span> <span class="o">=</span> <span class="n">gain_mean</span>
-                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
-                    <span class="n">gain_here</span> <span class="o">=</span> <span class="n">gain_mean</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_here</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
-                    <span class="n">gain_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gain_here</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">gain_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gain_here</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">gain_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">gain_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                    <span class="c1"># add the aperture efficiency</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">eta_dict</span><span class="p">[</span><span class="n">site</span><span class="p">],</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
 
-                <span class="c1"># add leakage means and stds</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
-                    <span class="n">leak_here</span> <span class="o">=</span> <span class="n">leak_mean</span>
-                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
-                    <span class="n">leak_here</span> <span class="o">=</span> <span class="n">leak_mean</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_here</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
-                    <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">leak_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="n">leak_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                    <span class="c1"># add gain means and stds</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
+                        <span class="n">gain_here</span> <span class="o">=</span> <span class="n">gain_mean</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_mean</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">gain_here</span> <span class="o">=</span> <span class="n">gain_mean</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">gain_here</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
+                        <span class="n">gain_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gain_here</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">gain_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gain_here</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">gain_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">gain_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
 
-                <span class="c1"># add feed angle</span>
-                <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_feed_angles</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_feed_angles</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">feed_angle</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+                    <span class="c1"># add leakage means and stds</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
+                        <span class="n">leak_here</span> <span class="o">=</span> <span class="n">leak_mean</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">leak_here</span> <span class="o">=</span> <span class="n">leak_mean</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_here</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
+                        <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">leak_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">leak_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
 
-                <span class="c1"># add mount type</span>
-                <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_mount_types</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_mount_types</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">mount_type</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
+                    <span class="c1"># add feed angle</span>
+                    <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_feed_angles</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_feed_angles</span><span class="p">[</span><span class="n">site</span><span class="p">])</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">feed_angle</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
 
-                <span class="c1"># add dish diameter</span>
-                <span class="n">diam</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">diameter</span><span class="p">()</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">diam</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+                    <span class="c1"># add mount type</span>
+                    <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_mount_types</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_mount_types</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">strhere</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">mount_type</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">18</span><span class="p">)</span>
 
-                <span class="c1"># add xyz coordinates</span>
-                <span class="n">coords</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">xyz</span><span class="p">()</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> 
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> 
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span>
+                    <span class="c1"># add dish diameter</span>
+                    <span class="n">diam</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">diameter</span><span class="p">()</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">diam</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
 
-                <span class="c1"># write line</span>
-                <span class="n">strhere</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
-                <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">strhere</span><span class="p">)</span></div>
+                    <span class="c1"># add xyz coordinates</span>
+                    <span class="n">coords</span> <span class="o">=</span> <span class="n">stat</span><span class="o">.</span><span class="n">xyz</span><span class="p">()</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> 
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> 
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="mi">8</span><span class="p">))</span>
+
+                    <span class="c1"># write line</span>
+                    <span class="n">strhere</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+                    <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">strhere</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="export_SYMBA_master_input"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.export_SYMBA_master_input">[docs]</a><span class="k">def</span> <span class="nf">export_SYMBA_master_input</span><span class="p">(</span><span class="n">obsgen</span><span class="p">,</span><span class="n">input_args</span><span class="o">=</span><span class="p">{},</span><span class="n">input_comments</span><span class="o">=</span><span class="p">{},</span><span class="n">output_filename</span><span class="o">=</span><span class="s1">&#39;master_input.txt&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="export_SYMBA_master_input"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.export_SYMBA_master_input">[docs]</a><span class="k">def</span> <span class="nf">export_SYMBA_master_input</span><span class="p">(</span><span class="n">obsgen</span><span class="p">,</span><span class="n">input_args</span><span class="o">=</span><span class="p">{},</span><span class="n">input_comments</span><span class="o">=</span><span class="p">{},</span><span class="n">output_filename</span><span class="o">=</span><span class="s1">&#39;master_input.txt&#39;</span><span class="p">,</span><span class="n">use_two_letter</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Export a SYMBA-compatible master_input.txt file from the obs_generator object.</span>
 
@@ -1595,6 +1696,7 @@
 <span class="sd">      input_args (dict): dictionary of input arguments</span>
 <span class="sd">      input_comments (dict): dictionary of comments associated with input arguments</span>
 <span class="sd">      output_filename (str): name of master_input.txt file to save</span>
+<span class="sd">      use_two_letter (bool): convert all station names to two-letter codes</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      SYMBA-compatible master_input.txt file containing the observation information</span>
@@ -1608,12 +1710,23 @@
     <span class="c1"># overwrite various defaults using the obsgen information</span>
 
     <span class="c1"># determine the top 5 most sensitive sites in the array</span>
-    <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()))[</span><span class="o">-</span><span class="mi">5</span><span class="p">:]</span>
+    <span class="n">freqhere</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">freq</span><span class="o">/</span><span class="p">(</span><span class="mf">1.0e9</span><span class="p">)))</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
     <span class="n">sitenames</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">D_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))[</span><span class="n">indices</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">strsites</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">site</span> <span class="ow">in</span> <span class="n">sitenames</span><span class="p">:</span>
-        <span class="n">strsites</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">two_letter_station_codes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span>
-    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;rpicard_refants&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">strsites</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">freqhere</span> <span class="ow">in</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">T_R_setup</span><span class="p">[</span><span class="n">site</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">use_two_letter</span><span class="p">:</span>
+                <span class="n">strsites</span> <span class="o">+=</span> <span class="n">const</span><span class="o">.</span><span class="n">two_letter_station_codes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">strsites</span> <span class="o">+=</span> <span class="n">site</span>
+            <span class="k">if</span> <span class="n">count</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+                <span class="n">strsites</span> <span class="o">+=</span> <span class="s1">&#39;, &#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;rpicard_refants&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">strsites</span>
 
     <span class="c1"># source name</span>
     <span class="n">args</span><span class="p">[</span><span class="s1">&#39;vex_source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span>
