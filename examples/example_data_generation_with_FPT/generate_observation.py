@@ -32,8 +32,13 @@ T_R_override_dict = {'HAY': {'86': 30.0, '230': 40.0},
                      'CNI': {'86': 30.0, '230': 40.0, '345': 60.0},
                      'LAS': {'86': 30.0, '230': 40.0, '345': 60.0}}
 
+# some sites have different sideband ratios (SSB = 0, DSB = 1)
+sideband_ratio_override_dict = {'JCMT': {'86': 1.0, '230': 1.0, '345': 0.03},
+                                'LMT': {'86': 1.0, '230': 1.0, '345': 0.03},
+                                'SMA': {'86': 1.0, '230': 1.0, '345': 0.03}}
+
 # initialize the observation generator
-obsgen_fpt = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict,bandwidth_override_dict=bandwidth_override_dict,T_R_override_dict=T_R_override_dict)
+obsgen_fpt = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict,bandwidth_override_dict=bandwidth_override_dict,T_R_override_dict=T_R_override_dict,sideband_ratio_override_dict=sideband_ratio_override_dict)
 
 # generate the observation
 obs_fpt = obsgen_fpt.make_obs()
@@ -48,7 +53,7 @@ obs_fpt.save_uvfits('./example_datafile_with_fpt.uvfits')
 yamlfile = './settings_no_fpt.yaml'
 
 # initialize the observation generator
-obsgen = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict,bandwidth_override_dict=bandwidth_override_dict,T_R_override_dict=T_R_override_dict)
+obsgen = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict,bandwidth_override_dict=bandwidth_override_dict,T_R_override_dict=T_R_override_dict,sideband_ratio_override_dict=sideband_ratio_override_dict)
 
 # generate the observation
 obs = obsgen.make_obs()

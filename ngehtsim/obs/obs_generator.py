@@ -38,6 +38,8 @@ class obs_generator(object):
       receiver_override_dict (dict): A dictionary of station names and available receivers to override defaults
       bandwidth_override_dict (dict): A dictionary of station names and bandwidth values to override defaults
       T_R_override_dict (dict): A dictionary of station names and receiver temperature values to override defaults
+      sideband_ratio_override_dict (dict): A dictionary of station names and sideband ratio values to override defaults
+      ap_eff_override_dict (dict): A dictionary of station names and aperture efficiency values to override defaults
       array_name (str): Name to get assigned to the ngehtutil array object
       ephem (str): path to the ephemeris for a space station
     """
@@ -45,7 +47,8 @@ class obs_generator(object):
     # initialize class instantiation
     def __init__(self, settings={}, settings_file=None, verbose=0, D_override_dict={},
                  surf_rms_override_dict={}, receiver_override_dict={}, bandwidth_override_dict={},
-                 T_R_override_dict={}, array_name=None, ephem='ephemeris/space'):
+                 T_R_override_dict={}, sideband_ratio_override_dict={}, ap_eff_override_dict={},
+                 array_name=None, ephem='ephemeris/space'):
 
         self.settings_file = settings_file
         self.verbosity = verbose
@@ -54,6 +57,8 @@ class obs_generator(object):
         self.receiver_override_dict = copy.deepcopy(receiver_override_dict)
         self.bandwidth_override_dict = copy.deepcopy(bandwidth_override_dict)
         self.T_R_override_dict = copy.deepcopy(T_R_override_dict)
+        self.sideband_ratio_override_dict = copy.deepcopy(sideband_ratio_override_dict)
+        self.ap_eff_override_dict = copy.deepcopy(ap_eff_override_dict)
         self.array_name = array_name
         self.ephem = ephem
 
@@ -112,6 +117,8 @@ class obs_generator(object):
         self.receiver_setup = set_receivers(self.sites,receiver_override_dict=self.receiver_override_dict)
         self.bandwidth_setup, self.unique_bandwidths = set_bandwidths(self.sites,self.settings['bandwidth'],self.receiver_setup,bandwidth_override_dict=self.bandwidth_override_dict)
         self.T_R_setup = set_TRs(self.sites,self.receiver_setup,T_R_override_dict=self.T_R_override_dict)
+        self.sideband_ratio_setup = set_sideband_ratios(self.sites,self.receiver_setup,sideband_ratio_override_dict=self.sideband_ratio_override_dict)
+        self.ap_eff_setup = set_ap_effs(self.sites,self.receiver_setup,ap_eff_override_dict=self.ap_eff_override_dict)
         self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
         self.tabulate_weather()
         self.telescope_properties(self.settings['surf_rms_new'])
@@ -329,20 +336,26 @@ class obs_generator(object):
     def telescope_properties(self,surf_rms_new):
 
         # aperture efficiency of new dishes
-        eta_new = eta_dish(self.freq,surf_rms_new,const.focus_offset)
+        freqhere = str(int(self.freq / (1.0e9)))
+        ap_eff = const.ap_eff_dict[freqhere]
+        eta_new = eta_dish(self.freq,surf_rms_new,const.focus_offset,ap_eff)
 
         D_dict = {}
         eta_dict = {}
         for station in self.array.stations():
             D_dict[station.name] = station.diameter()
+            if freqhere in self.ap_eff_setup[station.name].keys():
+                ap_eff = self.ap_eff_setup[station.name][freqhere]
+            else:
+                ap_eff = const.ap_eff_dict[freqhere]
 
             # recompute aperture efficiency for stations with known or overridden surface RMSs
             known = False
             if station.name in const.known_surf_rms.keys():
-                eta_dict[station.name] = eta_dish(self.freq,const.known_surf_rms[station.name],const.focus_offset)
+                eta_dict[station.name] = eta_dish(self.freq,const.known_surf_rms[station.name],const.focus_offset,ap_eff)
                 known = True
             if station.name in self.surf_rms_override_dict.keys():
-                eta_dict[station.name] = eta_dish(self.freq,self.surf_rms_override_dict[station.name],const.focus_offset)
+                eta_dict[station.name] = eta_dish(self.freq,self.surf_rms_override_dict[station.name],const.focus_offset,ap_eff)
                 known = True
             if not known:
                 eta_dict[station.name] = eta_new
@@ -513,14 +526,22 @@ class obs_generator(object):
                 Tb1[ind1] = const.T_CMB
                 Tb2[ind2] = const.T_CMB
 
-            # determine system temperatures
+            # determine receiver temperatures
             keyhere = self.weather_freq
             if keyhere in self.T_R_setup[site].keys():
                 T_R = self.T_R_setup[site][keyhere]
             else:
                 T_R = const.T_R_dict[keyhere]
-            Tsys1[ind1] = T_R + Tb1[ind1]
-            Tsys2[ind2] = T_R + Tb2[ind2]
+            
+            # determine sideband separation ratio
+            if keyhere in self.sideband_ratio_setup[site].keys():
+                sideband_ratio = self.sideband_ratio_setup[site][keyhere]
+            else:
+                sideband_ratio = const.sideband_ratio_dict[keyhere]
+
+            # determine system temperatures
+            Tsys1[ind1] = (T_R + Tb1[ind1])*(1.0 + sideband_ratio)
+            Tsys2[ind2] = (T_R + Tb2[ind2])*(1.0 + sideband_ratio)
 
             # determine SEFDs
             SEFD1[ind1] = (2.0*const.k*Tsys1[ind1])/((np.pi/4.0)*self.eta_dict[site]*(self.D_dict[site])**2)
@@ -1026,17 +1047,75 @@ def set_TRs(sitelist,receiver_setup,T_R_override_dict={}):
       (dict): A dictionary of station names and associated receiver temperatures
     """
 
-    # set up the T_R dictionary
+    # initialize the T_R dictionary
     T_R_setup = {}
     for site in sitelist:
+        T_R_setup[site] = {}
+        for key in receiver_setup[site]:
+            T_R_setup[site][key] = const.T_R_dict[key]
+
+    # update according to overrides
+    for site in sitelist:
         if site in list(T_R_override_dict.keys()):
-            T_R_setup[site] = T_R_override_dict[site]
-        else:
-            T_R_setup[site] = {}
-            for key in receiver_setup[site]:
-                T_R_setup[site][key] = const.T_R_dict[key]
+            T_R_setup[site].update(T_R_override_dict[site])
 
     return T_R_setup
+
+
+def set_sideband_ratios(sitelist,receiver_setup,sideband_ratio_override_dict={}):
+    """
+    Create a sideband ratio dictionary given a list of sites and overrides
+    
+    Args:
+      sitelist (list): A list of site names
+      receiver_setup (dict): A dictionary of station names and available receivers
+      sideband_ratio_override_dict (dict): A dictionary of station names and sideband ratios to override the defaults
+    
+    Returns:
+      (dict): A dictionary of station names and associated sideband ratios
+    """
+
+    # initialize the sideband ratio dictionary
+    sideband_ratio_setup = {}
+    for site in sitelist:
+        sideband_ratio_setup[site] = {}
+        for key in receiver_setup[site]:
+                sideband_ratio_setup[site][key] = const.sideband_ratio_dict[key]
+
+    # update according to overrides
+    for site in sitelist:
+        if site in list(sideband_ratio_override_dict.keys()):
+            sideband_ratio_setup[site].update(sideband_ratio_override_dict[site])
+
+    return sideband_ratio_setup
+
+
+def set_ap_effs(sitelist,receiver_setup,ap_eff_override_dict={}):
+    """
+    Create an aperture efficiency dictionary given a list of sites and overrides
+    
+    Args:
+      sitelist (list): A list of site names
+      receiver_setup (dict): A dictionary of station names and available receivers
+      ap_eff_override_dict (dict): A dictionary of station names and aperture efficiencies to override the defaults
+    
+    Returns:
+      (dict): A dictionary of station names and associated aperture efficiencies
+    """
+
+    # initialize the aperture efficiency dictionary
+    ap_eff_setup = {}
+    for site in sitelist:
+        ap_eff_setup[site] = {}
+        for key in receiver_setup[site]:
+                ap_eff_setup[site][key] = const.ap_eff_dict[key]
+
+    # update according to overrides
+    for site in sitelist:
+        if site in list(ap_eff_override_dict.keys()):
+            ap_eff_setup[site].update(ap_eff_override_dict[site])
+
+    return ap_eff_setup
 
 
 def set_receivers(sitelist,receiver_override_dict={}):
@@ -1133,20 +1212,26 @@ def load_image(infile,freq=230.0e9,verbose=0):
         return im
 
 
-def eta_dish(freq,sigma,offset):
+def eta_dish(freq,sigma,offset,ap_eff):
     """
-    Function for computing aperture efficiency.
+    Function for computing overall antenna aperture efficiency.
     
     Args:
       freq (float): observing frequency, in Hz
       sigma (float): surface RMS, in meters
       offset (float): focus offset, in equivalent surface RMS units
+      ap_eff (float): nominal aperture efficiency
     
     Returns:
-      (float): aperture efficiency
+      (float): overall aperture efficiency
     """
 
+    # Ruze's law for surface + focus
     etahere = np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/(const.c/freq))**2)
+
+    # additional aperture inefficiency
+    etahere *= ap_eff
+
     return etahere
 
 

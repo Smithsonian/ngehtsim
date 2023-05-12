@@ -62,6 +62,20 @@ T_R_dict = {'86': 40.0,
             '410': 150.0,
             '690': 100.0}
 
+# fiducial sideband ratios
+sideband_ratio_dict = {'86': 0.03,
+                       '230': 0.03,
+                       '345': 0.03,
+                       '410': 0.1,
+                       '690': 0.1}
+
+# aperture efficiency (beyond what is accounted for by surface and focus RMS)
+ap_eff_dict = {'86': 0.7,
+               '230': 0.7,
+               '345': 0.7,
+               '410': 0.7,
+               '690': 0.7}
+
 # quantization efficiency
 quant_eff = 0.88
 
