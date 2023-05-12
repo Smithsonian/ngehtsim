@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorials &mdash; ngehtsim 0+untagged.131.g12daafc documentation</title>
+  <title>Tutorials &mdash; ngehtsim 0+untagged.132.g395f2e9 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.131.g12daafc
+                0+untagged.132.g395f2e9
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -222,9 +222,9 @@
 </div>
 <p>Given all of the above corrections, we can now re-generate the observations.  This time, we will pass additional arguments to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object that capture the above effects:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span>
-                          <span class="n">D_override_dict</span><span class="o">=</span><span class="n">D_override_dict</span><span class="p">,</span>
-                          <span class="n">sideband_ratio_override_dict</span><span class="o">=</span><span class="n">sideband_ratio_override_dict</span><span class="p">,</span>
-                          <span class="n">T_R_override_dict</span><span class="o">=</span><span class="n">T_R_override_dict</span><span class="p">)</span>
+                          <span class="n">D_override_dict</span> <span class="o">=</span> <span class="n">D_override_dict</span><span class="p">,</span>
+                          <span class="n">sideband_ratio_override_dict</span> <span class="o">=</span> <span class="n">sideband_ratio_override_dict</span><span class="p">,</span>
+                          <span class="n">T_R_override_dict</span> <span class="o">=</span> <span class="n">T_R_override_dict</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>And then after re-generating the observation:</p>
@@ -232,19 +232,7 @@
 </pre></div>
 </div>
 <p>We can re-examine the relative sensitivities between the simulated data and the real data:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">..</span> <span class="n">image</span><span class="p">::</span> <span class="n">EHT2017_tutorial</span><span class="o">/</span><span class="n">noise_levels</span><span class="o">.</span><span class="n">png</span>
-</pre></div>
-</div>
-<blockquote>
-<div><dl class="field-list simple">
-<dt class="field-odd">align</dt>
-<dd class="field-odd"><p>left</p>
-</dd>
-<dt class="field-even">alt</dt>
-<dd class="field-even"><p>Comparison of simulated and real 2017 EHT noise levels.</p>
-</dd>
-</dl>
-</div></blockquote>
+<img alt="Comparison of simulated and real 2017 EHT noise levels." class="align-left" src="../../_images/noise_levels.png" />
 <p>This looks much better!  There are clearly some remaining unaccounted-for imperfections in the real data, but incorporating the above effects has removed the bulk of the large offset between the simulated and real noise levels.</p>
 </section>
 </section>

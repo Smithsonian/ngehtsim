@@ -162,15 +162,15 @@ Within ngehtsim, we can override the defaul receiver temperatures by specifying 
 Given all of the above corrections, we can now re-generate the observations.  This time, we will pass additional arguments to the ``obs_generator`` object that capture the above effects::
 
    obsgen = og.obs_generator(settings,
-                             D_override_dict=D_override_dict,
-                             sideband_ratio_override_dict=sideband_ratio_override_dict,
-                             T_R_override_dict=T_R_override_dict)
+                             D_override_dict = D_override_dict,
+                             sideband_ratio_override_dict = sideband_ratio_override_dict,
+                             T_R_override_dict = T_R_override_dict)
 
 And then after re-generating the observation::
 
    obs = obsgen.make_obs(mod)
 
-We can re-examine the relative sensitivities between the simulated data and the real data::
+We can re-examine the relative sensitivities between the simulated data and the real data:
 
 .. image:: EHT2017_tutorial/noise_levels.png
    :align: left
