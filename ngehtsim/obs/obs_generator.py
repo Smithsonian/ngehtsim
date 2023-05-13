@@ -1580,7 +1580,12 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
                     elif isinstance(leak_mean,dict):
                         leak_here = leak_mean[site]
                     if isinstance(leak_here,complex):
-                        leak_str = str(leak_here)[1:-1]
+                        # leak_str = str(leak_here)[1:-1]
+                        if (np.sign(np.imag(leak_here)) == 0.0) | (np.sign(np.imag(leak_here)) == 1.0):
+                            signhere = '+'
+                        else:
+                            signhere = '-'
+                        leak_str = str(np.real(leak_here)) + signhere + str(np.imag(leak_here)) + 'j'
                     else:
                         leak_str = str(leak_here)
                     strhere += leak_str.ljust(12)
@@ -1676,7 +1681,7 @@ def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_file
     t = Time(obsgen.mjd, format='mjd')
     dumt = t.fits
     dumt2 = '/'.join(dumt.split('-'))
-    dumt3 = '/'.join(dumt.split('T'))
+    dumt3 = '/'.join(dumt2.split('T'))
     args['ms_StartTime'] = 'UTC,' + dumt3
 
     # other observation time parameters
