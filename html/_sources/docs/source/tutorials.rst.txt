@@ -151,7 +151,7 @@ Another relevant factor for station sensitivities is the receiver temperature.  
 * The SMA receiver temperature is about 66K (see `here <https://lweb.cfa.harvard.edu/sma/memos/125.pdf>`_).
 * The SMT receiver temperature is about 66K (see `here <https://aro.as.arizona.edu/?q=facilities/submillimeter-telescope>`_).
 
-Within ngehtsim, we can override the defaul receiver temperatures by specifying yet another dictionary that will get passed to the ``obs_generator`` object::
+Within ngehtsim, we can override the default receiver temperatures by specifying yet another dictionary that will get passed to the ``obs_generator`` object::
 
    T_R_override_dict = {'APEX': {'230': 90.0},
                         'IRAM': {'230': 80.0},

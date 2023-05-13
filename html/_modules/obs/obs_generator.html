@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.131.g12daafc documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.135.gd18facc.dirty documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.131.g12daafc
+                0+untagged.135.gd18facc.dirty
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -105,6 +105,7 @@
 <span class="sd">                           Note that any settings specified by the settings keyword argument will override</span>
 <span class="sd">                           the corresponding settings from the settings file.</span>
 <span class="sd">      verbose (float): Set to &gt;0 for more verbose output</span>
+<span class="sd">      heavy (float): Set to &gt;0 to store more information in the obs_generator object</span>
 <span class="sd">      D_override_dict (dict): A dictionary of station names and diameters to override defaults</span>
 <span class="sd">      surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override defaults</span>
 <span class="sd">      receiver_override_dict (dict): A dictionary of station names and available receivers to override defaults</span>
@@ -117,13 +118,14 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># initialize class instantiation</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="o">=</span><span class="p">{},</span> <span class="n">settings_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">D_override_dict</span><span class="o">=</span><span class="p">{},</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="o">=</span><span class="p">{},</span> <span class="n">settings_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">heavy</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">D_override_dict</span><span class="o">=</span><span class="p">{},</span>
                  <span class="n">surf_rms_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">receiver_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">bandwidth_override_dict</span><span class="o">=</span><span class="p">{},</span>
                  <span class="n">T_R_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">sideband_ratio_override_dict</span><span class="o">=</span><span class="p">{},</span> <span class="n">ap_eff_override_dict</span><span class="o">=</span><span class="p">{},</span>
                  <span class="n">array_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ephem</span><span class="o">=</span><span class="s1">&#39;ephemeris/space&#39;</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">settings_file</span> <span class="o">=</span> <span class="n">settings_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbosity</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">heavy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">D_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">D_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">surf_rms_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">surf_rms_override_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">receiver_override_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">receiver_override_dict</span><span class="p">)</span>
@@ -660,19 +662,16 @@
         <span class="n">ind2</span> <span class="o">=</span> <span class="p">(</span><span class="n">bw2</span> <span class="o">&lt;=</span> <span class="n">bw1</span><span class="p">)</span>
         <span class="n">bw</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">bw1</span><span class="p">[</span><span class="n">ind1</span><span class="p">]</span>
         <span class="n">bw</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">bw2</span><span class="p">[</span><span class="n">ind2</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bandwidths</span> <span class="o">=</span> <span class="n">bw</span>
 
-
-        <span class="c1">#########################</span>
-        <span class="c1"># TO BE REMOVED</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Tsys1</span> <span class="o">=</span> <span class="n">Tsys1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Tsys2</span> <span class="o">=</span> <span class="n">Tsys2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tau1</span> <span class="o">=</span> <span class="n">tau1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tau2</span> <span class="o">=</span> <span class="n">tau2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Tb1</span> <span class="o">=</span> <span class="n">Tb1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">Tb2</span> <span class="o">=</span> <span class="n">Tb2</span>
-        <span class="c1">#########################</span>
-
+        <span class="c1"># store additional info if requested</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bandwidths</span> <span class="o">=</span> <span class="n">bw</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Tsys1</span> <span class="o">=</span> <span class="n">Tsys1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Tsys2</span> <span class="o">=</span> <span class="n">Tsys2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tau1</span> <span class="o">=</span> <span class="n">tau1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tau2</span> <span class="o">=</span> <span class="n">tau2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Tb1</span> <span class="o">=</span> <span class="n">Tb1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Tb2</span> <span class="o">=</span> <span class="n">Tb2</span>
 
         <span class="c1"># store and apply gains</span>
         <span class="k">if</span> <span class="n">addgains</span><span class="p">:</span>
@@ -680,10 +679,11 @@
             <span class="n">g2R</span> <span class="o">=</span> <span class="n">gainamp2R</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="n">gainphase2R</span><span class="p">)</span>
             <span class="n">g1L</span> <span class="o">=</span> <span class="n">gainamp1R</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="n">gainphase1L</span><span class="p">)</span>
             <span class="n">g2L</span> <span class="o">=</span> <span class="n">gainamp2R</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="mf">1.0</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="n">gainphase2L</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">station_gains1R</span> <span class="o">=</span> <span class="n">g1R</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">station_gains2R</span> <span class="o">=</span> <span class="n">g2R</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">station_gains1L</span> <span class="o">=</span> <span class="n">g1L</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">station_gains2L</span> <span class="o">=</span> <span class="n">g2L</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">station_gains1R</span> <span class="o">=</span> <span class="n">g1R</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">station_gains2R</span> <span class="o">=</span> <span class="n">g2R</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">station_gains1L</span> <span class="o">=</span> <span class="n">g1L</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">station_gains2L</span> <span class="o">=</span> <span class="n">g2L</span>
             <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rrvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">g1R</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">g2R</span><span class="p">)</span>
             <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">g1L</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">g2L</span><span class="p">)</span>
             <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlvis&#39;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">g1R</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">g2L</span><span class="p">)</span>
@@ -1652,7 +1652,12 @@
                     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_mean</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
                         <span class="n">leak_here</span> <span class="o">=</span> <span class="n">leak_mean</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">leak_here</span><span class="p">,</span><span class="nb">complex</span><span class="p">):</span>
-                        <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="c1"># leak_str = str(leak_here)[1:-1]</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">leak_here</span><span class="p">))</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">leak_here</span><span class="p">))</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">):</span>
+                            <span class="n">signhere</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">signhere</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span>
+                        <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">leak_here</span><span class="p">))</span> <span class="o">+</span> <span class="n">signhere</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">leak_here</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39;j&#39;</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">leak_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">leak_here</span><span class="p">)</span>
                     <span class="n">strhere</span> <span class="o">+=</span> <span class="n">leak_str</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
@@ -1748,9 +1753,9 @@
     <span class="n">t</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">mjd</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;mjd&#39;</span><span class="p">)</span>
     <span class="n">dumt</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">fits</span>
     <span class="n">dumt2</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dumt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">))</span>
-    <span class="n">dumt3</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dumt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">))</span>
+    <span class="n">dumt3</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dumt2</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">))</span>
     <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_StartTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;UTC,&#39;</span> <span class="o">+</span> <span class="n">dumt3</span>
-
+    
     <span class="c1"># other observation time parameters</span>
     <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_obslength&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">t_seg_times</span><span class="p">)</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_int&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">3600.0</span><span class="p">)</span>
     <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_nscan&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">t_seg_times</span><span class="p">))</span>

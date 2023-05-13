@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorials &mdash; ngehtsim 0+untagged.133.gf0d66c3 documentation</title>
+  <title>Tutorials &mdash; ngehtsim 0+untagged.135.gd18facc.dirty documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.133.gf0d66c3
+                0+untagged.135.gd18facc.dirty
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -212,7 +212,7 @@
 <li><p>The SMA receiver temperature is about 66K (see <a class="reference external" href="https://lweb.cfa.harvard.edu/sma/memos/125.pdf">here</a>).</p></li>
 <li><p>The SMT receiver temperature is about 66K (see <a class="reference external" href="https://aro.as.arizona.edu/?q=facilities/submillimeter-telescope">here</a>).</p></li>
 </ul>
-<p>Within ngehtsim, we can override the defaul receiver temperatures by specifying yet another dictionary that will get passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
+<p>Within ngehtsim, we can override the default receiver temperatures by specifying yet another dictionary that will get passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">T_R_override_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;APEX&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">90.0</span><span class="p">},</span>
                      <span class="s1">&#39;IRAM&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">},</span>
                      <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">70.0</span><span class="p">},</span>
