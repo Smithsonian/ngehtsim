@@ -1682,7 +1682,7 @@ def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_file
     dumt = t.fits
     dumt2 = '/'.join(dumt.split('-'))
     dumt3 = '/'.join(dumt2.split('T'))
-    args['ms_StartTime'] = 'UTC,' + dumt3
+    args['ms_StartTime'] = 'UTC,' + dumt3[:-1]
 
     # other observation time parameters
     args['ms_obslength'] = str(len(obsgen.t_seg_times)*obsgen.settings['t_int'] / 3600.0)
