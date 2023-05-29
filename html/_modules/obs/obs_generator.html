@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.135.gd18facc.dirty documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim 0+untagged.138.g6568e86 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.135.gd18facc.dirty
+                0+untagged.138.g6568e86
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -1754,8 +1754,8 @@
     <span class="n">dumt</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">fits</span>
     <span class="n">dumt2</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dumt</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">))</span>
     <span class="n">dumt3</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dumt2</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">))</span>
-    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_StartTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;UTC,&#39;</span> <span class="o">+</span> <span class="n">dumt3</span>
-    
+    <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_StartTime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;UTC,&#39;</span> <span class="o">+</span> <span class="n">dumt3</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
     <span class="c1"># other observation time parameters</span>
     <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_obslength&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">t_seg_times</span><span class="p">)</span><span class="o">*</span><span class="n">obsgen</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;t_int&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mf">3600.0</span><span class="p">)</span>
     <span class="n">args</span><span class="p">[</span><span class="s1">&#39;ms_nscan&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obsgen</span><span class="o">.</span><span class="n">t_seg_times</span><span class="p">))</span>
