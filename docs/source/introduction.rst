@@ -52,6 +52,13 @@ The `ngehtutil <https://github.com/Smithsonian/ngehtutil>`_ library provides inf
 
 The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database [#Rienecker2011]_ [#Molod2015]_ [#Gelaro2017]_.  The atmospheric state data from MERRA-2 have been processed through the *am* radiative transfer code [#Paine2022]_ to determine opacities and brightness temperatures as a function of time and observing frequency.  This information is used internally by ngehtsim to determine the sensitivity of each site during observation generation.
 
+We can access the available weather information for an individual site using the ``ngehtsim.weather`` subpackage.  For instance, to access the mean 230GHz zenith opacity at the LMT site in April of 2017, we can call::
+
+   import ngehtsim.weather.weather as nw
+   tau = nw.opacity('LMT', freq='230', month='Apr', year='2017')
+
+The ngehtsim library also contains similar functions for accessing the atmospheric pressure, temperature, level of precipitable water vaport (PWV), relative humidity and ground windspeed at each site.
+
 References
 ========================
 
