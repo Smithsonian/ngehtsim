@@ -1,18 +1,22 @@
 import ngehtsim as ng
 import os
 from collections import OrderedDict
+import numpy as np
 
 ###################################################
 # some defaults
 
-# relative path to the weather information
-path_to_weather = os.path.dirname(ng.__file__) + '/weather_data/'
+# absolute path to the weather information
+path_to_weather = os.path.abspath(os.path.dirname(ng.__file__) + '/weather_data/')
 
-# fiducial focus offset, in fractional surface RMS units
-focus_offset = 50.0e-6
+# absolute path to the eigenspectra
+path_to_eigenspectra = os.path.abspath(os.path.dirname(ng.__file__) + '/files/eigenspectra')
 
-# fiducial surface RMS, in meters
-surf_rms = 40.0e-6
+# absolute path to the telescope site matrix (TSM)
+path_to_tsm = os.path.abspath(os.path.dirname(ng.__file__) + '/files/Telescope_Site_Matrix.csv')
+
+# absolute path to the receiver file (RF)
+path_to_rf = os.path.abspath(os.path.dirname(ng.__file__) + '/files/Receivers.csv')
 
 default_settings = {'model_file': None,
                     'source': 'M87',
@@ -20,8 +24,6 @@ default_settings = {'model_file': None,
                     'RA': None,
                     'DEC': None,
                     'bandwidth': 2.0,
-                    'nbands': 1,
-                    'rf_offset': 0.0,
                     'month': 'Jan',
                     'year': '2025',
                     'day': '15',
@@ -30,13 +32,11 @@ default_settings = {'model_file': None,
                     't_int': 600.0,
                     't_rest': 1200.0,
                     'SNR_cutoff': ['fringegroups', [5.0, 10.0]],
-                    'array': 'EHT2022',
+                    'array': None,
                     'sites': None,
                     'D_new': 10.0,
-                    'surf_rms_new': surf_rms,
                     'tech_readiness': 1.0,
                     'weather': 'random',
-                    'weather_freq': None,
                     'weather_year': 2015,
                     'weather_day': 15,
                     'ttype': 'fast',
@@ -52,35 +52,26 @@ windspeed_degradation = 15.0
 windspeed_shutdown = 25.0
 
 # minimum and maximum years from which to query weather data
-year_min = 2009
-year_max = 2018
+year_min = 2012
+year_max = 2022
 
-# fiducial receiver temperatures, in K
-T_R_dict = {'86': 40.0,
-            '230': 50.0,
-            '345': 75.0,
-            '410': 150.0,
-            '690': 100.0}
-
-# fiducial sideband ratios
-sideband_ratio_dict = {'86': 0.03,
-                       '230': 0.03,
-                       '345': 0.03,
-                       '410': 0.1,
-                       '690': 0.1}
-
-# aperture efficiency (beyond what is accounted for by surface and focus RMS)
-ap_eff_dict = {'86': 0.7,
-               '230': 0.7,
-               '345': 0.7,
-               '410': 0.7,
-               '690': 0.7}
+# default aperture efficiency (beyond what is accounted for by surface and focus RMS)
+ap_eff = 0.7
 
 # quantization efficiency
 quant_eff = 0.88
 
-# receiver availabilities
-receivers = ['86', '230', '345', '410', '690']
+# default surface RMS, in microns
+surf_rms = 40.0
+
+# default focus offset, in microns
+focus_offset = 10.0
+
+# default mount type, if not otherwise known
+mount_type = 'ALT-AZ'
+
+# default feed angle, if not otherwise known
+feed_angle = 0.0
 
 ###################################################
 # physical constants
@@ -89,188 +80,206 @@ receivers = ['86', '230', '345', '410', '690']
 k = 1381.0
 
 # speed of light, in m/s
-c = 3.0e8
+c = 299792458.0
 
 # Earth diameter, in m
 D_Earth = 12742000.0
 
 # CMB temperature, in K
-T_CMB = 2.72548
+T_CMB = 2.725
 
-# CMB temperature assumed by the AM code, in K
-T_CMB_AM = 2.7
+###################################################
+# recognized receiver bands and properties
+
+rec_name = np.loadtxt(path_to_rf,
+                      delimiter=',',
+                      skiprows=1,
+                      usecols=(0),
+                      dtype=str)
+
+rec_lo, rec_hi, rec_T, rec_SSR = np.loadtxt(path_to_rf,
+                                            delimiter=',',
+                                            skiprows=1,
+                                            usecols=(1,2,3,4),
+                                            unpack=True)
+
+receivers = {}
+for i in range(len(rec_name)):
+    receivers[rec_name[i]] = {'lo': rec_lo[i], 'hi': rec_hi[i], 'T_R': rec_T[i], 'SSR': rec_SSR[i]}
 
 ###################################################
 # known arrays
 
-known_arrays = {'EHT2017': ['ALMA',
-                            'APEX',
-                            'IRAM',
-                            'JCMT',
-                            'LMT',
-                            'SMA',
-                            'SMT',
-                            'SPT'],
-                'EHT2018': ['ALMA',
-                            'APEX',
-                            'GLT',
-                            'IRAM',
-                            'JCMT',
-                            'LMT',
-                            'SMA',
-                            'SMT',
-                            'SPT'],
-                'EHT2021': ['ALMA',
-                            'APEX',
-                            'GLT',
-                            'IRAM',
-                            'JCMT',
-                            'KP',
-                            'LMT',
-                            'NOEMA',
-                            'SMA',
-                            'SMT',
-                            'SPT'],
-                'EHT2022': ['ALMA',
-                            'APEX',
-                            'GLT',
-                            'IRAM',
-                            'JCMT',
-                            'KP',
-                            'LMT',
-                            'NOEMA',
-                            'SMA',
-                            'SMT',
-                            'SPT'],
-                'ngEHTphase1': ['ALMA',
-                                'APEX',
-                                'BAJA',
-                                'CNI',
-                                'GLT',
-                                'HAY',
-                                'IRAM',
-                                'JCMT',
-                                'KP',
-                                'LAS',
-                                'LMT',
-                                'OVRO',
-                                'NOEMA',
-                                'SMA',
-                                'SMT',
-                                'SPT'],
-                'ngEHTphase2': ['ALMA',
-                                'APEX',
-                                'BAJA',
-                                'BOL',
-                                'BRZ',
-                                'CAT',
-                                'CNI',
-                                'GAM',
-                                'GARS',
-                                'GLT',
-                                'HAY',
-                                'IRAM',
-                                'JCMT',
-                                'KP',
-                                'LAS',
-                                'LMT',
-                                'OVRO',
-                                'NOEMA',
-                                'PIKE',
-                                'SMA',
-                                'SMT',
-                                'SPT']}
+known_arrays = {}
 
-known_array_D_overrides = {'EHT2017': {},
-                           'EHT2018': {},
-                           'EHT2021': {},
-                           'EHT2022': {},
-                           'ngEHTphase1': {'BAJA': 6.1,
-                                           'CNI': 6.1,
-                                           'LAS': 6.1,
-                                           'OVRO': 10.4},
-                           'ngEHTphase2': {'BAJA': 6.1,
-                                           'CNI': 6.1,
-                                           'LAS': 6.1,
-                                           'OVRO': 10.4}}
+# known_arrays = {'EHT2017': ['ALMA',
+#                             'APEX',
+#                             'IRAM',
+#                             'JCMT',
+#                             'LMT',
+#                             'SMA',
+#                             'SMT',
+#                             'SPT'],
+#                 'EHT2018': ['ALMA',
+#                             'APEX',
+#                             'GLT',
+#                             'IRAM',
+#                             'JCMT',
+#                             'LMT',
+#                             'SMA',
+#                             'SMT',
+#                             'SPT'],
+#                 'EHT2021': ['ALMA',
+#                             'APEX',
+#                             'GLT',
+#                             'IRAM',
+#                             'JCMT',
+#                             'KP',
+#                             'LMT',
+#                             'NOEMA',
+#                             'SMA',
+#                             'SMT',
+#                             'SPT'],
+#                 'EHT2022': ['ALMA',
+#                             'APEX',
+#                             'GLT',
+#                             'IRAM',
+#                             'JCMT',
+#                             'KP',
+#                             'LMT',
+#                             'NOEMA',
+#                             'SMA',
+#                             'SMT',
+#                             'SPT'],
+#                 'ngEHTphase1': ['ALMA',
+#                                 'APEX',
+#                                 'BAJA',
+#                                 'CNI',
+#                                 'GLT',
+#                                 'HAY',
+#                                 'IRAM',
+#                                 'JCMT',
+#                                 'KP',
+#                                 'LAS',
+#                                 'LMT',
+#                                 'OVRO',
+#                                 'NOEMA',
+#                                 'SMA',
+#                                 'SMT',
+#                                 'SPT'],
+#                 'ngEHTphase2': ['ALMA',
+#                                 'APEX',
+#                                 'BAJA',
+#                                 'BOL',
+#                                 'BRZ',
+#                                 'CAT',
+#                                 'CNI',
+#                                 'GAM',
+#                                 'GARS',
+#                                 'GLT',
+#                                 'HAY',
+#                                 'IRAM',
+#                                 'JCMT',
+#                                 'KP',
+#                                 'LAS',
+#                                 'LMT',
+#                                 'OVRO',
+#                                 'NOEMA',
+#                                 'PIKE',
+#                                 'SMA',
+#                                 'SMT',
+#                                 'SPT']}
 
-known_array_receiver_overrides = {'EHT2017': {'ALMA': ['230'],
-                                              'APEX': ['230'],
-                                              'IRAM': ['230'],
-                                              'JCMT': ['230'],
-                                              'LMT': ['230'],
-                                              'SMA': ['230'],
-                                              'SMT': ['230'],
-                                              'SPT': ['230']},
-                                  'EHT2018': {'ALMA': ['230'],
-                                              'APEX': ['230'],
-                                              'GLT': ['230'],
-                                              'IRAM': ['230'],
-                                              'JCMT': ['230'],
-                                              'LMT': ['230'],
-                                              'SMA': ['230'],
-                                              'SMT': ['230'],
-                                              'SPT': ['230']},
-                                  'EHT2021': {'ALMA': ['230'],
-                                              'APEX': ['230'],
-                                              'GLT': ['230'],
-                                              'IRAM': ['230'],
-                                              'JCMT': ['230'],
-                                              'KP': ['230'],
-                                              'LMT': ['230'],
-                                              'NOEMA': ['230'],
-                                              'SMA': ['230'],
-                                              'SMT': ['230'],
-                                              'SPT': ['230']},
-                                  'EHT2022': {'ALMA': ['230'],
-                                              'APEX': ['230'],
-                                              'GLT': ['230'],
-                                              'IRAM': ['230'],
-                                              'JCMT': ['230'],
-                                              'KP': ['230'],
-                                              'LMT': ['230'],
-                                              'NOEMA': ['230'],
-                                              'SMA': ['230'],
-                                              'SMT': ['230'],
-                                              'SPT': ['230']},
-                                  'ngEHTphase1': {'ALMA': ['86', '230', '345'],
-                                                  'APEX': ['86', '230', '345'],
-                                                  'BAJA': ['86', '230', '345'],
-                                                  'CNI': ['86', '230', '345'],
-                                                  'GLT': ['86', '230', '345'],
-                                                  'HAY': ['86', '230', '345'],
-                                                  'IRAM': ['86', '230', '345'],
-                                                  'JCMT': ['86', '230', '345'],
-                                                  'KP': ['86', '230', '345'],
-                                                  'LAS': ['86', '230', '345'],
-                                                  'LMT': ['86', '230', '345'],
-                                                  'OVRO': ['86', '230', '345'],
-                                                  'NOEMA': ['86', '230', '345'],
-                                                  'SMA': ['86', '230', '345'],
-                                                  'SMT': ['86', '230', '345'],
-                                                  'SPT': ['86', '230', '345']},
-                                  'ngEHTphase2': {'ALMA': ['86', '230', '345'],
-                                                  'APEX': ['86', '230', '345'],
-                                                  'BAJA': ['86', '230', '345'],
-                                                  'BOL': ['86', '230', '345'],
-                                                  'BRZ': ['86', '230', '345'],
-                                                  'CAT': ['86', '230', '345'],
-                                                  'CNI': ['86', '230', '345'],
-                                                  'GAM': ['86', '230', '345'],
-                                                  'GARS': ['86', '230', '345'],
-                                                  'GLT': ['86', '230', '345'],
-                                                  'HAY': ['86', '230', '345'],
-                                                  'IRAM': ['86', '230', '345'],
-                                                  'JCMT': ['86', '230', '345'],
-                                                  'KP': ['86', '230', '345'],
-                                                  'LAS': ['86', '230', '345'],
-                                                  'LMT': ['86', '230', '345'],
-                                                  'OVRO': ['86', '230', '345'],
-                                                  'NOEMA': ['86', '230', '345'],
-                                                  'PIKE': ['86', '230', '345'],
-                                                  'SMA': ['86', '230', '345'],
-                                                  'SMT': ['86', '230', '345'],
-                                                  'SPT': ['86', '230', '345']}}
+# known_array_D_overrides = {'EHT2017': {},
+#                            'EHT2018': {},
+#                            'EHT2021': {},
+#                            'EHT2022': {},
+#                            'ngEHTphase1': {'BAJA': 6.1,
+#                                            'CNI': 6.1,
+#                                            'LAS': 6.1,
+#                                            'OVRO': 10.4},
+#                            'ngEHTphase2': {'BAJA': 6.1,
+#                                            'CNI': 6.1,
+#                                            'LAS': 6.1,
+#                                            'OVRO': 10.4}}
+
+# known_array_receiver_overrides = {'EHT2017': {'ALMA': ['230'],
+#                                               'APEX': ['230'],
+#                                               'IRAM': ['230'],
+#                                               'JCMT': ['230'],
+#                                               'LMT': ['230'],
+#                                               'SMA': ['230'],
+#                                               'SMT': ['230'],
+#                                               'SPT': ['230']},
+#                                   'EHT2018': {'ALMA': ['230'],
+#                                               'APEX': ['230'],
+#                                               'GLT': ['230'],
+#                                               'IRAM': ['230'],
+#                                               'JCMT': ['230'],
+#                                               'LMT': ['230'],
+#                                               'SMA': ['230'],
+#                                               'SMT': ['230'],
+#                                               'SPT': ['230']},
+#                                   'EHT2021': {'ALMA': ['230'],
+#                                               'APEX': ['230'],
+#                                               'GLT': ['230'],
+#                                               'IRAM': ['230'],
+#                                               'JCMT': ['230'],
+#                                               'KP': ['230'],
+#                                               'LMT': ['230'],
+#                                               'NOEMA': ['230'],
+#                                               'SMA': ['230'],
+#                                               'SMT': ['230'],
+#                                               'SPT': ['230']},
+#                                   'EHT2022': {'ALMA': ['230'],
+#                                               'APEX': ['230'],
+#                                               'GLT': ['230'],
+#                                               'IRAM': ['230'],
+#                                               'JCMT': ['230'],
+#                                               'KP': ['230'],
+#                                               'LMT': ['230'],
+#                                               'NOEMA': ['230'],
+#                                               'SMA': ['230'],
+#                                               'SMT': ['230'],
+#                                               'SPT': ['230']},
+#                                   'ngEHTphase1': {'ALMA': ['86', '230', '345'],
+#                                                   'APEX': ['86', '230', '345'],
+#                                                   'BAJA': ['86', '230', '345'],
+#                                                   'CNI': ['86', '230', '345'],
+#                                                   'GLT': ['86', '230', '345'],
+#                                                   'HAY': ['86', '230', '345'],
+#                                                   'IRAM': ['86', '230', '345'],
+#                                                   'JCMT': ['86', '230', '345'],
+#                                                   'KP': ['86', '230', '345'],
+#                                                   'LAS': ['86', '230', '345'],
+#                                                   'LMT': ['86', '230', '345'],
+#                                                   'OVRO': ['86', '230', '345'],
+#                                                   'NOEMA': ['86', '230', '345'],
+#                                                   'SMA': ['86', '230', '345'],
+#                                                   'SMT': ['86', '230', '345'],
+#                                                   'SPT': ['86', '230', '345']},
+#                                   'ngEHTphase2': {'ALMA': ['86', '230', '345'],
+#                                                   'APEX': ['86', '230', '345'],
+#                                                   'BAJA': ['86', '230', '345'],
+#                                                   'BOL': ['86', '230', '345'],
+#                                                   'BRZ': ['86', '230', '345'],
+#                                                   'CAT': ['86', '230', '345'],
+#                                                   'CNI': ['86', '230', '345'],
+#                                                   'GAM': ['86', '230', '345'],
+#                                                   'GARS': ['86', '230', '345'],
+#                                                   'GLT': ['86', '230', '345'],
+#                                                   'HAY': ['86', '230', '345'],
+#                                                   'IRAM': ['86', '230', '345'],
+#                                                   'JCMT': ['86', '230', '345'],
+#                                                   'KP': ['86', '230', '345'],
+#                                                   'LAS': ['86', '230', '345'],
+#                                                   'LMT': ['86', '230', '345'],
+#                                                   'OVRO': ['86', '230', '345'],
+#                                                   'NOEMA': ['86', '230', '345'],
+#                                                   'PIKE': ['86', '230', '345'],
+#                                                   'SMA': ['86', '230', '345'],
+#                                                   'SMT': ['86', '230', '345'],
+#                                                   'SPT': ['86', '230', '345']}}
 
 ###################################################
 # known sources
@@ -293,126 +302,78 @@ known_sources = {'M87': {'RA': 12.51373,
                             'DEC': -5.78944},}
 
 ###################################################
-# antenna properties
+# pull antenna properties from table
 
-known_surf_rms = {'ALMA': 25.0e-6,
-                  'APEX': 25.0e-6,
-                  'GLT': 50.0e-6,
-                  'HAY': 85.0e-6,
-                  'IRAM': 55.0e-6,
-                  'JCMT': 24.0e-6,
-                  'KP': 16.0e-6,
-                  'LMT': 80.0e-6,
-                  'NOEMA': 35.0e-6,
-                  'SMA': 20.0e-6,
-                  'SMT': 15.0e-6,
-                  'SPT': 25.0e-6}
+known_stations, tlcs, diam_arr, surf_arr, mnts_arr, fa_arr, altnames = np.loadtxt(path_to_tsm,
+                                                                                  delimiter=',',
+                                                                                  skiprows=1,
+                                                                                  usecols=(0,1,7,8,9,10,11),
+                                                                                  dtype=str,
+                                                                                  unpack=True)
+lat_arr, lon_arr, elev_arr = np.loadtxt(path_to_tsm,
+                                        delimiter=',',
+                                        skiprows=1,
+                                        usecols=(3,4,5),
+                                        unpack=True)
 
-known_mount_types = {'ALMA': 'ALT-AZ',
-                     'APEX': 'ALT-AZ+NASMYTH-R',
-                     'GAM': 'ALT-AZ',
-                     'GLT': 'ALT-AZ',
-                     'IRAM': 'ALT-AZ+NASMYTH-L',
-                     'JCMT': 'ALT-AZ',
-                     'KP': 'ALT-AZ',
-                     'LMT': 'ALT-AZ+NASMYTH-L',
-                     'NOEMA': 'ALT-AZ',
-                     'SMA': 'ALT-AZ+NASMYTH-L',
-                     'SMT': 'ALT-AZ+NASMYTH-R',
-                     'SPT': 'ALT-AZ'}
+known_diameters = {}
+for i in range(len(known_stations)):
+    if (diam_arr[i] != ''):
+        known_diameters[known_stations[i]] = float(diam_arr[i])
 
-# default mount type, if not otherwise known
-mount_type = 'ALT-AZ'
+known_surf_rms = {}
+for i in range(len(known_stations)):
+    if (surf_arr[i] != ''):
+        known_surf_rms[known_stations[i]] = float(surf_arr[i])
 
-known_feed_angles = {'ALMA': 0.0,
-                     'APEX': 0.0,
-                     'GAM': 0.0,
-                     'GLT': 0.0,
-                     'IRAM': 0.0,
-                     'JCMT': 0.0,
-                     'KP': 0.0,
-                     'LMT': 0.0,
-                     'NOEMA': 0.0,
-                     'SMA': 45.0,
-                     'SMT': 0.0,
-                     'SPT': 0.0}
+known_latitudes = {}
+for i in range(len(known_stations)):
+    if (lat_arr[i] != ''):
+        known_latitudes[known_stations[i]] = lat_arr[i]
 
-# default feed angle, if not otherwise known
-feed_angle = 0.0
+known_longitudes = {}
+for i in range(len(known_stations)):
+    if (lon_arr[i] != ''):
+        known_longitudes[known_stations[i]] = lon_arr[i]
+
+known_elevations = {}
+for i in range(len(known_stations)):
+    if (elev_arr[i] != ''):
+        known_elevations[known_stations[i]] = elev_arr[i]
+
+known_mount_types = {}
+for i in range(len(known_stations)):
+    if (mnts_arr[i] != ''):
+        known_mount_types[known_stations[i]] = mnts_arr[i]
+
+known_feed_angles = {}
+for i in range(len(known_stations)):
+    if (fa_arr[i] != ''):
+        known_feed_angles[known_stations[i]] = float(fa_arr[i])
+
+# translation between full and two-letter station codes
+two_letter_station_codes = {}
+for i in range(len(known_stations)):
+    if (tlcs[i] != ''):
+        two_letter_station_codes[known_stations[i]] = tlcs[i]
+
+# translation dictionary between alternative names for some stations
+translation_dict = {}
+for i in range(len(known_stations)):
+    if (altnames[i] != ''):
+        altname_list = altnames[i].split(';')
+        for altname in altname_list:
+            translation_dict[altname.strip()] = known_stations[i]
+    if (tlcs[i] != ''):
+        translation_dict[tlcs[i]] = known_stations[i]
 
 ###################################################
 # other items
 
-# translation dictionary between alternative names for some stations
-translation_dict = {'AMT': 'GAM',
-                    'GLT-S': 'GLTS',
-                    'HOP': 'FLWO',
-                    'IRAM-30m': 'IRAM',
-                    'PDB': 'NOEMA',
-                    'PIKES': 'PIKE',
-                    'PV': 'IRAM',
-                    'SOC': 'VLA'}
-
-# translation between full and two-letter station codes
-two_letter_station_codes = {'ALI': 'AL',
-                            'ALMA': 'AA',
-                            'APEX': 'AP',
-                            'BAJA': 'BA',
-                            'BAN': 'BN',
-                            'BAR': 'BR',
-                            'BGA': 'BG',
-                            'BGK': 'BK',
-                            'BLDR': 'BL',
-                            'BMAC': 'BM',
-                            'BOL': 'BO',
-                            'BRZ': 'BZ',
-                            'CAS': 'CS',
-                            'CAT': 'CA',
-                            'CNI': 'CI',
-                            'DomeA': 'DA',
-                            'DomeC': 'DC',
-                            'DomeF': 'DF',
-                            'ERB': 'ER',
-                            'FAIR': 'FA',
-                            'FLWO': 'FL',
-                            'FUJI': 'FU',
-                            'GAM': 'AM',
-                            'GARS': 'GA',
-                            'GLT': 'GL',
-                            'GLTS': 'GS',
-                            'HAN': 'HN',
-                            'HAY': 'HA',
-                            'IRAM': 'PV',
-                            'JCMT': 'JC',
-                            'JELM': 'JE',
-                            'KEN': 'KN',
-                            'KILI': 'KI',
-                            'KP': 'KP',
-                            'KVNYS': 'KV',
-                            'LAS': 'LA',
-                            'LLA': 'LL',
-                            'LMT': 'LM',
-                            'LOS': 'LO',
-                            'NOB': 'NB',
-                            'NOEMA': 'PB',
-                            'NOR': 'NR',
-                            'NZ': 'NZ',
-                            'ORG': 'OG',
-                            'OVRO': 'OV',
-                            'PAR': 'PR',
-                            'PIKE': 'PK',
-                            'SAN': 'SN',
-                            'SGO': 'SG',
-                            'SKS': 'SK',
-                            'SMA': 'SM',
-                            'SMT': 'AZ',
-                            'SPT': 'SP',
-                            'SPX': 'SX',
-                            'SUF': 'SF',
-                            'TRL': 'TR',
-                            'VLA': 'VL',
-                            'YAN': 'YA',
-                            'YBG': 'YB'}
+# PCA spectral decomposition quantities
+number_of_components = 40
+length_of_spectrum = 2001
+spectrum_frequency = np.linspace(0.0,2000.0,length_of_spectrum)
 
 SYMBA_master_input_arguments = OrderedDict({'rpicard_path': '/usr/local/src/picard/input_template',
                                             'meqsilhouette_path': '/usr/local/src/MeqSilhouette/meqsilhouette/data',

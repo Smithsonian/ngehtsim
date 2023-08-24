@@ -2,7 +2,6 @@ from setuptools import setup, find_packages
 import os
 import versioneer
 
-
 def package_files(directory):
     paths = []
     for (path, directories, filenames) in os.walk(directory):
@@ -10,8 +9,11 @@ def package_files(directory):
             paths.append(os.path.join('..', path, filename))
     return paths
 
-
 extra_files = package_files('./ngehtsim/weather_data')
+extra_files.append('.././ngehtsim/files/Telescope_Site_Matrix.csv')
+extra_files.append('.././ngehtsim/files/Receivers.csv')
+extra_files += package_files('./ngehtsim/files/eigenspectra')
+extra_files += package_files('./ngehtsim/files/eigenspectra_Tb')
 
 setup(name='ngehtsim',
       version=versioneer.get_version(),
@@ -20,7 +22,7 @@ setup(name='ngehtsim',
       author='Dom Pesce',
       author_email='dpesce@cfa.harvard.edu',
       url='https://github.com/Smithsonian/ngehtsim',
-      license='GPLv3',
+      license='MIT',
       packages=find_packages(),
       package_data={'': extra_files},
       include_package_data=True,
@@ -29,6 +31,5 @@ setup(name='ngehtsim',
                         'matplotlib',
                         'numpy',
                         'scipy',
-                        'ngehtutil',
                         'ngEHTforecast @ git+https://github.com/aeb/ngEHTforecast.git']
       )

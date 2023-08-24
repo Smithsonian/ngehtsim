@@ -3,11 +3,11 @@
 
 import numpy as np
 import ehtim as eh
-import ngehtutil as ng
 import scipy.stats as stats
 from scipy.special import erf, erfinv
 from collections import defaultdict
 from astropy.time import Time
+from astropy.coordinates import EarthLocation
 import ngEHTforecast.fisher as fp
 import yaml
 import glob
@@ -24,45 +24,50 @@ import ngehtsim.weather.weather as nw
 
 class obs_generator(object):
     """
-    Class that organizes information for generating synthetic observations.  Typically initialized by
-    passing a settings file.
+    Class that organizes information for generating synthetic observations.
 
     Attributes:
       settings (dict): Dictionary of information about the observation generation setup
       settings_file (str): Path to the input settings file; if set to None, will use default settings.
                            Note that any settings specified by the settings keyword argument will override
                            the corresponding settings from the settings file.
-      verbose (float): Set to >0 for more verbose output
+      verbosity (float): Set to >0 for more verbose output
       heavy (float): Set to >0 to store more information in the obs_generator object
-      D_override_dict (dict): A dictionary of station names and diameters to override defaults
-      surf_rms_override_dict (dict): A dictionary of station names and surface RMS values to override defaults
-      receiver_override_dict (dict): A dictionary of station names and available receivers to override defaults
-      bandwidth_override_dict (dict): A dictionary of station names and bandwidth values to override defaults
-      T_R_override_dict (dict): A dictionary of station names and receiver temperature values to override defaults
-      sideband_ratio_override_dict (dict): A dictionary of station names and sideband ratio values to override defaults
-      ap_eff_override_dict (dict): A dictionary of station names and aperture efficiency values to override defaults
-      array_name (str): Name to get assigned to the ngehtutil array object
+      D_overrides (dict): A dictionary of station names and diameters to override defaults
+      surf_rms_overrides (dict): A dictionary of station names and surface RMS values to override defaults
+      receiver_configuration_overrides (dict): A dictionary of station names and available receivers to override defaults
+      bandwidth_overrides (dict): A dictionary of station names and bandwidth values to override defaults
+      T_R_overrides (dict): A dictionary of station names and receiver temperature values to override defaults
+      sideband_ratio_overrides (dict): A dictionary of station names and sideband ratio values to override defaults
+      ap_eff_overrides (dict): A dictionary of station names and aperture efficiency values to override defaults
+      array_name (str): Name to load a known array
       ephem (str): path to the ephemeris for a space station
     """
 
     # initialize class instantiation
-    def __init__(self, settings={}, settings_file=None, verbose=0, heavy=0, D_override_dict={},
-                 surf_rms_override_dict={}, receiver_override_dict={}, bandwidth_override_dict={},
-                 T_R_override_dict={}, sideband_ratio_override_dict={}, ap_eff_override_dict={},
+    def __init__(self, settings={}, settings_file=None, verbosity=0, heavy=0, D_overrides={},
+                 surf_rms_overrides={}, receiver_configuration_overrides={}, bandwidth_overrides={},
+                 T_R_overrides={}, sideband_ratio_overrides={}, ap_eff_overrides={},
                  array_name=None, ephem='ephemeris/space'):
 
+        #############################
+        # parse inputs
+
         self.settings_file = settings_file
-        self.verbosity = verbose
+        self.verbosity = verbosity
         self.weight = heavy
-        self.D_override_dict = copy.deepcopy(D_override_dict)
-        self.surf_rms_override_dict = copy.deepcopy(surf_rms_override_dict)
-        self.receiver_override_dict = copy.deepcopy(receiver_override_dict)
-        self.bandwidth_override_dict = copy.deepcopy(bandwidth_override_dict)
-        self.T_R_override_dict = copy.deepcopy(T_R_override_dict)
-        self.sideband_ratio_override_dict = copy.deepcopy(sideband_ratio_override_dict)
-        self.ap_eff_override_dict = copy.deepcopy(ap_eff_override_dict)
+        self.D_overrides = copy.deepcopy(D_overrides)
+        self.surf_rms_overrides = copy.deepcopy(surf_rms_overrides)
+        self.receiver_configuration_overrides = copy.deepcopy(receiver_configuration_overrides)
+        self.bandwidth_overrides = copy.deepcopy(bandwidth_overrides)
+        self.T_R_overrides = copy.deepcopy(T_R_overrides)
+        self.sideband_ratio_overrides = copy.deepcopy(sideband_ratio_overrides)
+        self.ap_eff_overrides = copy.deepcopy(ap_eff_overrides)
         self.array_name = array_name
         self.ephem = ephem
+
+        #############################
+        # load settings
 
         # start with some default settings
         self.settings = copy.deepcopy(const.default_settings)
@@ -71,63 +76,56 @@ class obs_generator(object):
         if settings_file is not None:
             self.load_yaml_settings()
             if self.verbosity > 0:
-                print('========= Loaded settings from {0}'.format(settings_file))
-        else:
-            if self.verbosity > 0:
-                print('========= Loaded default settings')
+                print('Loading settings from {0}'.format(settings_file))
 
         # update the settings with any additional passed information
         self.settings.update(settings)
+
+        #############################
+        # check/fix some easy issues
 
         # remove array name if sites are specified
         if (self.settings['sites'] is not None):
             if (len(self.settings['sites']) > 0):
                 self.settings['array'] = None
 
-        # set absolute path to weather
-        self.path_to_weather = os.path.abspath(const.path_to_weather)
-
-        # check for issues, fix some easy ones, complain about the others
-        if (self.settings['weather_freq'] is not None) & (self.settings['weather_freq'] not in ['86', '230', '345', '410', '690']):
-            raise ValueError('Input weather frequency needs to be one of 86, 230, 345, 410, or 690.')
-        if (self.settings['nbands'] < 1):
-            self.settings['nbands'] = 1
-            raise Warning('Input nbands must be at least 1; setting to 1.')
-        if ((self.settings['nbands'] > 1) & (self.settings['rf_offset'] < self.settings['bandwidth'])):
-            raise Exception('Input rf_offset must be greater than or equal to input bandwidth when nbands > 1.')
-        if (self.path_to_weather[-1] != '/'):
-            self.path_to_weather += '/'
+        # set array name if it is provided
         if self.array_name is None:
             if self.settings['array'] is not None:
                 self.array_name = self.settings['array']
 
+        #############################
         # extract commonly-used settings
+
         self.model_file = self.settings['model_file']
         self.freq = float(self.settings['frequency'])*(1.0e9)
-        self.nbands = self.settings['nbands']
-        self.freq_offsets = (np.arange(float(self.nbands)) - np.mean(np.arange(float(self.nbands)))) * float(self.settings['rf_offset']) * (1.0e9)
         self.weather = self.settings['weather']
 
+        #############################
         # run initialization functions
+
         self.set_seed()
         self.get_sites()
         self.translate_sites()
-        self.set_weather_freq()
         self.set_coords()
         self.mjd = determine_mjd(self.settings['day'],self.settings['month'],self.settings['year'])
-        self.array, self.arr = make_array(self.sites,self.settings['D_new'],D_override_dict=self.D_override_dict,array_name=self.array_name,freq=self.freq/(1.0e9),ephem=self.ephem)
-        self.receiver_setup = set_receivers(self.sites,receiver_override_dict=self.receiver_override_dict)
-        self.bandwidth_setup, self.unique_bandwidths = set_bandwidths(self.sites,self.settings['bandwidth'],self.receiver_setup,bandwidth_override_dict=self.bandwidth_override_dict)
-        self.T_R_setup = set_TRs(self.sites,self.receiver_setup,T_R_override_dict=self.T_R_override_dict)
-        self.sideband_ratio_setup = set_sideband_ratios(self.sites,self.receiver_setup,sideband_ratio_override_dict=self.sideband_ratio_override_dict)
-        self.ap_eff_setup = set_ap_effs(self.sites,self.receiver_setup,ap_eff_override_dict=self.ap_eff_override_dict)
-        self.im = load_image(self.model_file,freq=self.freq,verbose=self.verbosity)
+        self.arr = make_array(self.sites,ephem=self.ephem,verbosity=self.verbosity)
+        self.set_receivers()
+        self.set_bands()
+        self.set_bandwidths()
+        self.set_ap_effs()
+        self.im = load_image(self.model_file,freq=self.freq,verbosity=self.verbosity)
         self.tabulate_weather()
-        self.telescope_properties(self.settings['surf_rms_new'])
+        self.set_telescope_properties()
         self.get_obs_times()
 
+        #############################
         # other settings
+
         self.obs_empty = None
+
+    ###################################################
+    # initialization functions
 
     # load and store settings from file
     def load_yaml_settings(self):
@@ -135,14 +133,13 @@ class obs_generator(object):
         with open(self.settings_file, 'r') as fi:
             self.settings.update(yaml.load(fi, Loader=loader))
 
-    # set random number seed
+    # set random number seed and generator
     def set_seed(self):
         if self.settings['random_seed'] is None:
             self.seed = int((time.time() % 100000) * 1000)
-            np.random.seed(self.seed)
         else:
             self.seed = self.settings['random_seed']
-            np.random.seed(self.seed)
+        self.rng = np.random.default_rng(seed=self.seed)
 
     # generate the site list
     def get_sites(self):
@@ -151,16 +148,16 @@ class obs_generator(object):
         self.sites = list()
 
         # if a known array is specified, pull its sites and overrides
-        if self.settings['array'] in const.known_arrays.keys():
+        if self.settings['array'] in list(const.known_arrays.keys()):
             self.sites = copy.deepcopy(const.known_arrays[self.settings['array']])
 
-            D_override_dict_here = copy.deepcopy(const.known_array_D_overrides[self.settings['array']])
-            D_override_dict_here.update(self.D_override_dict)
-            self.D_override_dict = D_override_dict_here
+            D_overrides_here = copy.deepcopy(const.known_array_D_overrides[self.settings['array']])
+            D_overrides_here.update(self.D_overrides)
+            self.D_overrides = D_overrides_here
 
-            receiver_override_dict_here = copy.deepcopy(const.known_array_receiver_overrides[self.settings['array']])
-            receiver_override_dict_here.update(self.receiver_override_dict)
-            self.receiver_override_dict = receiver_override_dict_here
+            receiver_configuration_overrides_here = copy.deepcopy(const.known_array_receiver_configuration_overrides[self.settings['array']])
+            receiver_configuration_overrides_here.update(self.receiver_configuration_overrides)
+            self.receiver_configuration_overrides = receiver_configuration_overrides_here
 
         # add in any additional sites
         else:
@@ -175,33 +172,21 @@ class obs_generator(object):
         temp_sites = np.unique(np.array(self.sites))
         self.sites = list(temp_sites)
 
-    # make sure all sites are known
+    # use common site names and make sure all sites are known
     def translate_sites(self):
         for isite, site in enumerate(self.sites):
             if site in list(const.translation_dict.keys()):
                 self.sites[isite] = copy.deepcopy(const.translation_dict[site])
             else:
-                if site not in ng.Station.get_list():
+                if site not in const.known_stations:
                     if site != 'space':
                         raise Exception(site+' is not a known station.')
-
-    # determine the weather frequency to use
-    def set_weather_freq(self):
-        freq_options = np.array([86.0,230.0,345.0,410.0,690.0])
-        weath_options = np.array(['86','230','345','410','690'])
-        if self.settings['weather_freq'] is None:
-            freqhere = self.freq / (1.0e9)
-            self.weather_freq = weath_options[np.argmin(np.abs(freqhere - freq_options))]
-        else:
-            self.weather_freq = self.settings['weather_freq']
-        if self.verbosity > 0:
-            print("************** Weather frequency set to " + str(self.weather_freq) + ' GHz.')
 
     # set source coordinates
     def set_coords(self):
 
         # retrieve coordinates from source, if known
-        if self.settings['source'] in const.known_sources.keys():
+        if self.settings['source'] in list(const.known_sources.keys()):
             self.RA = copy.deepcopy(const.known_sources[self.settings['source']]['RA'])
             self.DEC = copy.deepcopy(const.known_sources[self.settings['source']]['DEC'])
         else:
@@ -214,7 +199,84 @@ class obs_generator(object):
         if self.settings['DEC'] is not None:
             self.DEC = self.settings['DEC']
 
-    # extract the opacity and Tb information from weather tables
+    # create a receiver suite dictionary
+    def set_receivers(self):
+
+        receiver_setup = {}
+
+        for site in self.sites:
+
+            receiver_setup[site] = {}
+
+            if site in list(self.receiver_configuration_overrides.keys()):
+                for rec in self.receiver_configuration_overrides[site]:
+                    receiver_setup[site][rec] = copy.deepcopy(const.receivers[rec])
+            else:
+                receiver_setup[site] = copy.deepcopy(const.receivers)
+
+            if site in list(self.T_R_overrides.keys()):
+                for rec in self.T_R_overrides[site]:
+                    if rec in list(receiver_setup[site].keys()):
+                        receiver_setup[site][rec]['T_R'] = self.T_R_overrides[site][rec]
+
+            if site in list(self.sideband_ratio_overrides.keys()):
+                for rec in self.sideband_ratio_overrides[site]:
+                    if rec in list(receiver_setup[site].keys()):
+                        receiver_setup[site][rec]['SSR'] = self.sideband_ratio_overrides[site][rec]
+
+        self.receivers = receiver_setup
+
+    # set the receiver bands that will be used for each site
+    def set_bands(self):
+        self.bands = {}
+        freq = self.freq / (1.0e9)
+        for site in self.sites:
+            self.bands[site] = None
+            for band in list(self.receivers[site].keys()):
+                if ((self.receivers[site][band]['lo'] <= freq) & (self.receivers[site][band]['hi'] >= freq)):
+                    self.bands[site] = band
+    
+    # sort out the bandwidth info for each site and for the whole array
+    def set_bandwidths(self):
+
+        # set up the bandwidth dictionary
+        bandwidth_setup = {}
+        for site in self.sites:
+            if site in list(self.bandwidth_overrides.keys()):
+                bandwidth_setup[site] = self.bandwidth_overrides[site]
+            else:
+                bandwidth_setup[site] = {}
+                for key in list(self.receivers[site].keys()):
+                    bandwidth_setup[site][key] = self.settings['bandwidth']
+
+        # determine the unique bandwidths
+        unique_bandwidths = list()
+        for key in list(bandwidth_setup.keys()):
+            for key2 in list(bandwidth_setup[key].keys()):
+                if bandwidth_setup[key][key2] not in unique_bandwidths:
+                    unique_bandwidths.append(bandwidth_setup[key][key2])
+
+        self.bandwidth_setup = bandwidth_setup
+        self.unique_bandwidths = unique_bandwidths
+
+    # create an aperture efficiency dictionary
+    def set_ap_effs(self):
+
+        # initialize the aperture efficiency dictionary
+        ap_eff_setup = {}
+        for site in self.sites:
+            ap_eff_setup[site] = {}
+            for key in list(self.receivers[site].keys()):
+                    ap_eff_setup[site][key] = const.ap_eff
+
+        # update according to overrides
+        for site in self.sites:
+            if site in list(self.ap_eff_overrides.keys()):
+                ap_eff_setup[site].update(self.ap_eff_overrides[site])
+
+        self.ap_eff_setup = ap_eff_setup
+
+    # extract and store the relevant weather information
     def tabulate_weather(self):
 
         # initialize dictionaries
@@ -231,97 +293,51 @@ class obs_generator(object):
         # get a day and year for the weather parameters
         if (self.weather == 'random'):
             # pick a random past date from which to pull the weather
-            self.randyear = np.random.randint(const.year_min,const.year_max+1)
+            self.weather_year = self.rng.integers(const.year_min,const.year_max,endpoint=True)
             if (self.settings['month'] == 'Feb'):
-                self.randday = np.random.randint(1,29)
+                self.weather_day = self.rng.integers(1,28,endpoint=True)
             elif (self.settings['month'] in ['Apr','Jun','Sep','Nov']):
-                self.randday = np.random.randint(1,31)
+                self.weather_day = self.rng.integers(1,30,endpoint=True)
             else:
-                self.randday = np.random.randint(1,32)
+                self.weather_day = self.rng.integers(1,31,endpoint=True)
         else:
             # use the specified date
-            self.randyear = int(self.settings['weather_year'])
-            self.randday = int(self.settings['weather_day'])
+            self.weather_year = int(self.settings['weather_year'])
+            self.weather_day = int(self.settings['weather_day'])
 
         # read in the weather info and store it
         for isite, site in enumerate(self.sites):
 
             if site != 'space':
 
-                # determine which table to read
-                pathhere = self.path_to_weather
-                pathhere += site + '/'
-                pathhere += monthnum + self.settings['month'] + '/'
-                weather_file = pathhere + 'mean_SEFD_info_' + self.weather_freq + '.csv'
-                wind_file = pathhere + 'mean_wind_speed.csv'
-
-                if self.verbosity > 1:
-                    print('Reading weather from '+weather_file)
-                
-                # read in the tables
-                year_ws, monthdum, day_ws, ws = np.loadtxt(wind_file,skiprows=6,unpack=True,delimiter=',')
-                year, monthdum, day, tau, Tb = np.loadtxt(weather_file,skiprows=7,unpack=True,delimiter=',')
-
-                # start a count of how many times it breaks
-                broken = 0
-
                 if ((self.weather == 'random') | (self.weather == 'exact')):
-                    # pull out the info for the selected date
-                    index = ((year == self.randyear) & (day == self.randday))
-                    if (np.array(index).sum() == 0):
-                        broken += 1
-                        if self.verbosity > 1:
-                            print('Weather tabulation broke for the '+ str(broken) + ' time!')
-                        # if it breaks 10 times, toss an error
-                        if broken >= 10:
-                            raise Exception('No weather on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
-                        else:
-                            print('Retabulating weather...')
-                            self.tabulate_weather()
-                            return None
-                    tau_here = tau[index][0]
-                    Tb_here = Tb[index][0]
-
-                    # do the same for windspeed
-                    index_ws = ((year_ws == self.randyear) & (day_ws == self.randday))
-                    if (np.array(index_ws).sum() == 0):
-                        broken += 1
-                        if self.verbosity > 1:
-                            print('Windspeed tabulation broke for the '+ str(broken) + ' time!')
-                        # if it breaks 10 times, toss an error
-                        if broken >= 10:
-                            raise Exception('No windspeed on file for the selected date!  Date is '+self.settings['month']+' '+str(self.randday)+', '+str(self.randyear)+'.')
-                        else:
-                            print('Retabulating windspeed...')
-                            self.tabulate_weather()
-                            return None
-                    ws_here = ws[index_ws][0]
-                elif (self.weather == 'typical'):
-                    tau_here = np.median(tau)
-                    Tb_here = np.median(Tb)
-                    ws_here = np.median(ws)
+                    form = 'exact'
+                elif ((self.weather == 'mean') | (self.weather == 'average')):
+                    form = 'mean'
+                elif ((self.weather == 'typical') | (self.weather == 'median')):
+                    form = 'median'
                 elif (self.weather == 'good'):
-                    tau_here = np.percentile(tau,15.87)
-                    Tb_here = np.percentile(Tb,15.87)
-                    ws_here = np.percentile(ws,15.87)
-                elif (self.weather == 'poor'):
-                    tau_here = np.percentile(tau,84.13)
-                    Tb_here = np.percentile(Tb,84.13)
-                    ws_here = np.percentile(ws,84.13)
+                    form = 'good'
+                elif ((self.weather == 'bad') | (self.weather == 'poor')):
+                    form = 'bad'
+
+                tau_here = nw.opacity(site,form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year, freq=self.freq/(1.0e9))
+                Tb_here = nw.brightness_temperature(site,form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year, freq=self.freq/(1.0e9))
+                ws_here = nw.windspeed(site,form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year)
 
                 # divide out the opacity term to get the actual atmospheric temperature
-                Tatm = (Tb_here - (const.T_CMB_AM*np.exp(-tau_here))) / (1.0 - np.exp(-tau_here))
+                Tatm_here = (Tb_here - (const.T_CMB*np.exp(-tau_here))) / (1.0 - np.exp(-tau_here))
 
                 # store the info in the dictionaries
                 tau_dict[site] = tau_here
-                Tatm_dict[site] = Tatm
+                Tatm_dict[site] = Tatm_here
                 Tb_dict[site] = Tb_here
                 windspeed_dict[site] = ws_here
 
             else:
 
                 if self.verbosity > 1:
-                    print('For space dish, assuming perfect weather!')
+                    print('For space dish, assuming perfect weather.')
 
                 tau_dict[site] = 0.0
                 Tatm_dict[site] = 0.0
@@ -335,32 +351,32 @@ class obs_generator(object):
         self.windspeed_dict = windspeed_dict
 
     # generate dictionaries of telescope properties
-    def telescope_properties(self,surf_rms_new):
-
-        # aperture efficiency of new dishes
-        freqhere = str(int(self.freq / (1.0e9)))
-        ap_eff = const.ap_eff_dict[freqhere]
-        eta_new = eta_dish(self.freq,surf_rms_new,const.focus_offset,ap_eff)
+    def set_telescope_properties(self):
 
         D_dict = {}
         eta_dict = {}
-        for station in self.array.stations():
-            D_dict[station.name] = station.diameter()
-            if freqhere in self.ap_eff_setup[station.name].keys():
-                ap_eff = self.ap_eff_setup[station.name][freqhere]
-            else:
-                ap_eff = const.ap_eff_dict[freqhere]
+        for site in self.sites:
 
-            # recompute aperture efficiency for stations with known or overridden surface RMSs
-            known = False
-            if station.name in const.known_surf_rms.keys():
-                eta_dict[station.name] = eta_dish(self.freq,const.known_surf_rms[station.name],const.focus_offset,ap_eff)
-                known = True
-            if station.name in self.surf_rms_override_dict.keys():
-                eta_dict[station.name] = eta_dish(self.freq,self.surf_rms_override_dict[station.name],const.focus_offset,ap_eff)
-                known = True
-            if not known:
-                eta_dict[station.name] = eta_new
+            # start with the values for a new site
+            D_dict[site] = self.settings['D_new']
+            rms_here = const.surf_rms
+            ap_eff_here = const.ap_eff
+
+            # if the site is known, replace those values with the known ones
+            if site in list(const.known_diameters.keys()):
+                D_dict[site] = const.known_diameters[site]
+            if site in list(const.known_surf_rms.keys()):
+                rms_here = const.known_surf_rms[site]
+
+            # if the user has provided overrides, use those instead
+            if site in list(self.D_overrides.keys()):
+                D_dict[site] = self.D_overrides[site]
+            if site in list(self.surf_rms_overrides.keys()):
+                rms_here = self.surf_rms_overrides[site]
+            if site in list(self.ap_eff_overrides.keys()):
+                ap_eff_here = self.ap_eff_overrides[site][self.bands[site]]
+
+            eta_dict[site] = eta_dish(self.freq,rms_here,const.focus_offset,ap_eff_here)
 
         self.D_dict = D_dict
         self.eta_dict = eta_dict
@@ -372,36 +388,37 @@ class obs_generator(object):
         t_last = t_first+float(N_obs-1)*(self.settings['t_rest']/3600.)
         self.t_seg_times = np.linspace(t_first,t_last,N_obs)
         if self.verbosity > 0:
-            print("========= Number of timestamps: {0}".format(N_obs))
-            print("========= Beginning of first integration: {0}".format(t_first))
-            print("========= Beginning of last integration: {0}".format(t_last))
-            print('************** Scan start times: {0}'.format(self.t_seg_times))
+            print("Number of timestamps: {0}".format(N_obs))
+            print("Beginning of first integration: {0}".format(t_first))
+            print("Beginning of last integration: {0}".format(t_last))
+            print('Scan start times: {0}'.format(self.t_seg_times))
+
+    ###################################################
+    # functions for generating observations
 
     # generate a raw observation
-    def observe(self,input_model,obsfreq,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None,flagwind=True):
+    def observe(self,input_model,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,flagwind=True,p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
         Args:
           input_model (ehtim.image.Image, ehtim.movie.Movie, ehtim.model.Model, ngEHTforecast.fisher.fisher_forecast.FisherForecast): input source model
-          obsfreq (float): observing frequency, in Hz
-          return_SEFDs (bool): if True, returns two lists of station SEFDs along with the observation
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
-          p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
           flagwind (bool): flag for whether to derate sites with high wind
+          p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
         
         Returns:
           (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation
         """
 
         # generate an empty obsdata object
-        if ((self.obs_empty is None) or (self.obs_empty.rf != obsfreq)):
+        if ((self.obs_empty is None) or (self.obs_empty.rf != self.freq)):
             self.obs_empty = self.arr.obsdata(self.RA,
                                               self.DEC,
-                                              obsfreq,
+                                              self.freq,
                                               (1.0e9)*float(self.settings['bandwidth']),
                                               self.settings['t_int'],
                                               self.settings['t_rest'],
@@ -427,22 +444,34 @@ class obs_generator(object):
             input_model.dec = self.DEC
             input_model.mjd = self.mjd
             input_model.source = self.settings['source']
-            input_model.rf = obsfreq
-            obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'])
+            input_model.rf = self.freq
+            if self.verbosity <= 0:
+                with eh.parloop.HiddenPrints():
+                    obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'])
+            else:
+                obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'])
         elif isinstance(input_model, eh.movie.Movie):
             input_model.ra = self.RA
             input_model.dec = self.DEC
             input_model.mjd = self.mjd
             input_model.source = self.settings['source']
-            input_model.rf = obsfreq
-            obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'],repeat=True)
+            input_model.rf = self.freq
+            if self.verbosity <= 0:
+                with eh.parloop.HiddenPrints():
+                    obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'],repeat=True)
+            else:
+                obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'],repeat=True)
         elif isinstance(input_model, eh.model.Model):
             input_model.ra = self.RA
             input_model.dec = self.DEC
             input_model.mjd = self.mjd
             input_model.source = self.settings['source']
-            input_model.rf = obsfreq
-            obs = input_model.observe_same_nonoise(self.obs_empty)
+            input_model.rf = self.freq
+            if self.verbosity <= 0:
+                with eh.parloop.HiddenPrints():
+                    obs = input_model.observe_same_nonoise(self.obs_empty)
+            else:
+                obs = input_model.observe_same_nonoise(self.obs_empty)
         elif isinstance(input_model, fp.FisherForecast):
             if p is None:
                 raise Exception('When observing an ngEHTforecast model, the parameter vector keyword argument p must be specified!')
@@ -507,6 +536,8 @@ class obs_generator(object):
             if (ws > const.windspeed_shutdown):
                 if flagwind:
                     flagsites.append(site)
+                    if self.verbosity > 0:
+                        print(site + ' cannot observe because of high wind.')
 
             # indices for this site
             ind1 = (t1 == site)
@@ -528,18 +559,16 @@ class obs_generator(object):
                 Tb1[ind1] = const.T_CMB
                 Tb2[ind2] = const.T_CMB
 
-            # determine receiver temperatures
-            keyhere = self.weather_freq
-            if keyhere in self.T_R_setup[site].keys():
-                T_R = self.T_R_setup[site][keyhere]
+            # if this site does not have an appropriate receiver, temporarily assign it some values
+            band = self.bands[site]
+            if band is None:
+                T_R = 0.0
+                sideband_ratio = 0.0
+
+            # otherwise, retrieve the receiver temperature and sideband separation ratio
             else:
-                T_R = const.T_R_dict[keyhere]
-            
-            # determine sideband separation ratio
-            if keyhere in self.sideband_ratio_setup[site].keys():
-                sideband_ratio = self.sideband_ratio_setup[site][keyhere]
-            else:
-                sideband_ratio = const.sideband_ratio_dict[keyhere]
+                T_R = self.receivers[site][band]['T_R']
+                sideband_ratio = self.receivers[site][band]['SSR']
 
             # determine system temperatures
             Tsys1[ind1] = (T_R + Tb1[ind1])*(1.0 + sideband_ratio)
@@ -555,10 +584,8 @@ class obs_generator(object):
             SEFD2[ind2] *= SEFD_factor
 
             # determine bandwidth
-            bw_setup = self.bandwidth_setup[site]
-            keyhere = str(int(self.freq / (1.0e9)))
-            if keyhere in bw_setup.keys():
-                valhere = bw_setup[keyhere]*(1.0e9)
+            if band in list(self.bandwidth_setup[site].keys()):
+                valhere = self.bandwidth_setup[site][band]*(1.0e9)
             else:
                 valhere = obs.bw
             bw1[ind1] = valhere
@@ -569,8 +596,8 @@ class obs_generator(object):
                 for t in tuniq:
                     ind1here = ((times == t) & (t1 == site))
                     ind2here = ((times == t) & (t2 == site))
-                    gainamphere = 10.0**(gainamp*np.random.normal(0.0,1.0))
-                    gainphasehere = np.random.uniform(-np.pi,np.pi)
+                    gainamphere = 10.0**(gainamp*self.rng.normal(0.0,1.0))
+                    gainphasehere = self.rng.uniform(-np.pi,np.pi)
                     gainamp1R[ind1here] = gainamphere
                     gainamp2R[ind2here] = gainamphere
                     gainphase1R[ind1here] = gainphasehere
@@ -591,22 +618,12 @@ class obs_generator(object):
         bw[ind1] = bw1[ind1]
         bw[ind2] = bw2[ind2]
 
-        # store additional info if requested
-        if self.weight > 0:
-            self.bandwidths = bw
-            self.Tsys1 = Tsys1
-            self.Tsys2 = Tsys2
-            self.tau1 = tau1
-            self.tau2 = tau2
-            self.Tb1 = Tb1
-            self.Tb2 = Tb2
-
         # store and apply gains
         if addgains:
             g1R = gainamp1R*np.exp((1.0j)*gainphase1R)
             g2R = gainamp2R*np.exp((1.0j)*gainphase2R)
-            g1L = gainamp1R*np.exp((1.0j)*gainphase1L)
-            g2L = gainamp2R*np.exp((1.0j)*gainphase2L)
+            g1L = gainamp1L*np.exp((1.0j)*gainphase1L)
+            g2L = gainamp2L*np.exp((1.0j)*gainphase2L)
             if self.weight > 0:
                 self.station_gains1R = g1R
                 self.station_gains2R = g2R
@@ -616,10 +633,6 @@ class obs_generator(object):
             obs.data['llvis'] *= g1L*np.conj(g2L)
             obs.data['rlvis'] *= g1R*np.conj(g2L)
             obs.data['lrvis'] *= g1L*np.conj(g2R)
-            obs.data['rrsigma'] *= np.abs(g1R*g2R)
-            obs.data['llsigma'] *= np.abs(g1L*g2L)
-            obs.data['rlsigma'] *= np.abs(g1R*g2L)
-            obs.data['lrsigma'] *= np.abs(g1L*g2R)
 
         # store things differently depending on whether opacity is assumed to be calibrated or not
         if opacitycal:
@@ -646,49 +659,67 @@ class obs_generator(object):
         obs.data['rlsigma'] = sigma
         obs.data['lrsigma'] = sigma
 
+        # apply gains
+        if addgains:
+            obs.data['rrsigma'] *= np.abs(g1R*np.conj(g2R))
+            obs.data['llsigma'] *= np.abs(g1L*np.conj(g2L))
+            obs.data['rlsigma'] *= np.abs(g1R*np.conj(g2L))
+            obs.data['lrsigma'] *= np.abs(g1L*np.conj(g2R))
+
         # add thermal noise to observations
         if addnoise:
-            obs.data['rrvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['rrsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['rrsigma']))))
-            obs.data['llvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['llsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['llsigma']))))
-            obs.data['rlvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['rlsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['rlsigma']))))
-            obs.data['lrvis'] += sigma*(np.random.normal(0.0,1.0,len(obs.data['lrsigma'])) + ((1.0j)*np.random.normal(0.0,1.0,len(obs.data['lrsigma']))))
+            obs.data['rrvis'] += sigma*(self.rng.normal(0.0,1.0,len(obs.data['rrsigma'])) + ((1.0j)*self.rng.normal(0.0,1.0,len(obs.data['rrsigma']))))
+            obs.data['llvis'] += sigma*(self.rng.normal(0.0,1.0,len(obs.data['llsigma'])) + ((1.0j)*self.rng.normal(0.0,1.0,len(obs.data['llsigma']))))
+            obs.data['rlvis'] += sigma*(self.rng.normal(0.0,1.0,len(obs.data['rlsigma'])) + ((1.0j)*self.rng.normal(0.0,1.0,len(obs.data['rlsigma']))))
+            obs.data['lrvis'] += sigma*(self.rng.normal(0.0,1.0,len(obs.data['lrsigma'])) + ((1.0j)*self.rng.normal(0.0,1.0,len(obs.data['lrsigma']))))
 
-        # flag sites that exceeded the maximum windspeed threshold
+        # create mask and populate it with the sites that should not be flagged
         t1_list = obs.unpack('t1')['t1']
         t2_list = obs.unpack('t2')['t2']
         mask = np.array([t1_list[j] not in flagsites and t2_list[j] not in flagsites for j in range(len(t1_list))])
-        SEFD1 = SEFD1[mask]
-        SEFD2 = SEFD2[mask]
-        tau1 = tau1[mask]
-        tau2 = tau2[mask]
-        obs = obs.flag_sites(flagsites)
+
+        # apply the wind flags to the observation
+        data_copy = obs.data.copy()
+        obs.data = data_copy[mask]
+        if self.verbosity > 0:
+            print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points because of wind.')
 
         # restore Stokes polrep
         obs = obs.switch_polrep(polrep_out='stokes')
 
-        if return_SEFDs:
+        # store additional info if requested
+        if self.weight > 0:
+            self.bandwidths = bw[mask]
+            self.Tsys1 = Tsys1[mask]
+            self.Tsys2 = Tsys2[mask]
+            self.tau1 = tau1[mask]
+            self.tau2 = tau2[mask]
+            self.Tb1 = Tb1[mask]
+            self.Tb2 = Tb2[mask]
             if opacitycal:
-                return obs, SEFD1*np.exp(tau1), SEFD2*np.exp(tau2)
+                self.SEFD1 = SEFD1[mask]*np.exp(tau1[mask])
+                self.SEFD2 = SEFD2[mask]*np.exp(tau2[mask])
             else:
-                return obs, SEFD1, SEFD2
-        else:
-            return obs
+                self.SEFD1 = SEFD1[mask]
+                self.SEFD2 = SEFD2[mask]
+
+        # return observation object
+        return obs
 
     # generate observation
-    def make_obs(self,input_model=None,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,p=None,flagwind=True):
+    def make_obs(self,input_model=None,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,flagwind=True,p=None):
         """
-        Generate an observation (possibly multi-band) that folds in weather-based opacity effects
+        Generate an observation that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
         
         Args:
           input_model (ehtim.image.Image, ehtim.movie.Movie, ehtim.model.Model, ngEHTforecast.fisher.fisher_forecast.FisherForecast): input source model
-          return_SEFDs (bool): if True, returns two lists of station SEFDs along with the observation
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
-          p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
           flagwind (bool): flag for whether to derate sites with high wind
+          p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
 
         Returns:
           (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation
@@ -706,96 +737,119 @@ class obs_generator(object):
                 if self.verbosity > 0:
                     print('No input model passed to make_obs; using the model provided in the settings.')
 
-        # loop through the bands
-        for i_band in range(self.nbands):
+        # generate raw observation
+        obs = self.observe(input_model,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
 
-            # adjust the observing frequency to account for the band offset
-            adjusted_frequency = self.freq + self.freq_offsets[i_band]
+        # apply naive SNR thresholding
+        if (snr_algo.lower() == 'naive'):
+            mask = obs.unpack('snr')['snr'] > snr_args
 
-            # generate raw observation for this band
-            obs_seg, SEFD1, SEFD2 = self.observe(input_model,adjusted_frequency,return_SEFDs=True,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
+        # apply a proxy for the "fringegroups" procedure from HOPS
+        elif (snr_algo.lower() == 'fringegroups'):
 
-            # apply naive SNR thresholding
-            if (snr_algo == 'naive'):
-                mask = obs_seg.unpack('snr')['snr'] > snr_args
-                SEFD1 = SEFD1[mask]
-                SEFD2 = SEFD2[mask]
-                obs_seg = obs_seg.flag_low_snr(snr_cut=snr_args,output='kept')
+            # parse SNR_cutoff arguments
+            snr_ref = snr_args[0]
+            tint_ref = snr_args[1]
 
-            # apply a proxy for fringe-finding in HOPS
-            elif (snr_algo == 'fringegroups'):
+            mask = fringegroups(self,obs,snr_ref,tint_ref)
 
-                # parse SNR_cutoff arguments
-                snr_ref = snr_args[0]
-                tint_ref = snr_args[1]
+        # apply an FPT proxy for SNR thresholding
+        elif (snr_algo.lower() == 'fpt'):
 
-                if return_SEFDs:
-                    mask = fringegroups(self,obs_seg,snr_ref,tint_ref,return_index=True)
-                    SEFD1 = SEFD1[mask]
-                    SEFD2 = SEFD2[mask]
-                obs_seg = fringegroups(self,obs_seg,snr_ref,tint_ref)
+            # parse SNR_cutoff arguments
+            snr_ref = snr_args[0]
+            tint_ref = snr_args[1]
+            freq_ref = snr_args[2]
+            model_path_ref = snr_args[3]
 
-            # apply an FPT proxy for SNR thresholding
-            elif (snr_algo == 'fpt'):
+            mask = FPT(self,obs,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind,ephem=self.ephem)
 
-                # parse SNR_cutoff arguments
-                snr_ref = snr_args[0]
-                tint_ref = snr_args[1]
-                freq_ref = snr_args[2]
-                model_path_ref = snr_args[3]
-                
-                if return_SEFDs:
-                    mask = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind,ephem=self.ephem,return_index=True)
-                    SEFD1 = SEFD1[mask]
-                    SEFD2 = SEFD2[mask]
-                obs_seg = FPT(self,obs_seg,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind,ephem=self.ephem)
+        # unrecognized SNR thresholding scheme
+        else:
+            raise ValueError('Unknown algorithm for SNR_cutoff.')
 
-            # unrecognized SNR thresholding scheme
-            else:
-                raise ValueError('unknown algorithm for SNR_cutoff')
+        # apply the data flags to the observation
+        data_copy = obs.data.copy()
+        obs.data = data_copy[mask]
+        if self.verbosity > 0:
+            print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points during fringe-finding emulation.')
 
-            # append this segment to the obs list
-            if i_band == 0:
-                obs = obs_seg.copy()
-            else:
-                obs_seg.data['time'] += i_band*0.00001
-                obs.data = np.concatenate([obs.data,obs_seg.data])
+        # flag the additional stored quantities as well
+        if self.weight > 0:
+            self.bandwidths = self.bandwidths[mask]
+            self.Tsys1 = self.Tsys1[mask]
+            self.Tsys2 = self.Tsys2[mask]
+            self.tau1 = self.tau1[mask]
+            self.tau2 = self.tau2[mask]
+            self.Tb1 = self.Tb1[mask]
+            self.Tb2 = self.Tb2[mask]
+            self.SEFD1 = self.SEFD1[mask]
+            self.SEFD2 = self.SEFD2[mask]
 
         # remove sites that can't observe at the requested frequency
         sites_to_remove = list()
-        for site in self.sites:
-            recs_here = self.receiver_setup[site]
-            if self.weather_freq not in recs_here:
+        for site in obs.tarr['site']:
+            if self.bands[site] is None:
                 sites_to_remove.append(site)
+                if self.verbosity > 0:
+                    print(site + ' cannot observe at '+str(self.freq/(1.0e9))+' GHz.')
         if len(sites_to_remove) > 0:
-            siteshere = np.unique(np.concatenate((obs.data['t1'],obs.data['t2'])))
-            if (len(siteshere) != 0):
-                if return_SEFDs:
-                    t1_list = obs.unpack('t1')['t1']
-                    t2_list = obs.unpack('t2')['t2']
-                    mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
-                    SEFD1 = SEFD1[mask]
-                    SEFD2 = SEFD2[mask]
-                obs = obs.flag_sites(sites_to_remove)
-
-        # drop any sites randomly deemed to be technically unready
-        sites_in_obs = obs.tarr['site']
-        sites_to_drop = get_unready_sites(sites_in_obs, self.settings['tech_readiness'])
-        if len(sites_to_drop) > 0:
-            if return_SEFDs:
+            if len(obs.data) > 0:
                 t1_list = obs.unpack('t1')['t1']
                 t2_list = obs.unpack('t2')['t2']
-                mask = np.array([t1_list[j] not in sites_to_drop and t2_list[j] not in sites_to_drop for j in range(len(t1_list))])
-                SEFD1 = SEFD1[mask]
-                SEFD2 = SEFD2[mask]
-            obs = obs.flag_sites(sites_to_drop)
+                mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+
+                # apply the data flags to the observation
+                data_copy = obs.data.copy()
+                obs.data = data_copy[mask]
+                if self.verbosity > 0:
+                    print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points because of no appropriate receiver at the observing frequency.')
+
+                # flag the additional stored quantities as well
+                if self.weight > 0:
+                    self.bandwidths = self.bandwidths[mask]
+                    self.Tsys1 = self.Tsys1[mask]
+                    self.Tsys2 = self.Tsys2[mask]
+                    self.tau1 = self.tau1[mask]
+                    self.tau2 = self.tau2[mask]
+                    self.Tb1 = self.Tb1[mask]
+                    self.Tb2 = self.Tb2[mask]
+                    self.SEFD1 = self.SEFD1[mask]
+                    self.SEFD2 = self.SEFD2[mask]
+
+        # drop any sites that are randomly deemed to be technically unready
+        sites_to_remove = get_unready_sites(obs.tarr['site'], self.settings['tech_readiness'], rng=self.rng)
+        if len(sites_to_remove) > 0:
             if self.verbosity > 0:
                 print("Dropping {0} due to technical (un)readiness.".format(sites_to_drop))
+            if len(obs.data) > 0:
+                t1_list = obs.unpack('t1')['t1']
+                t2_list = obs.unpack('t2')['t2']
+                mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
 
-        if return_SEFDs:
-            return obs, SEFD1, SEFD2
-        else:
-            return obs
+                # apply the data flags to the observation
+                data_copy = obs.data.copy()
+                obs.data = data_copy[mask]
+                if self.verbosity > 0:
+                    print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points because of techincal unreadiness.')
+
+                # flag the additional stored quantities as well
+                if self.weight > 0:
+                    self.bandwidths = self.bandwidths[mask]
+                    self.Tsys1 = self.Tsys1[mask]
+                    self.Tsys2 = self.Tsys2[mask]
+                    self.tau1 = self.tau1[mask]
+                    self.tau2 = self.tau2[mask]
+                    self.Tb1 = self.Tb1[mask]
+                    self.Tb2 = self.Tb2[mask]
+                    self.SEFD1 = self.SEFD1[mask]
+                    self.SEFD2 = self.SEFD2[mask]
+
+        # return observation object
+        return obs
+
+    ###################################################
+    # other functions
 
     # export SYMBA-compatible input files
     def export_SYMBA(self, symba_workdir='./data',
@@ -849,17 +903,18 @@ class obs_generator(object):
                               leak_mean=leak_mean)
 
         # export master_input.txt file
-        if 'outdirname' not in master_input_args.keys():
+        if 'outdirname' not in list(master_input_args.keys()):
             master_input_args.update({'outdirname': outdir})
-        if 'ms_antenna_table' not in master_input_args.keys():
+        if 'ms_antenna_table' not in list(master_input_args.keys()):
             master_input_args.update({'ms_antenna_table': output_filenames[0]})
-        if 'input_fitsimage' not in master_input_args.keys():
+        if 'input_fitsimage' not in list(master_input_args.keys()):
             master_input_args.update({'input_fitsimage': inpdir + '/*.fits'})
         export_SYMBA_master_input(self,
                                   input_args=master_input_args,
                                   input_comments=master_input_comments,
                                   output_filename=output_filenames[1],
                                   use_two_letter=use_two_letter)
+
 
 ###################################################
 # other functions
@@ -873,7 +928,7 @@ def get_station_list():
       (list): a list of station names
     """
 
-    return ng.Station.get_list()
+    return list(const.known_stations)
 
 
 # alias for get_station_list
@@ -947,70 +1002,106 @@ def determine_mjd(day,month,year):
     return t.mjd
 
 
-def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephem='ephemeris/space'):
+def make_array(sitelist,ephem='ephemeris/space',verbosity=0):
     """
-    Create ngehtutil and ehtim array objects from a list of sites.
+    Create an ehtim array object from a list of sites.
     
     Args:
       sitelist (list): A list of site names
-      D_new (float): New dish diameter, in meters
-      D_override_dict (dict): A dictionary of station names and diameters to override the defaults
-      array_name (str): Name to get assigned to the ngehtutil array object
-      freq (float): Observing frequency, in GHz
       ephem (str): path to the ephemeris for a space station
+      verbosity (float): Set to >0 for more verbose output
     
     Returns:
-      (ngehtutil.array), (ehtim.array.Array): An ngehtutil array object and an ehtim array object
+      (ehtim.array.Array): An ehtim array object
     """
 
     if 'space' not in sitelist:
-        
-        stations = list()
-        for site in sitelist:
-            stationhere = ng.Station.from_name(site)
-            if stationhere.name in list(D_override_dict.keys()):
-                stationhere.dishes = [ng.station.Dish(diameter=D_override_dict[stationhere.name])]
-            else:
-                if (stationhere.existing_dish == False):
-                    stationhere.dishes = [ng.station.Dish(diameter=D_new)]
-            stations.append(stationhere)
 
-        if array_name is not None:
-            array = ng.Array(array_name,stations)
-        else:
-            array = ng.Array('nameless array',stations)
-        arr = array.to_ehtim_array(freq)
+        tarr = np.recarray(len(sitelist),dtype=eh.const_def.DTARR)
+
+        for isite, site in enumerate(sitelist):
+
+            lon = const.known_longitudes[site]
+            lat = const.known_latitudes[site]
+            elev = const.known_elevations[site]
+
+            earthloc = EarthLocation.from_geodetic(lon,lat,elev)
+            x = earthloc.x.value
+            y = earthloc.y.value
+            z = earthloc.z.value
+
+            fr_par = 1.0
+            fr_elev = 0.0
+            if site in list(const.known_mount_types.keys()):
+                mthere = const.known_mount_types[site]
+                if 'NASMYTH-R' in mthere:
+                    fr_elev = 1.0
+                elif 'NASMYTH-L' in mthere:
+                    fr_elev = -1.0
+            fr_off = 0.0
+            if site in list(const.known_feed_angles.keys()):
+                fr_off = const.known_feed_angles[site]
+
+            tarr[isite]['site'] = site
+            tarr[isite]['x'] = x
+            tarr[isite]['y'] = y
+            tarr[isite]['z'] = z
+            tarr[isite]['sefdr'] = 10000.0
+            tarr[isite]['sefdl'] = 10000.0
+            tarr[isite]['dr'] = 0.0 + 0.0j
+            tarr[isite]['dl'] = 0.0 + 0.0j
+            tarr[isite]['fr_par'] = fr_par
+            tarr[isite]['fr_elev'] = fr_elev
+            tarr[isite]['fr_off'] = fr_off
+
+        arr = eh.array.Array(tarr)
 
     else:
 
+        sitelist2 = sitelist.copy()
+        sitelist2.remove('space')
+        tarr = np.recarray(len(sitelist2),dtype=eh.const_def.DTARR)
+
         # first add the non-space dishes
-        stations = list()
-        for site in sitelist:
-            if site != 'space':
-                stationhere = ng.Station.from_name(site)
-                if stationhere.name in list(D_override_dict.keys()):
-                    stationhere.dishes = [ng.station.Dish(diameter=D_override_dict[stationhere.name])]
-                else:
-                    if (stationhere.existing_dish == False):
-                        stationhere.dishes = [ng.station.Dish(diameter=D_new)]
-                stations.append(stationhere)
+        for isite, site in enumerate(sitelist2):
 
-        if array_name is not None:
-            array = ng.Array(array_name,stations)
-        else:
-            array = ng.Array('nameless array',stations)
-        arr = array.to_ehtim_array(freq)
+            lon = const.known_longitudes[site]
+            lat = const.known_latitudes[site]
+            elev = const.known_elevations[site]
 
-        # add the space dish
-        stationhere = ng.Station('space')
-        if stationhere.name in list(D_override_dict.keys()):
-            stationhere.dishes = [ng.station.Dish(diameter=D_override_dict[stationhere.name])]
-        else:
-            stationhere.dishes = [ng.station.Dish(diameter=D_new)]
-        stations.append(stationhere)
+            earthloc = EarthLocation.from_geodetic(lon,lat,elev)
+            x = earthloc.x.value
+            y = earthloc.y.value
+            z = earthloc.z.value
 
-        # now add the space dish
-        space_entry = ('space', 0., 0., 0., 10000., 10000., 0.+0.j, 0.+0.j, 0., 0., 0.)
+            fr_par = 1.0
+            fr_elev = 0.0
+            if site in list(const.known_mount_types.keys()):
+                mthere = const.known_mount_types[site]
+                if 'NASMYTH-R' in mthere:
+                    fr_elev = 1.0
+                elif 'NASMYTH-L' in mthere:
+                    fr_elev = -1.0
+            fr_off = 0.0
+            if site in list(const.known_feed_angles.keys()):
+                fr_off = const.known_feed_angles[site]
+
+            tarr[isite]['site'] = site
+            tarr[isite]['x'] = x
+            tarr[isite]['y'] = y
+            tarr[isite]['z'] = z
+            tarr[isite]['sefdr'] = 10000.0
+            tarr[isite]['sefdl'] = 10000.0
+            tarr[isite]['dr'] = 0.0 + 0.0j
+            tarr[isite]['dl'] = 0.0 + 0.0j
+            tarr[isite]['fr_par'] = fr_par
+            tarr[isite]['fr_elev'] = fr_elev
+            tarr[isite]['fr_off'] = fr_off
+
+        arr = eh.array.Array(tarr)
+        
+        # then add the space dish
+        space_entry = ('space', 0., 0., 0., 10000., 10000., 0.+0.j, 0.+0.j, 1., 0., 0.)
         arr_templist = list()
         for i in range(len(arr.tarr)):
             arr_templist.append(arr.tarr[i])
@@ -1024,166 +1115,25 @@ def make_array(sitelist,D_new,D_override_dict={},array_name=None,freq=230.0,ephe
         try:
             edata[sitename] = np.loadtxt(ephem, dtype=bytes,
                                          comments='#', delimiter='/').astype(str)
-            print('loaded spacecraft ephemeris %s' % ephem)
+            if (verbosity > 0):
+                print('Loaded spacecraft ephemeris %s' % ephem)
         except IOError:
-            raise Exception('no ephemeris file %s !' % ephem)
+            raise Exception('No ephemeris file %s !' % ephem)
 
         # add the ephemeris to the array object
         arr.ephem = edata
-
-    return array, arr
-
-
-def set_TRs(sitelist,receiver_setup,T_R_override_dict={}):
-    """
-    Create a receiver temperature dictionary given a list of sites and overrides
-    
-    Args:
-      sitelist (list): A list of site names
-      receiver_setup (dict): A dictionary of station names and available receivers
-      T_R_override_dict (dict): A dictionary of station names and receiver noise temperatures to override the defaults
-    
-    Returns:
-      (dict): A dictionary of station names and associated receiver temperatures
-    """
-
-    # initialize the T_R dictionary
-    T_R_setup = {}
-    for site in sitelist:
-        T_R_setup[site] = {}
-        for key in receiver_setup[site]:
-            T_R_setup[site][key] = const.T_R_dict[key]
-
-    # update according to overrides
-    for site in sitelist:
-        if site in list(T_R_override_dict.keys()):
-            T_R_setup[site].update(T_R_override_dict[site])
-
-    return T_R_setup
+        
+    return arr
 
 
-def set_sideband_ratios(sitelist,receiver_setup,sideband_ratio_override_dict={}):
-    """
-    Create a sideband ratio dictionary given a list of sites and overrides
-    
-    Args:
-      sitelist (list): A list of site names
-      receiver_setup (dict): A dictionary of station names and available receivers
-      sideband_ratio_override_dict (dict): A dictionary of station names and sideband ratios to override the defaults
-    
-    Returns:
-      (dict): A dictionary of station names and associated sideband ratios
-    """
-
-    # initialize the sideband ratio dictionary
-    sideband_ratio_setup = {}
-    for site in sitelist:
-        sideband_ratio_setup[site] = {}
-        for key in receiver_setup[site]:
-                sideband_ratio_setup[site][key] = const.sideband_ratio_dict[key]
-
-    # update according to overrides
-    for site in sitelist:
-        if site in list(sideband_ratio_override_dict.keys()):
-            sideband_ratio_setup[site].update(sideband_ratio_override_dict[site])
-
-    return sideband_ratio_setup
-
-
-def set_ap_effs(sitelist,receiver_setup,ap_eff_override_dict={}):
-    """
-    Create an aperture efficiency dictionary given a list of sites and overrides
-    
-    Args:
-      sitelist (list): A list of site names
-      receiver_setup (dict): A dictionary of station names and available receivers
-      ap_eff_override_dict (dict): A dictionary of station names and aperture efficiencies to override the defaults
-    
-    Returns:
-      (dict): A dictionary of station names and associated aperture efficiencies
-    """
-
-    # initialize the aperture efficiency dictionary
-    ap_eff_setup = {}
-    for site in sitelist:
-        ap_eff_setup[site] = {}
-        for key in receiver_setup[site]:
-                ap_eff_setup[site][key] = const.ap_eff_dict[key]
-
-    # update according to overrides
-    for site in sitelist:
-        if site in list(ap_eff_override_dict.keys()):
-            ap_eff_setup[site].update(ap_eff_override_dict[site])
-
-    return ap_eff_setup
-
-
-def set_receivers(sitelist,receiver_override_dict={}):
-    """
-    Create a receiver suite dictionary given a list of sites and overrides
-    
-    Args:
-      sitelist (list): A list of site names
-      receiver_override_dict (dict): A dictionary of station names and available receivers to override the defaults
-    
-    Returns:
-      (dict): A dictionary of station names and available receivers
-    """
-
-    receiver_setup = {}
-
-    for site in sitelist:
-        if site in list(receiver_override_dict.keys()):
-            receiver_setup[site] = receiver_override_dict[site]
-        else:
-            receiver_setup[site] = const.receivers
-
-    return receiver_setup
-
-
-def set_bandwidths(sitelist,default_bandwidth,receiver_setup,bandwidth_override_dict={}):
-    """
-    Create a bandwidth dictionary given a list of sites and overrides
-    
-    Args:
-      sitelist (list): A list of site names
-      default_bandwidth (float): A default bandwidth value to use, in the absence of overrides
-      receiver_setup (dict): A dictionary of station names and available receivers
-      bandwidth_override_dict (dict): A dictionary of station names and available bandwidths to override the defaults
-    
-    Returns:
-      (dict): A dictionary of station names and available bandwidths
-      (list): A list of all unique bandwidth values available to the stations
-    """
-
-    # set up the bandwidth dictionary
-    bandwidth_setup = {}
-    for site in sitelist:
-        if site in list(bandwidth_override_dict.keys()):
-            bandwidth_setup[site] = bandwidth_override_dict[site]
-        else:
-            bandwidth_setup[site] = {}
-            for key in receiver_setup[site]:
-                bandwidth_setup[site][key] = default_bandwidth
-
-    # determine the unique bandwidths
-    unique_bandwidths = list()
-    for key in bandwidth_setup.keys():
-        for key2 in bandwidth_setup[key].keys():
-            if bandwidth_setup[key][key2] not in unique_bandwidths:
-                unique_bandwidths.append(bandwidth_setup[key][key2])
-
-    return bandwidth_setup, unique_bandwidths
-
-
-def load_image(infile,freq=230.0e9,verbose=0):
+def load_image(infile,freq=230.0e9,verbosity=0):
     """
     Load an ehtim image or movie object.
     
     Args:
       infile (str): The input path and filename
       freq (float): Observing frequency, in Hz
-      verbose (float): Set to >0 for more verbose output
+      verbosity (float): Set to >0 for more verbose output
     
     Returns:
       (ehtim.image.Image, ehtim.movie.Movie): An ehtim image or movie object; returns None if infile is None
@@ -1193,23 +1143,43 @@ def load_image(infile,freq=230.0e9,verbose=0):
         return None
 
     else:
-        try:
-            im = eh.image.load_image(infile)
-            im.rf = float(np.round(im.rf))
-        except:
-            if verbose > 0:
-                print('Source file does not appear to be an image; assuming that it is a movie file instead.')
-            extension = infile.split('.')[-1]
-            if extension.lower() in ['hdf5','h5']:
-                im = eh.movie.load_hdf5(infile)
-            elif extension.lower() == ['fits']:
-                im = eh.movie.load_fits(infile)
-            elif extension.lower() == ['txt']:
-                im = eh.movie.load_txt(infile)
-            else:
-                raise Exception('Source file does not have a recognized file extension.')
-            im.rf = freq
-        return im
+        if verbosity <= 0:
+            with eh.parloop.HiddenPrints():
+                try:
+                    im = eh.image.load_image(infile)
+                    im.rf = float(np.round(im.rf))
+                except:
+                    if verbosity > 0:
+                        print('Source file does not appear to be an image; assuming that it is a movie file instead.')
+                    extension = infile.split('.')[-1]
+                    if extension.lower() in ['hdf5','h5']:
+                        im = eh.movie.load_hdf5(infile)
+                    elif extension.lower() == ['fits']:
+                        im = eh.movie.load_fits(infile)
+                    elif extension.lower() == ['txt']:
+                        im = eh.movie.load_txt(infile)
+                    else:
+                        raise Exception('Source file does not have a recognized file extension.')
+                    im.rf = freq
+                return im
+        elif verbosity > 0:
+            try:
+                im = eh.image.load_image(infile)
+                im.rf = float(np.round(im.rf))
+            except:
+                if verbosity > 0:
+                    print('Source file does not appear to be an image; assuming that it is a movie file instead.')
+                extension = infile.split('.')[-1]
+                if extension.lower() in ['hdf5','h5']:
+                    im = eh.movie.load_hdf5(infile)
+                elif extension.lower() == ['fits']:
+                    im = eh.movie.load_fits(infile)
+                elif extension.lower() == ['txt']:
+                    im = eh.movie.load_txt(infile)
+                else:
+                    raise Exception('Source file does not have a recognized file extension.')
+                im.rf = freq
+            return im
 
 
 def eta_dish(freq,sigma,offset,ap_eff):
@@ -1218,8 +1188,8 @@ def eta_dish(freq,sigma,offset,ap_eff):
     
     Args:
       freq (float): observing frequency, in Hz
-      sigma (float): surface RMS, in meters
-      offset (float): focus offset, in equivalent surface RMS units
+      sigma (float): surface RMS, in microns
+      offset (float): focus offset, in equivalent microns of surface RMS
       ap_eff (float): nominal aperture efficiency
     
     Returns:
@@ -1227,7 +1197,7 @@ def eta_dish(freq,sigma,offset,ap_eff):
     """
 
     # Ruze's law for surface + focus
-    etahere = np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/(const.c/freq))**2)
+    etahere = np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/((const.c*(1.0e6))/freq))**2)
 
     # additional aperture inefficiency
     etahere *= ap_eff
@@ -1235,14 +1205,15 @@ def eta_dish(freq,sigma,offset,ap_eff):
     return etahere
 
 
-def get_unready_sites(sites_in_observ,tech_readiness):
+def get_unready_sites(sites,tech_readiness,rng=np.random.default_rng()):
     """
     Function to determine which sites will randomly fail technical readiness.
     
     Args:
-      sites_in_observ (list): list of sites to use in the observation
+      sites (list): list of sites participating in the observation
       tech_readiness (float): probability of any individual site being technically ready to observe;
                               takes on a value between 0 and 1
+      rng (numpy.random.Generator): a numpy random number generator
             
     Returns:
       (list): sites to drop
@@ -1252,8 +1223,8 @@ def get_unready_sites(sites_in_observ,tech_readiness):
         raise Exception('The tech_readiness keyword must take on a value between 0 and 1!')
 
     p = tech_readiness
-    index = np.random.choice([0, 1], size=(len(sites_in_observ)), p=[p,1-p]).astype(bool)
-    sites_to_drop = sites_in_observ[index]
+    index = rng.choice([0, 1], size=(len(sites)), p=[p,1-p]).astype(bool)
+    sites_to_drop = sites[index]
     return sites_to_drop
 
 
@@ -1288,10 +1259,9 @@ def fringegroups(obsgen,obs,snr_ref,tint_ref,return_index=False):
       obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the input observation
       snr_ref (float): strong baseline SNR threshold
       tint_ref (float): strong baseline coherence time, in seconds
-      return_index (numpy.ndarray): if True, returns an array of kept data indices rather than an Obsdata object
 
     Returns:
-      (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the thresholded observation
+      (numpy.ndarray): An array of kept data indices
     """
 
     # get the timestamps
@@ -1301,8 +1271,7 @@ def fringegroups(obsgen,obs,snr_ref,tint_ref,return_index=False):
     # get the stations that are able to observe at this frequency
     available_sites = list()
     for site in obsgen.sites:
-        recs_here = obsgen.receiver_setup[site]
-        if obsgen.weather_freq in recs_here:
+        if obsgen.bands[site] is not None:
             available_sites.append(site)
 
     # create a running index list of baselines to flag
@@ -1355,25 +1324,15 @@ def fringegroups(obsgen,obs,snr_ref,tint_ref,return_index=False):
 
         # check whether both stations on each baseline are in the same group
         for datum in obs_here.data:
-            if ((datum['t1'] in site_dict.keys()) & (datum['t2'] in site_dict.keys())):
+            if ((datum['t1'] in list(site_dict.keys())) & (datum['t2'] in list(site_dict.keys()))):
                 if (site_dict[datum['t1']] == site_dict[datum['t2']]):
                     master_index[count] = True
             count += 1
 
-    if return_index:
-
-        return master_index
-
-    else:
-
-        # apply the flagging
-        data_copy = obs.data.copy()
-        obs.data = data_copy[master_index]
-
-        return obs
+    return master_index
 
 
-def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,ephem='ephemeris/space',**kwargs):
+def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,ephem='ephemeris/space',**kwargs):
     """
     Function to apply the frequency phase transfer ("FPT") SNR thresholding scheme to an observation.
     This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibration pipeline.
@@ -1385,10 +1344,9 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,e
       tint_ref (float): strong baseline coherence time, in seconds
       freq_ref(float): FPT reference frequency, in GHz
       model_ref (str): path to FPT reference model, or the reference model itself
-      return_index (numpy.ndarray): if True, returns an array of kept data indices rather than an Obsdata object
 
     Returns:
-      (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the thresholded observation
+      (numpy.ndarray): An array of kept data indices
     """
     
     # determine settings for dummy obsgen object
@@ -1401,20 +1359,24 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,e
         new_settings['model_file'] = model_ref
     if ((obsgen.weather == 'random') | (obsgen.weather == 'exact')):
         new_settings['weather'] = 'exact'
-        new_settings['weather_year'] = str(obsgen.randyear)
-        new_settings['weather_day'] = str(obsgen.randday)
-    new_D_override_dict = obsgen.D_override_dict
-    new_surf_rms_override_dict = obsgen.surf_rms_override_dict
-    new_receiver_override_dict = obsgen.receiver_override_dict
-    new_bandwidth_override_dict = obsgen.bandwidth_override_dict
-    new_T_R_override_dict = obsgen.T_R_override_dict
+        new_settings['weather_year'] = str(obsgen.weather_year)
+        new_settings['weather_day'] = str(obsgen.weather_day)
+    new_D_overrides = copy.deepcopy(obsgen.D_overrides)
+    new_surf_rms_overrides = copy.deepcopy(obsgen.surf_rms_overrides)
+    new_receiver_configuration_overrides = copy.deepcopy(obsgen.receiver_configuration_overrides)
+    new_bandwidth_overrides = copy.deepcopy(obsgen.bandwidth_overrides)
+    new_T_R_overrides = copy.deepcopy(obsgen.T_R_overrides)
+    new_sideband_ratio_overrides = copy.deepcopy(obsgen.sideband_ratio_overrides)
+    new_ap_eff_overrides = copy.deepcopy(obsgen.ap_eff_overrides)
 
     # create dummy obsgen object
-    obsgen_ref = obs_generator(new_settings,D_override_dict=new_D_override_dict,
-                               receiver_override_dict=new_receiver_override_dict,
-                               surf_rms_override_dict=new_surf_rms_override_dict,
-                               bandwidth_override_dict=new_bandwidth_override_dict,
-                               T_R_override_dict=new_T_R_override_dict,
+    obsgen_ref = obs_generator(new_settings,D_overrides=new_D_overrides,
+                               receiver_configuration_overrides=new_receiver_configuration_overrides,
+                               surf_rms_overrides=new_surf_rms_overrides,
+                               bandwidth_overrides=new_bandwidth_overrides,
+                               T_R_overrides=new_T_R_overrides,
+                               sideband_ratio_overrides=new_sideband_ratio_overrides,
+                               ap_eff_overrides=new_ap_eff_overrides,
                                ephem=ephem)
     if ((model_ref is not None) & (not isinstance(model_ref,str))):
         obsgen_ref.im = model_ref
@@ -1426,25 +1388,15 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,return_index=False,e
     master_index = np.zeros(len(obs_ref.data),dtype='bool')
 
     # get detections from the reference frequency
-    fringegroups_index = fringegroups(obsgen_ref,obs_ref,snr_ref,tint_ref,return_index=True)
+    fringegroups_index = fringegroups(obsgen_ref,obs_ref,snr_ref,tint_ref)
     master_index |= fringegroups_index
 
     # get any additional detections from normal fringe-fitting
     snr_fringegroups = snr_ref * (freq_ref/(obsgen.freq/(1.0e9)))
-    fringegroups_index = fringegroups(obsgen,obs,snr_fringegroups,tint_ref,return_index=True)
+    fringegroups_index = fringegroups(obsgen,obs,snr_fringegroups,tint_ref)
     master_index |= fringegroups_index
 
-    if return_index:
-
-        return master_index
-
-    else:
-
-        # apply the flagging
-        data_copy = obs.data.copy()
-        obs.data = data_copy[master_index]
-
-        return obs
+    return master_index
 
 
 def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0, RMS_point=1.0,
@@ -1470,19 +1422,8 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
           SYMBA-compatible .antennas file containing the observation information
         """
 
-        # make a list of station names in the correct order for the ngehtutils array object
-        stationnames = list()
-        for stat in obsgen.array.stations():
-            stationnames.append(stat.name)
-        stationnames = np.array(stationnames)
-
-        # translate the weather type setting
-        weather_translation_dict = {'exact': 'exact',
-                                    'random': 'exact',
-                                    'typical': 'median',
-                                    'good': 'good',
-                                    'bad': 'bad'}
-        weather_translation = weather_translation_dict[obsgen.weather]
+        # make an array of station names
+        stationnames = np.array(obsgen.sites)
 
         with open(output_filename,'w') as outfile:
 
@@ -1514,7 +1455,9 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
             for site in obsgen.sites:
 
                 freqhere = str(int(obsgen.freq/(1.0e9)))
-                if freqhere in obsgen.T_R_setup[site].keys():
+                band = obsgen.bands[site]
+
+                if band is not None:
 
                     # initialize empty string
                     strhere = ''
@@ -1526,19 +1469,19 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
                         strhere += site.ljust(9)
 
                     # add receiver SEFD, in Jy
-                    SEFD_R = (2.0*const.k*obsgen.T_R_setup[site][freqhere])/((np.pi/4.0)*obsgen.eta_dict[site]*(obsgen.D_dict[site])**2)
+                    SEFD_R = (2.0*const.k*obsgen.receivers[site][band]['T_R'])/((np.pi/4.0)*obsgen.eta_dict[site]*(obsgen.D_dict[site])**2)
                     strhere += str(np.round(SEFD_R,2)).ljust(11)
 
                     # add PWV, in mm
-                    PWV = nw.PWV(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
+                    PWV = nw.PWV(site, form=obsgen.weather, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
                     strhere += str(np.round(PWV,4)).ljust(9)
 
                     # add surface pressure, in mbar
-                    pres = nw.pressure(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
+                    pres = nw.pressure(site, form=obsgen.weather, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
                     strhere += str(np.round(pres,2)).ljust(12)
 
                     # add surface temperature, in K
-                    temp = nw.temperature(site, form=weather_translation, month=obsgen.settings['month'], day=obsgen.randday, year=obsgen.randyear)
+                    temp = nw.temperature(site, form=obsgen.weather, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
                     strhere += str(np.round(temp,2)).ljust(10)
 
                     # add coherence time, in seconds
@@ -1548,9 +1491,7 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
                     strhere += str(np.round(RMS_point,2)).ljust(17)
 
                     # add 230GHz FWHM primary beam size
-                    ind = (stationnames == site)
-                    stat = np.array(obsgen.array.stations())[ind][0]
-                    diam = stat.dishes[0].diameter
+                    diam = obsgen.D_dict[site]
                     pb = ((180.0/np.pi)*3600.0)*((const.c / (230.0e9)) / diam)
                     strhere += str(np.round(pb,2)).ljust(20)
 
@@ -1580,7 +1521,6 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
                     elif isinstance(leak_mean,dict):
                         leak_here = leak_mean[site]
                     if isinstance(leak_here,complex):
-                        # leak_str = str(leak_here)[1:-1]
                         if (np.sign(np.imag(leak_here)) == 0.0) | (np.sign(np.imag(leak_here)) == 1.0):
                             signhere = '+'
                         else:
@@ -1594,26 +1534,32 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
                     strhere += str(0.0).ljust(12)
 
                     # add feed angle
-                    if site in const.known_feed_angles.keys():
+                    if site in list(const.known_feed_angles.keys()):
                         strhere += str(const.known_feed_angles[site]).ljust(20)
                     else:
                         strhere += str(const.feed_angle).ljust(20)
 
                     # add mount type
-                    if site in const.known_mount_types.keys():
+                    if site in list(const.known_mount_types.keys()):
                         strhere += const.known_mount_types[site].ljust(18)
                     else:
                         strhere += const.mount_type.ljust(18)
 
                     # add dish diameter
-                    diam = stat.diameter()
+                    diam = obsgen.D_dict[site]
                     strhere += str(np.round(diam,2)).ljust(17)
 
                     # add xyz coordinates
-                    coords = stat.xyz()
-                    strhere += str(np.round(coords[0],8)) + ',' 
-                    strhere += str(np.round(coords[1],8)) + ',' 
-                    strhere += str(np.round(coords[2],8))
+                    lon = const.known_longitudes[site]
+                    lat = const.known_latitudes[site]
+                    elev = const.known_elevations[site]
+                    earthloc = EarthLocation.from_geodetic(lon,lat,elev)
+                    x = earthloc.x.value
+                    y = earthloc.y.value
+                    z = earthloc.z.value
+                    strhere += str(np.round(x,8)) + ',' 
+                    strhere += str(np.round(y,8)) + ',' 
+                    strhere += str(np.round(z,8))
 
                     # write line
                     strhere += '\n'
@@ -1649,7 +1595,7 @@ def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_file
     strsites = ''
     count = 0
     for site in sitenames:
-        if freqhere in obsgen.T_R_setup[site].keys():
+        if obsgen.bands[site] is not None:
             count += 1
             if use_two_letter:
                 strsites += const.two_letter_station_codes[site]
@@ -1698,7 +1644,7 @@ def export_SYMBA_master_input(obsgen,input_args={},input_comments={},output_file
     with open(output_filename,'w') as outfile:
         
         # loop through the arguments
-        for key in args.keys():
+        for key in list(args.keys()):
 
             # initialize empty string
             strhere = ''
