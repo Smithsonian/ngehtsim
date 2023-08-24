@@ -2,7 +2,6 @@
 # imports
 
 import numpy as np
-import ngehtutil as ng
 import ngehtsim.const_def as const
 import os
 import struct

@@ -1249,7 +1249,7 @@ def windspeed_SEFD_modification(windspeed,windspeed_degradation=const.windspeed_
     return 1.0/scale_factor
 
 
-def fringegroups(obsgen,obs,snr_ref,tint_ref,return_index=False):
+def fringegroups(obsgen,obs,snr_ref,tint_ref):
     """
     Function to apply the "fringegroups" SNR thresholding scheme to an observation.
     This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibration pipeline.
@@ -1382,7 +1382,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,ephem='ephemeris/spa
         obsgen_ref.im = model_ref
 
     # generate observation at reference frequency
-    obs_ref = obsgen_ref.observe(obsgen_ref.im,obsgen_ref.freq,**kwargs)
+    obs_ref = obsgen_ref.observe(obsgen_ref.im,**kwargs)
 
     # create a running index list of baselines to flag
     master_index = np.zeros(len(obs_ref.data),dtype='bool')

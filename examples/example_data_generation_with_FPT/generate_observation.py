@@ -12,33 +12,53 @@ import ngehtsim.obs.obs_generator as og
 # input settings file
 yamlfile = './settings_fpt.yaml'
 
-# some sites only have access to certain frequencies
-receiver_override_dict = {'ALMA': ['345'],
-                          'HAY': ['86', '230'],
-                          'KP': ['86', '230'],
-                          'OVRO': ['86', '230'],
-                          'SPT': ['230', '345']}
+# some sites have modified diameters compared to their defaults
+D_overrides = {'LMT': 32.5,
+               'SMA': 14.7}
 
-# some sites can record higher bandwidths
-bandwidth_override_dict = {'HAY': {'86': 8.0, '230': 16.0},
-                           'OVRO': {'86': 8.0, '230': 16.0},
-                           'BAJA': {'86': 8.0, '230': 16.0, '345': 16.0},
-                           'CNI': {'86': 8.0, '230': 16.0, '345': 16.0},
-                           'LAS': {'86': 8.0, '230': 16.0, '345': 16.0}}
+# some sites only have access to certain frequencies
+receiver_configuration_overrides = {'ALMA': ['Band7'],
+                                    'APEX': ['Band7'],
+                                    'BAJA': ['Band3', 'Band6', 'Band7'],
+                                    'CNI': ['Band3', 'Band6', 'Band7'],
+                                    'GLT': ['Band3', 'Band6', 'Band7'],
+                                    'IRAM': ['Band7'],
+                                    'JCMT': ['Band3', 'Band6', 'Band7'],
+                                    'JELM': ['Band3', 'Band6', 'Band7'],
+                                    'KP': ['Band3', 'Band6'],
+                                    'LAS': ['Band3', 'Band6', 'Band7'],
+                                    'LMT': ['Band6'],
+                                    'NOEMA': ['Band7'],
+                                    'SMA': ['Band7'],
+                                    'SMT': ['Band3', 'Band6', 'Band7'],
+                                    'SPT': ['Band3', 'Band6', 'Band7']}
+
+# some sites can record different bandwidths
+bandwidth_overrides = {'BAJA': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                       'CNI': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                       'JELM': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                       'LAS': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0}}
 
 # some sites have different receiver temperatures
-T_R_override_dict = {'HAY': {'86': 30.0, '230': 40.0},
-                     'BAJA': {'86': 30.0, '230': 40.0, '345': 60.0},
-                     'CNI': {'86': 30.0, '230': 40.0, '345': 60.0},
-                     'LAS': {'86': 30.0, '230': 40.0, '345': 60.0}}
+T_R_overrides = {'APEX': {'Band6': 90.0},
+                 'IRAM': {'Band6': 80.0},
+                 'LMT': {'Band6': 70.0},
+                 'SMT': {'Band6': 66.0},
+                 'SMA': {'Band6': 66.0}}
 
 # some sites have different sideband ratios (SSB = 0, DSB = 1)
-sideband_ratio_override_dict = {'JCMT': {'86': 1.0, '230': 1.0, '345': 0.03},
-                                'LMT': {'86': 1.0, '230': 1.0, '345': 0.03},
-                                'SMA': {'86': 1.0, '230': 1.0, '345': 0.03}}
+sideband_ratio_overrides = {'JCMT': {'Band3': 1.0, 'Band6': 1.0, 'Band7': 0.03},
+                            'LMT': {'Band3': 1.0, 'Band6': 1.0, 'Band7': 0.03},
+                            'SMA': {'Band3': 1.0, 'Band6': 1.0, 'Band7': 0.03}}
 
 # initialize the observation generator
-obsgen_fpt = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict,bandwidth_override_dict=bandwidth_override_dict,T_R_override_dict=T_R_override_dict,sideband_ratio_override_dict=sideband_ratio_override_dict)
+obsgen_fpt = og.obs_generator(settings_file=yamlfile,
+                              D_overrides=D_overrides,
+                              receiver_configuration_overrides=receiver_configuration_overrides,
+                              bandwidth_overrides=bandwidth_overrides,
+                              T_R_overrides=T_R_overrides,
+                              sideband_ratio_overrides=sideband_ratio_overrides,
+                              verbosity=0)
 
 # generate the observation
 obs_fpt = obsgen_fpt.make_obs()
@@ -53,7 +73,13 @@ obs_fpt.save_uvfits('./example_datafile_with_fpt.uvfits')
 yamlfile = './settings_no_fpt.yaml'
 
 # initialize the observation generator
-obsgen = og.obs_generator(settings_file=yamlfile,receiver_override_dict=receiver_override_dict,bandwidth_override_dict=bandwidth_override_dict,T_R_override_dict=T_R_override_dict,sideband_ratio_override_dict=sideband_ratio_override_dict)
+obsgen = og.obs_generator(settings_file=yamlfile,
+                          D_overrides=D_overrides,
+                          receiver_configuration_overrides=receiver_configuration_overrides,
+                          bandwidth_overrides=bandwidth_overrides,
+                          T_R_overrides=T_R_overrides,
+                          sideband_ratio_overrides=sideband_ratio_overrides,
+                          verbosity=0)
 
 # generate the observation
 obs = obsgen.make_obs()
@@ -79,6 +105,8 @@ ax.plot(-u2/(1.0e9),-v2/(1.0e9),'ro',markersize=2,markeredgewidth=0)
 
 ax.set_xlabel(r'$u$ (G$\lambda$)')
 ax.set_ylabel(r'$v$ (G$\lambda$)')
+ax.set_xlim(15,-15)
+ax.set_ylim(-15,15)
 
 ax.legend(fontsize=10)
 
