@@ -40,7 +40,7 @@ class obs_generator(object):
       T_R_overrides (dict): A dictionary of station names and receiver temperature values to override defaults
       sideband_ratio_overrides (dict): A dictionary of station names and sideband ratio values to override defaults
       ap_eff_overrides (dict): A dictionary of station names and aperture efficiency values to override defaults
-      array_name (str): Name to load a known array
+      array (str): Provide the name of a known array to load the corresponding sites and configuration
       ephem (str): path to the ephemeris for a space station
     """
 
@@ -48,7 +48,7 @@ class obs_generator(object):
     def __init__(self, settings={}, settings_file=None, verbosity=0, heavy=0, D_overrides={},
                  surf_rms_overrides={}, receiver_configuration_overrides={}, bandwidth_overrides={},
                  T_R_overrides={}, sideband_ratio_overrides={}, ap_eff_overrides={},
-                 array_name=None, ephem='ephemeris/space'):
+                 array=None, ephem='ephemeris/space'):
 
         #############################
         # parse inputs
@@ -63,7 +63,7 @@ class obs_generator(object):
         self.T_R_overrides = copy.deepcopy(T_R_overrides)
         self.sideband_ratio_overrides = copy.deepcopy(sideband_ratio_overrides)
         self.ap_eff_overrides = copy.deepcopy(ap_eff_overrides)
-        self.array_name = array_name
+        self.array = array
         self.ephem = ephem
 
         #############################
@@ -84,15 +84,15 @@ class obs_generator(object):
         #############################
         # check/fix some easy issues
 
-        # remove array name if sites are specified
-        if (self.settings['sites'] is not None):
-            if (len(self.settings['sites']) > 0):
-                self.settings['array'] = None
+        # # remove array name if sites are specified
+        # if (self.settings['sites'] is not None):
+        #     if (len(self.settings['sites']) > 0):
+        #         self.settings['array'] = None
 
         # set array name if it is provided
-        if self.array_name is None:
+        if self.array is None:
             if self.settings['array'] is not None:
-                self.array_name = self.settings['array']
+                self.array = self.settings['array']
 
         #############################
         # extract commonly-used settings
@@ -148,25 +148,75 @@ class obs_generator(object):
         self.sites = list()
 
         # if a known array is specified, pull its sites and overrides
-        if self.settings['array'] in list(const.known_arrays.keys()):
-            self.sites = copy.deepcopy(const.known_arrays[self.settings['array']])
+        if self.array in list(const.known_arrays.keys()):
+            self.sites = copy.deepcopy(const.known_arrays[self.array])
 
-            D_overrides_here = copy.deepcopy(const.known_array_D_overrides[self.settings['array']])
+            D_overrides_here = copy.deepcopy(const.known_array_D_overrides[self.array])
             D_overrides_here.update(self.D_overrides)
             self.D_overrides = D_overrides_here
 
-            receiver_configuration_overrides_here = copy.deepcopy(const.known_array_receiver_configuration_overrides[self.settings['array']])
+            surf_rms_overrides_here = copy.deepcopy(const.known_array_surf_rms_overrides[self.array])
+            surf_rms_overrides_here.update(self.surf_rms_overrides)
+            self.surf_rms_overrides = surf_rms_overrides_here
+
+            receiver_configuration_overrides_here = copy.deepcopy(const.known_array_receiver_configuration_overrides[self.array])
             receiver_configuration_overrides_here.update(self.receiver_configuration_overrides)
             self.receiver_configuration_overrides = receiver_configuration_overrides_here
 
-        # add in any additional sites
-        else:
-            if self.settings['sites'] is not None:
-                self.sites += self.settings['sites']
-            else:
-                raise Exception('No known array or sites have been specified!')
+            bandwidth_overrides_here = copy.deepcopy(const.known_array_bandwidth_overrides[self.array])
+            bandwidth_overrides_here.update(self.bandwidth_overrides)
+            self.bandwidth_overrides = bandwidth_overrides_here
+
+            T_R_overrides_here = copy.deepcopy(const.known_array_T_R_overrides[self.array])
+            T_R_overrides_here.update(self.T_R_overrides)
+            self.T_R_overrides = T_R_overrides_here
+
+            sideband_ratio_overrides_here = copy.deepcopy(const.known_array_sideband_ratio_overrides[self.array])
+            sideband_ratio_overrides_here.update(self.sideband_ratio_overrides)
+            self.sideband_ratio_overrides = sideband_ratio_overrides_here
+
+            ap_eff_overrides_here = copy.deepcopy(const.known_array_ap_eff_overrides[self.array])
+            ap_eff_overrides_here.update(self.ap_eff_overrides)
+            self.ap_eff_overrides = ap_eff_overrides_here
+
+        # but if sites are provided, then override the array
         if self.settings['sites'] is not None:
-            self.sites += self.settings['sites']
+            self.sites = self.settings['sites']
+
+            # still consider the overrides if the array is named
+            if self.array in list(const.known_arrays.keys()):
+
+                D_overrides_here = copy.deepcopy(const.known_array_D_overrides[self.array])
+                D_overrides_here.update(self.D_overrides)
+                self.D_overrides = D_overrides_here
+
+                surf_rms_overrides_here = copy.deepcopy(const.known_array_surf_rms_overrides[self.array])
+                surf_rms_overrides_here.update(self.surf_rms_overrides)
+                self.surf_rms_overrides = surf_rms_overrides_here
+
+                receiver_configuration_overrides_here = copy.deepcopy(const.known_array_receiver_configuration_overrides[self.array])
+                receiver_configuration_overrides_here.update(self.receiver_configuration_overrides)
+                self.receiver_configuration_overrides = receiver_configuration_overrides_here
+
+                bandwidth_overrides_here = copy.deepcopy(const.known_array_bandwidth_overrides[self.array])
+                bandwidth_overrides_here.update(self.bandwidth_overrides)
+                self.bandwidth_overrides = bandwidth_overrides_here
+
+                T_R_overrides_here = copy.deepcopy(const.known_array_T_R_overrides[self.array])
+                T_R_overrides_here.update(self.T_R_overrides)
+                self.T_R_overrides = T_R_overrides_here
+
+                sideband_ratio_overrides_here = copy.deepcopy(const.known_array_sideband_ratio_overrides[self.array])
+                sideband_ratio_overrides_here.update(self.sideband_ratio_overrides)
+                self.sideband_ratio_overrides = sideband_ratio_overrides_here
+
+                ap_eff_overrides_here = copy.deepcopy(const.known_array_ap_eff_overrides[self.array])
+                ap_eff_overrides_here.update(self.ap_eff_overrides)
+                self.ap_eff_overrides = ap_eff_overrides_here
+
+        # otherwise it's unclear what the user wants
+        if (self.array not in list(const.known_arrays.keys())) and (self.settings['sites'] is None):
+            raise Exception('No known array or sites have been specified!')
 
         # remove duplicates
         temp_sites = np.unique(np.array(self.sites))
@@ -726,7 +776,7 @@ class obs_generator(object):
         """
 
         # determine SNR thresholding scheme and values
-        snr_algo, snr_args = self.settings['SNR_cutoff']
+        snr_algo, snr_args = self.settings['fringe_finder']
 
         # retrieve stored input_model if it has been set to None
         if input_model is None:
@@ -747,7 +797,7 @@ class obs_generator(object):
         # apply a proxy for the "fringegroups" procedure from HOPS
         elif (snr_algo.lower() == 'fringegroups'):
 
-            # parse SNR_cutoff arguments
+            # parse fringe_finder arguments
             snr_ref = snr_args[0]
             tint_ref = snr_args[1]
 
@@ -756,7 +806,7 @@ class obs_generator(object):
         # apply an FPT proxy for SNR thresholding
         elif (snr_algo.lower() == 'fpt'):
 
-            # parse SNR_cutoff arguments
+            # parse fringe_finder arguments
             snr_ref = snr_args[0]
             tint_ref = snr_args[1]
             freq_ref = snr_args[2]
@@ -766,7 +816,7 @@ class obs_generator(object):
 
         # unrecognized SNR thresholding scheme
         else:
-            raise ValueError('Unknown algorithm for SNR_cutoff.')
+            raise ValueError('Unknown algorithm for fringe_finder.')
 
         # apply the data flags to the observation
         data_copy = obs.data.copy()
@@ -1353,7 +1403,7 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,ephem='ephemeris/spa
     new_settings = copy.deepcopy(obsgen.settings)
     new_settings['frequency'] = freq_ref
     new_settings['bandwidth'] = obsgen.settings['bandwidth']
-    new_settings['SNR_cutoff'] = ['fringegroups', [snr_ref, tint_ref]]
+    new_settings['fringe_finder'] = ['fringegroups', [snr_ref, tint_ref]]
     new_settings['random_seed'] = obsgen.seed
     if ((model_ref is None) | isinstance(model_ref,str)):
         new_settings['model_file'] = model_ref
@@ -1452,6 +1502,18 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
             header += 'xzy_position_m' + '\n'
             outfile.write(header)
 
+            # determine form of weather return
+            if ((obsgen.weather == 'random') | (obsgen.weather == 'exact')):
+                form = 'exact'
+            elif ((obsgen.weather == 'mean') | (obsgen.weather == 'average')):
+                form = 'mean'
+            elif ((obsgen.weather == 'typical') | (obsgen.weather == 'median')):
+                form = 'median'
+            elif (obsgen.weather == 'good'):
+                form = 'good'
+            elif ((obsgen.weather == 'bad') | (obsgen.weather == 'poor')):
+                form = 'bad'
+
             for site in obsgen.sites:
 
                 freqhere = str(int(obsgen.freq/(1.0e9)))
@@ -1473,15 +1535,15 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
                     strhere += str(np.round(SEFD_R,2)).ljust(11)
 
                     # add PWV, in mm
-                    PWV = nw.PWV(site, form=obsgen.weather, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
+                    PWV = nw.PWV(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
                     strhere += str(np.round(PWV,4)).ljust(9)
 
                     # add surface pressure, in mbar
-                    pres = nw.pressure(site, form=obsgen.weather, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
+                    pres = nw.pressure(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
                     strhere += str(np.round(pres,2)).ljust(12)
 
                     # add surface temperature, in K
-                    temp = nw.temperature(site, form=obsgen.weather, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
+                    temp = nw.temperature(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
                     strhere += str(np.round(temp,2)).ljust(10)
 
                     # add coherence time, in seconds
