@@ -39,7 +39,10 @@ class obs_generator(object):
       bandwidth_overrides (dict): A dictionary of station names and bandwidth values to override defaults
       T_R_overrides (dict): A dictionary of station names and receiver temperature values to override defaults
       sideband_ratio_overrides (dict): A dictionary of station names and sideband ratio values to override defaults
+      lo_freq_overrides (dict): A dictionary of station names and receiver lowest frequency values to override defaults
+      hi_freq_overrides (dict): A dictionary of station names and receiver lowest frequency values to override defaults
       ap_eff_overrides (dict): A dictionary of station names and aperture efficiency values to override defaults
+      custom_receivers (dict): A dictionary of custom receiver names and properties
       array (str): Provide the name of a known array to load the corresponding sites and configuration
       ephem (str): path to the ephemeris for a space station
     """
@@ -47,8 +50,8 @@ class obs_generator(object):
     # initialize class instantiation
     def __init__(self, settings={}, settings_file=None, verbosity=0, heavy=0, D_overrides={},
                  surf_rms_overrides={}, receiver_configuration_overrides={}, bandwidth_overrides={},
-                 T_R_overrides={}, sideband_ratio_overrides={}, ap_eff_overrides={},
-                 array=None, ephem='ephemeris/space'):
+                 T_R_overrides={}, sideband_ratio_overrides={}, lo_freq_overrides={}, hi_freq_overrides={},
+                 ap_eff_overrides={}, custom_receivers={}, array=None, ephem='ephemeris/space'):
 
         #############################
         # parse inputs
@@ -62,7 +65,10 @@ class obs_generator(object):
         self.bandwidth_overrides = copy.deepcopy(bandwidth_overrides)
         self.T_R_overrides = copy.deepcopy(T_R_overrides)
         self.sideband_ratio_overrides = copy.deepcopy(sideband_ratio_overrides)
+        self.lo_freq_overrides = copy.deepcopy(lo_freq_overrides)
+        self.hi_freq_overrides = copy.deepcopy(hi_freq_overrides)
         self.ap_eff_overrides = copy.deepcopy(ap_eff_overrides)
+        self.custom_receivers = copy.deepcopy(custom_receivers)
         self.array = array
         self.ephem = ephem
 
@@ -84,15 +90,22 @@ class obs_generator(object):
         #############################
         # check/fix some easy issues
 
-        # # remove array name if sites are specified
-        # if (self.settings['sites'] is not None):
-        #     if (len(self.settings['sites']) > 0):
-        #         self.settings['array'] = None
-
         # set array name if it is provided
         if self.array is None:
             if self.settings['array'] is not None:
                 self.array = self.settings['array']
+
+        # check that any custom receivers have all of the necessary settings
+        if len(self.custom_receivers.keys()) > 0:
+            for rec in list(self.custom_receivers.keys()):
+                if ('lo' not in self.custom_receivers[rec].keys()):
+                    raise Exception('Custom receivers must contain a "lo" key specifying the lowest frequency.')
+                if ('hi' not in self.custom_receivers[rec].keys()):
+                    raise Exception('Custom receivers must contain a "hi" key specifying the highest frequency.')
+                if ('T_R' not in self.custom_receivers[rec].keys()):
+                    raise Exception('Custom receivers must contain a "T_R" key specifying the receiver temperature (in K).')
+                if ('SSR' not in self.custom_receivers[rec].keys()):
+                    raise Exception('Custom receivers must contain a "SSR" key specifying sideband separation ratio.')
 
         #############################
         # extract commonly-used settings
@@ -175,6 +188,14 @@ class obs_generator(object):
             sideband_ratio_overrides_here.update(self.sideband_ratio_overrides)
             self.sideband_ratio_overrides = sideband_ratio_overrides_here
 
+            lo_freq_overrides_here = copy.deepcopy(const.known_array_lo_freq_overrides[self.array])
+            lo_freq_overrides_here.update(self.lo_freq_overrides)
+            self.lo_freq_overrides = lo_freq_overrides_here
+
+            hi_freq_overrides_here = copy.deepcopy(const.known_array_hi_freq_overrides[self.array])
+            hi_freq_overrides_here.update(self.hi_freq_overrides)
+            self.hi_freq_overrides = hi_freq_overrides_here
+
             ap_eff_overrides_here = copy.deepcopy(const.known_array_ap_eff_overrides[self.array])
             ap_eff_overrides_here.update(self.ap_eff_overrides)
             self.ap_eff_overrides = ap_eff_overrides_here
@@ -209,6 +230,14 @@ class obs_generator(object):
                 sideband_ratio_overrides_here = copy.deepcopy(const.known_array_sideband_ratio_overrides[self.array])
                 sideband_ratio_overrides_here.update(self.sideband_ratio_overrides)
                 self.sideband_ratio_overrides = sideband_ratio_overrides_here
+
+                lo_freq_overrides_here = copy.deepcopy(const.known_array_lo_freq_overrides[self.array])
+                lo_freq_overrides_here.update(self.lo_freq_overrides)
+                self.lo_freq_overrides = lo_freq_overrides_here
+
+                hi_freq_overrides_here = copy.deepcopy(const.known_array_hi_freq_overrides[self.array])
+                hi_freq_overrides_here.update(self.hi_freq_overrides)
+                self.hi_freq_overrides = hi_freq_overrides_here
 
                 ap_eff_overrides_here = copy.deepcopy(const.known_array_ap_eff_overrides[self.array])
                 ap_eff_overrides_here.update(self.ap_eff_overrides)
@@ -260,7 +289,12 @@ class obs_generator(object):
 
             if site in list(self.receiver_configuration_overrides.keys()):
                 for rec in self.receiver_configuration_overrides[site]:
-                    receiver_setup[site][rec] = copy.deepcopy(const.receivers[rec])
+                    if rec in list(const.receivers.keys()):
+                        receiver_setup[site][rec] = copy.deepcopy(const.receivers[rec])
+                    elif rec in list(self.custom_receivers.keys()):
+                        receiver_setup[site][rec] = copy.deepcopy(self.custom_receivers[rec])
+                    else:
+                        raise Exception('Receiver '+rec+' not recognized.')
             else:
                 receiver_setup[site] = copy.deepcopy(const.receivers)
 
@@ -273,6 +307,16 @@ class obs_generator(object):
                 for rec in self.sideband_ratio_overrides[site]:
                     if rec in list(receiver_setup[site].keys()):
                         receiver_setup[site][rec]['SSR'] = self.sideband_ratio_overrides[site][rec]
+
+            if site in list(self.lo_freq_overrides.keys()):
+                for rec in self.lo_freq_overrides[site]:
+                    if rec in list(receiver_setup[site].keys()):
+                        receiver_setup[site][rec]['lo'] = self.lo_freq_overrides[site][rec]
+
+            if site in list(self.hi_freq_overrides.keys()):
+                for rec in self.hi_freq_overrides[site]:
+                    if rec in list(receiver_setup[site].keys()):
+                        receiver_setup[site][rec]['hi'] = self.hi_freq_overrides[site][rec]
 
         self.receivers = receiver_setup
 
@@ -1417,7 +1461,10 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,ephem='ephemeris/spa
     new_bandwidth_overrides = copy.deepcopy(obsgen.bandwidth_overrides)
     new_T_R_overrides = copy.deepcopy(obsgen.T_R_overrides)
     new_sideband_ratio_overrides = copy.deepcopy(obsgen.sideband_ratio_overrides)
+    new_lo_freq_overrides = copy.deepcopy(obsgen.lo_freq_overrides)
+    new_hi_freq_overrides = copy.deepcopy(obsgen.hi_freq_overrides)
     new_ap_eff_overrides = copy.deepcopy(obsgen.ap_eff_overrides)
+    new_custom_receivers = copy.deepcopy(obsgen.custom_receivers)
 
     # create dummy obsgen object
     obsgen_ref = obs_generator(new_settings,D_overrides=new_D_overrides,
@@ -1426,7 +1473,10 @@ def FPT(obsgen,obs,snr_ref,tint_ref,freq_ref,model_ref=None,ephem='ephemeris/spa
                                bandwidth_overrides=new_bandwidth_overrides,
                                T_R_overrides=new_T_R_overrides,
                                sideband_ratio_overrides=new_sideband_ratio_overrides,
+                               lo_freq_overrides=new_lo_freq_overrides,
+                               hi_freq_overrides=new_hi_freq_overrides,
                                ap_eff_overrides=new_ap_eff_overrides,
+                               custom_receivers=new_custom_receivers,
                                ephem=ephem)
     if ((model_ref is not None) & (not isinstance(model_ref,str))):
         obsgen_ref.im = model_ref
