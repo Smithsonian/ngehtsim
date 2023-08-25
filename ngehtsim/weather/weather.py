@@ -177,6 +177,17 @@ def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015):
     # read in the table
     years, months, days, coeffs = read_binary_atm(pathhere)
 
+    # remove false Feb 29 entries
+    if (month == 'Feb'):
+        indlist = np.ones(len(days),dtype=bool)
+        for i in range(1,len(days)):
+            if (days[i] == days[i-1]):
+                indlist[i] = False
+        years = years[indlist]
+        months = months[indlist]
+        days = days[indlist]
+        coeffs = coeffs[indlist,:]
+
     # retrieve the requested opacity values
     if (form == 'exact'):
         ind = ((years == int(year)) & (days == int(day)))
@@ -198,7 +209,7 @@ def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015):
             tauspec = np.percentile(tauspec_arr,84.13,axis=0)
         elif (form == 'all'):
             tauspec = tauspec_arr
-    
+
     return tauspec
 
 def opacity(site, form='exact', month='Apr', day=15, year=2015, freq=230.0):
@@ -269,6 +280,17 @@ def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, yea
 
     # read in the table
     years, months, days, coeffs = read_binary_atm(pathhere)
+
+    # remove false Feb 29 entries
+    if (month == 'Feb'):
+        indlist = np.ones(len(days),dtype=bool)
+        for i in range(1,len(days)):
+            if (days[i] == days[i-1]):
+                indlist[i] = False
+        years = years[indlist]
+        months = months[indlist]
+        days = days[indlist]
+        coeffs = coeffs[indlist,:]
 
     # retrieve the requested brightness temperature values
     if (form == 'exact'):
@@ -363,6 +385,17 @@ def pressure(site, form='exact', month='Apr', day=15, year=2015):
     # read in the table
     years, months, days, vals = read_binary_weather(pathhere)
 
+    # remove false Feb 29 entries
+    if (month == 'Feb'):
+        indlist = np.ones(len(days),dtype=bool)
+        for i in range(1,len(days)):
+            if (days[i] == days[i-1]):
+                indlist[i] = False
+        years = years[indlist]
+        months = months[indlist]
+        days = days[indlist]
+        vals = vals[indlist]
+
     # retrieve the requested pressure value(s)
     if (form == 'exact'):
         ind = ((years == int(year)) & (days == int(day)))
@@ -419,6 +452,17 @@ def temperature(site, form='exact', month='Apr', day=15, year=2015):
 
     # read in the table
     years, months, days, vals = read_binary_weather(pathhere)
+
+    # remove false Feb 29 entries
+    if (month == 'Feb'):
+        indlist = np.ones(len(days),dtype=bool)
+        for i in range(1,len(days)):
+            if (days[i] == days[i-1]):
+                indlist[i] = False
+        years = years[indlist]
+        months = months[indlist]
+        days = days[indlist]
+        vals = vals[indlist]
 
     # retrieve the requested temperature value(s)
     if (form == 'exact'):
@@ -477,6 +521,17 @@ def PWV(site, form='exact', month='Apr', day=15, year=2015):
     # read in the table
     years, months, days, vals = read_binary_weather(pathhere)
 
+    # remove false Feb 29 entries
+    if (month == 'Feb'):
+        indlist = np.ones(len(days),dtype=bool)
+        for i in range(1,len(days)):
+            if (days[i] == days[i-1]):
+                indlist[i] = False
+        years = years[indlist]
+        months = months[indlist]
+        days = days[indlist]
+        vals = vals[indlist]
+
     # retrieve the requested temperature value(s)
     if (form == 'exact'):
         ind = ((years == int(year)) & (days == int(day)))
@@ -533,6 +588,17 @@ def windspeed(site, form='exact', month='Apr', day=15, year=2015):
 
     # read in the table
     years, months, days, vals = read_binary_weather(pathhere)
+
+    # remove false Feb 29 entries
+    if (month == 'Feb'):
+        indlist = np.ones(len(days),dtype=bool)
+        for i in range(1,len(days)):
+            if (days[i] == days[i-1]):
+                indlist[i] = False
+        years = years[indlist]
+        months = months[indlist]
+        days = days[indlist]
+        vals = vals[indlist]
 
     # retrieve the requested temperature value(s)
     if (form == 'exact'):
