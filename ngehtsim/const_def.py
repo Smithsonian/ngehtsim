@@ -304,6 +304,22 @@ known_array_sideband_ratio_overrides = {'EHT2017': {'IRAM': {'Band6': 2.663},
                                         'ngEHT': {}
                                         }
 
+known_array_lo_freq_overrides = {'EHT2017': {},
+                                 'EHT2018': {},
+                                 'EHT2021': {},
+                                 'EHT2022': {},
+                                 'EHT2023': {},
+                                 'ngEHT': {}
+                                 }
+
+known_array_hi_freq_overrides = {'EHT2017': {},
+                                 'EHT2018': {},
+                                 'EHT2021': {},
+                                 'EHT2022': {},
+                                 'EHT2023': {},
+                                 'ngEHT': {}
+                                 }
+
 known_array_ap_eff_overrides = {'EHT2017': {},
                                 'EHT2018': {},
                                 'EHT2021': {},

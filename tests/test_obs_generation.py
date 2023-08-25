@@ -61,9 +61,9 @@ def test_MJD():
 def test_diameter_override():
     sitelist = ['ALMA', 'APEX', 'JCMT', 'LMT', 'SMT']
     D_new = 10.0
-    D_override_dict = {'APEX': 100.0}
-    array, arr = og.make_array(sitelist, D_new, D_override_dict=D_override_dict)
-    assert array.stations()[1].diameter() == D_override_dict['APEX']
+    D_overrides = {'APEX': 100.0}
+    array, arr = og.make_array(sitelist, D_new, D_overrides=D_overrides)
+    assert array.stations()[1].diameter() == D_overrides['APEX']
 
 #######################################################
 # test eta_dish
