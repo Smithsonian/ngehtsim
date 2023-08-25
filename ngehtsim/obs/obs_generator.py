@@ -31,8 +31,8 @@ class obs_generator(object):
       settings_file (str): Path to the input settings file; if set to None, will use default settings.
                            Note that any settings specified by the settings keyword argument will override
                            the corresponding settings from the settings file.
-      verbosity (float): Set to >0 for more verbose output
-      heavy (float): Set to >0 to store more information in the obs_generator object
+      verbose (float): Set to >0 for more verbose output
+      weight (float): Set to >0 to store more information in the obs_generator object
       D_overrides (dict): A dictionary of station names and diameters to override defaults
       surf_rms_overrides (dict): A dictionary of station names and surface RMS values to override defaults
       receiver_configuration_overrides (dict): A dictionary of station names and available receivers to override defaults
@@ -48,7 +48,7 @@ class obs_generator(object):
     """
 
     # initialize class instantiation
-    def __init__(self, settings={}, settings_file=None, verbosity=0, heavy=0, D_overrides={},
+    def __init__(self, settings={}, settings_file=None, verbosity=0, weight=0, D_overrides={},
                  surf_rms_overrides={}, receiver_configuration_overrides={}, bandwidth_overrides={},
                  T_R_overrides={}, sideband_ratio_overrides={}, lo_freq_overrides={}, hi_freq_overrides={},
                  ap_eff_overrides={}, custom_receivers={}, array=None, ephem='ephemeris/space'):
@@ -58,7 +58,7 @@ class obs_generator(object):
 
         self.settings_file = settings_file
         self.verbosity = verbosity
-        self.weight = heavy
+        self.weight = weight
         self.D_overrides = copy.deepcopy(D_overrides)
         self.surf_rms_overrides = copy.deepcopy(surf_rms_overrides)
         self.receiver_configuration_overrides = copy.deepcopy(receiver_configuration_overrides)
@@ -801,7 +801,7 @@ class obs_generator(object):
         return obs
 
     # generate observation
-    def make_obs(self,input_model=None,return_SEFDs=False,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,flagwind=True,p=None):
+    def make_obs(self,input_model=None,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,flagwind=True,p=None):
         """
         Generate an observation that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
@@ -941,6 +941,142 @@ class obs_generator(object):
 
         # return observation object
         return obs
+
+    # generate multifrequency observation, assuming that FPT will be used wherever possible
+    def make_obs_mf(self,freqs,input_models,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,flagwind=True,p=None):
+        """
+        Generate a multi-frequency observation
+        
+        Args:
+          freqs (list): list of frequencies at which to carry out the observation, in GHz
+          input_models (list): list of input source models; one for each frequency
+          addnoise (bool): flag for whether or not to add thermal noise to the visibilities
+          addgains (bool): flag for whether or not to add station gain corruptions
+          gainamp (float): standard deviation of amplitude log-gains
+          opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
+          flagwind (bool): flag for whether to derate sites with high wind
+          p (list): list of lists of parameters for input ngEHTforecast.fisher.fisher_forecast.FisherForecast objects; one for each frequency
+
+        Returns:
+          (list): list of ehtim.obsdata.Obsdata objects containing the generated observations; one for each frequency
+        """
+
+        #################################
+        # initial checks and fixes
+
+        if len(freqs) < 2:
+            raise Exception('Please provide at least 2 frequencies for a multi-frequency observation.')
+
+        if p is None:
+            p = [list()]*len(freqs)
+
+        if (len(input_models) != len(freqs)):
+            raise Exception('The number of input models must match the number of frequencies.')
+        if (len(p) != len(freqs)):
+            raise Exception('The number of lists of FisherForecast parameters must match the number of frequencies; if some input models are not FisherForecast objects, then the corresponding elements of the list may be empty.')
+
+        #################################
+        # estimate coherence times
+
+        tcoh_230 = 10.0
+        tcohs = list()
+        for freq in freqs:
+            tcoh = tcoh_230/(freq/230.0)
+            tcohs.append(tcoh)
+
+        #################################
+        # loop through all frequency pairs
+        # index i denotes the "currently observed" frequency
+        # index j denotes the frequency being tried for FPT
+
+        obslist = list()
+
+        for ifreq, freq_target in enumerate(freqs):
+
+            # retrieve the model for the target frequency
+            model_target = input_models[ifreq]
+            p_target = p[ifreq]
+
+            # keep track of whether it's the first reference or not
+            count = 0
+
+            for jfreq, freq_ref in enumerate(freqs):
+                if (jfreq == ifreq):
+                    continue
+
+                # retrieve the model for the reference frequency
+                model_ref = input_models[jfreq]
+                p_ref = p[jfreq]
+
+                # determine the coherence time to use
+                tcoh_here = np.min([tcohs[ifreq],tcohs[jfreq]])
+
+                # determine the SNR to use
+                SNR_here = np.max([5.0,5.0*(freq_target/freq_ref)])
+
+                # initialize the settings for a dummy obsgen object
+                settings = copy.deepcopy(self.settings)
+                settings['frequency'] = freq_target
+                settings['fringe_finder'] = ['fpt', [SNR_here, tcoh_here, freq_ref, model_ref]]
+                settings['random_seed'] = self.seed
+                if ((model_target is None) | isinstance(model_target,str)):
+                    settings['model_file'] = model_target
+                if ((self.weather == 'random') | (self.weather == 'exact')):
+                    settings['weather'] = 'exact'
+                    settings['weather_year'] = str(self.weather_year)
+                    settings['weather_day'] = str(self.weather_day)
+
+                # create dummy obsgen object
+                obsgen_here = obs_generator(settings=settings,
+                                            verbosity=self.verbosity,
+                                            weight=self.weight,
+                                            D_overrides=copy.deepcopy(self.D_overrides),
+                                            surf_rms_overrides=copy.deepcopy(self.surf_rms_overrides),
+                                            receiver_configuration_overrides=copy.deepcopy(self.receiver_configuration_overrides),
+                                            bandwidth_overrides=copy.deepcopy(self.bandwidth_overrides),
+                                            T_R_overrides=copy.deepcopy(self.T_R_overrides),
+                                            sideband_ratio_overrides=copy.deepcopy(self.sideband_ratio_overrides),
+                                            lo_freq_overrides=copy.deepcopy(self.lo_freq_overrides),
+                                            hi_freq_overrides=copy.deepcopy(self.hi_freq_overrides),
+                                            ap_eff_overrides=copy.deepcopy(self.ap_eff_overrides),
+                                            custom_receivers=copy.deepcopy(self.custom_receivers),
+                                            array=self.array,
+                                            ephem=self.ephem)
+
+                if ((model_target is not None) & (not isinstance(model_target,str))):
+                    obsgen_here.im = model_target
+
+                # generate observation at target frequency
+                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,flagwind=flagwind,p=p_target)
+
+                # add any new detections to the running datatable
+                if count == 0:
+                    datatable_init = obs_here.data.copy()
+                    t1 = obs_here.data['time']
+                    t11 = obs_here.data['t1']
+                    t21 = obs_here.data['t2']
+                else:
+                    t2 = obs_here.data['time']
+                    t12 = obs_here.data['t1']
+                    t22 = obs_here.data['t2']
+
+                    for ii in range(len(t2)):
+                        ind = ((t1 == t2[ii]) & (t11 == t12[ii]) & (t21 == t22[ii]))
+                        if ind.sum() == 0:
+                            datatable_init = np.append(datatable_init,obs_here.data[ii])
+
+                # update the obsdata object
+                obs = obs_here.copy()
+                obs.datatable = datatable_init
+                obs.data = datatable_init
+
+                count += 1
+
+            # add to the list
+            obslist.append(obs)
+
+        return obslist
+
 
     ###################################################
     # other functions

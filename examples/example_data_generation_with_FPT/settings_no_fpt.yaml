@@ -34,7 +34,7 @@ array:                 # name of the array to use
 D_new: 9.0             # new dish diameter, in meters
 tech_readiness: 1.0    # derating for technical readiness
 
-# list containing any additional sites to include
+# list containing sites to include
 sites: ['ALMA','APEX','BAJA','CNI','GLT','IRAM','JCMT','JELM','KP','LAS','LMT','NOEMA','SMA','SMT','SPT']
 
 ############################################################
