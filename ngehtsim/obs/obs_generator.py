@@ -1180,52 +1180,52 @@ def determine_mjd(day,month,year):
 
     if (month == 'Jan'):
         if int(day) > 31:
-            raise Exception('January has fewer than ' + day + 'days!')
-        t = Time(year+'-01-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('January has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-01-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Feb'):
         if int(day) > 28:
-            raise Exception('February has fewer than ' + day + 'days!')
-        t = Time(year+'-02-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('February has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-02-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Mar'):
         if int(day) > 31:
-            raise Exception('March has fewer than ' + day + 'days!')
-        t = Time(year+'-03-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('March has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-03-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Apr'):
         if int(day) > 30:
-            raise Exception('April has fewer than ' + day + 'days!')
-        t = Time(year+'-04-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('April has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-04-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'May'):
         if int(day) > 31:
-            raise Exception('May has fewer than ' + day + 'days!')
-        t = Time(year+'-05-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('May has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-05-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Jun'):
         if int(day) > 30:
-            raise Exception('June has fewer than ' + day + 'days!')
-        t = Time(year+'-06-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('June has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-06-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Jul'):
         if int(day) > 31:
-            raise Exception('July has fewer than ' + day + 'days!')
-        t = Time(year+'-07-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('July has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-07-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Aug'):
         if int(day) > 31:
-            raise Exception('August has fewer than ' + day + 'days!')
-        t = Time(year+'-08-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('August has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-08-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Sep'):
         if int(day) > 30:
-            raise Exception('September has fewer than ' + day + 'days!')
-        t = Time(year+'-09-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('September has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-09-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Oct'):
         if int(day) > 31:
-            raise Exception('October has fewer than ' + day + 'days!')
-        t = Time(year+'-10-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('October has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-10-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Nov'):
         if int(day) > 30:
-            raise Exception('November has fewer than ' + day + 'days!')
-        t = Time(year+'-11-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('November has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-11-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Dec'):
         if int(day) > 31:
-            raise Exception('December has fewer than ' + day + 'days!')
-        t = Time(year+'-12-'+day+'T00:00:00', format='isot', scale='utc')
+            raise Exception('December has fewer than ' + str(day).zfill(2) + 'days!')
+        t = Time(str(year)+'-12-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     else:
         raise Exception('This month abbreviation is not recognized; should be one of: Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec')
 
