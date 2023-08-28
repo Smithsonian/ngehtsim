@@ -396,8 +396,8 @@ class obs_generator(object):
                 self.weather_day = self.rng.integers(1,31,endpoint=True)
         else:
             # use the specified date
-            self.weather_year = int(self.settings['weather_year'])
-            self.weather_day = int(self.settings['weather_day'])
+            self.weather_year = int(self.settings['year'])
+            self.weather_day = int(self.settings['day'])
 
         # read in the weather info and store it
         for isite, site in enumerate(self.sites):
