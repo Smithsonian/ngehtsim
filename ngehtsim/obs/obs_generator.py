@@ -31,7 +31,7 @@ class obs_generator(object):
       settings_file (str): Path to the input settings file; if set to None, will use default settings.
                            Note that any settings specified by the settings keyword argument will override
                            the corresponding settings from the settings file.
-      verbose (float): Set to >0 for more verbose output
+      verbosity (float): Set to >0 for more verbose output
       weight (float): Set to >0 to store more information in the obs_generator object
       D_overrides (dict): A dictionary of station names and diameters to override defaults
       surf_rms_overrides (dict): A dictionary of station names and surface RMS values to override defaults
@@ -113,6 +113,8 @@ class obs_generator(object):
         self.model_file = self.settings['model_file']
         self.freq = float(self.settings['frequency'])*(1.0e9)
         self.weather = self.settings['weather']
+        self.weather_year = self.settings['weather_year']
+        self.weather_day = self.settings['weather_day']
 
         #############################
         # run initialization functions
@@ -396,8 +398,10 @@ class obs_generator(object):
                 self.weather_day = self.rng.integers(1,31,endpoint=True)
         else:
             # use the specified date
-            self.weather_year = int(self.settings['year'])
-            self.weather_day = int(self.settings['day'])
+            if self.weather_year is None:
+                self.weather_year = int(self.settings['year'])
+            if self.weather_day is None:
+                self.weather_day = int(self.settings['day'])
 
         # read in the weather info and store it
         for isite, site in enumerate(self.sites):
@@ -491,7 +495,8 @@ class obs_generator(object):
     # functions for generating observations
 
     # generate a raw observation
-    def observe(self,input_model,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,flagwind=True,p=None):
+    def observe(self,input_model,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,
+                flagwind=True,el_min=const.el_min,el_max=const.el_max,p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
@@ -502,6 +507,8 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           flagwind (bool): flag for whether to derate sites with high wind
+          el_min (float): minimum elevation that a site can observe at, in degrees
+          el_max (float): maximum elevation that a site can observe at, in degrees
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
         
         Returns:
@@ -528,8 +535,8 @@ class obs_generator(object):
 
         # apply elevation cuts to ground stations
         els = self.obs_empty.unpack(['el1','el2'])
-        mask  = (self.obs_empty.data['t1'] == 'space') | ((els['el1'] > const.el_min) & (els['el1'] < const.el_max))
-        mask &= (self.obs_empty.data['t2'] == 'space') | ((els['el2'] > const.el_min) & (els['el2'] < const.el_max))
+        mask  = (self.obs_empty.data['t1'] == 'space') | ((els['el1'] > el_min) & (els['el1'] < el_max))
+        mask &= (self.obs_empty.data['t2'] == 'space') | ((els['el2'] > el_min) & (els['el2'] < el_max))
         self.obs_empty.data = self.obs_empty.data[mask]
 
         # observe the source
@@ -783,6 +790,9 @@ class obs_generator(object):
 
         # store additional info if requested
         if self.weight > 0:
+            self.timestamps = times[mask]
+            self.ant1 = t1_list[mask]
+            self.ant2 = t2_list[mask]
             self.bandwidths = bw[mask]
             self.Tsys1 = Tsys1[mask]
             self.Tsys2 = Tsys2[mask]
@@ -801,7 +811,8 @@ class obs_generator(object):
         return obs
 
     # generate observation
-    def make_obs(self,input_model=None,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,flagwind=True,p=None):
+    def make_obs(self,input_model=None,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,
+                 el_min=const.el_min,el_max=const.el_max,flagwind=True,p=None):
         """
         Generate an observation that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
@@ -813,6 +824,8 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           flagwind (bool): flag for whether to derate sites with high wind
+          el_min (float): minimum elevation that a site can observe at, in degrees
+          el_max (float): maximum elevation that a site can observe at, in degrees
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
 
         Returns:
@@ -832,7 +845,7 @@ class obs_generator(object):
                     print('No input model passed to make_obs; using the model provided in the settings.')
 
         # generate raw observation
-        obs = self.observe(input_model,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind)
+        obs = self.observe(input_model,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,flagwind=flagwind,el_min=el_min,el_max=el_max,p=p)
 
         # apply naive SNR thresholding
         if (snr_algo.lower() == 'naive'):
@@ -856,7 +869,7 @@ class obs_generator(object):
             freq_ref = snr_args[2]
             model_path_ref = snr_args[3]
 
-            mask = FPT(self,obs,snr_ref,tint_ref,freq_ref,model_path_ref,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,p=p,flagwind=flagwind,ephem=self.ephem)
+            mask = FPT(self,obs,snr_ref,tint_ref,freq_ref,model_path_ref,ephem=self.ephem,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,flagwind=flagwind,el_min=el_min,el_max=el_max,p=p)
 
         # unrecognized SNR thresholding scheme
         else:
@@ -870,6 +883,9 @@ class obs_generator(object):
 
         # flag the additional stored quantities as well
         if self.weight > 0:
+            self.timestamps = self.timestamps[mask]
+            self.ant1 = self.ant1[mask]
+            self.ant2 = self.ant2[mask]
             self.bandwidths = self.bandwidths[mask]
             self.Tsys1 = self.Tsys1[mask]
             self.Tsys2 = self.Tsys2[mask]
@@ -901,6 +917,9 @@ class obs_generator(object):
 
                 # flag the additional stored quantities as well
                 if self.weight > 0:
+                    self.timestamps = self.timestamps[mask]
+                    self.ant1 = self.ant1[mask]
+                    self.ant2 = self.ant2[mask]
                     self.bandwidths = self.bandwidths[mask]
                     self.Tsys1 = self.Tsys1[mask]
                     self.Tsys2 = self.Tsys2[mask]
@@ -929,6 +948,9 @@ class obs_generator(object):
 
                 # flag the additional stored quantities as well
                 if self.weight > 0:
+                    self.timestamps = self.timestamps[mask]
+                    self.ant1 = self.ant1[mask]
+                    self.ant2 = self.ant2[mask]
                     self.bandwidths = self.bandwidths[mask]
                     self.Tsys1 = self.Tsys1[mask]
                     self.Tsys2 = self.Tsys2[mask]
@@ -943,7 +965,8 @@ class obs_generator(object):
         return obs
 
     # generate multifrequency observation, assuming that FPT will be used wherever possible
-    def make_obs_mf(self,freqs,input_models,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,flagwind=True,p=None):
+    def make_obs_mf(self,freqs,input_models,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,
+                    el_min=const.el_min,el_max=const.el_max,flagwind=True,p=None):
         """
         Generate a multi-frequency observation
         
@@ -954,6 +977,8 @@ class obs_generator(object):
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
+          el_min (float): minimum elevation that a site can observe at, in degrees
+          el_max (float): maximum elevation that a site can observe at, in degrees
           flagwind (bool): flag for whether to derate sites with high wind
           p (list): list of lists of parameters for input ngEHTforecast.fisher.fisher_forecast.FisherForecast objects; one for each frequency
 
@@ -1027,7 +1052,7 @@ class obs_generator(object):
                     settings['weather_day'] = str(self.weather_day)
 
                 # create dummy obsgen object
-                obsgen_here = obs_generator(settings=settings,
+                obsgen_here = obs_generator(settings=copy.deepcopy(settings),
                                             verbosity=self.verbosity,
                                             weight=self.weight,
                                             D_overrides=copy.deepcopy(self.D_overrides),
@@ -1042,12 +1067,12 @@ class obs_generator(object):
                                             custom_receivers=copy.deepcopy(self.custom_receivers),
                                             array=self.array,
                                             ephem=self.ephem)
-
+                
                 if ((model_target is not None) & (not isinstance(model_target,str))):
                     obsgen_here.im = model_target
 
                 # generate observation at target frequency
-                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,flagwind=flagwind,p=p_target)
+                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,el_min=el_min,el_max=el_max,flagwind=flagwind,p=p_target)
 
                 # add any new detections to the running datatable
                 if count == 0:

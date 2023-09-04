@@ -39,7 +39,9 @@ default_settings = {'model_file': None,
                     'weather': 'random',
                     'ttype': 'fast',
                     'fft_pad_factor': 2,
-                    'random_seed': None}
+                    'random_seed': None,
+                    'weather_year': None,
+                    'weather_day': None}
 
 # minimum and maximum elevations at which a site may observe a source
 el_min = 10.0
