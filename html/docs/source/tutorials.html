@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorials &mdash; ngehtsim 0+untagged.138.g9c02851 documentation</title>
+  <title>Tutorials &mdash; ngehtsim 0+untagged.158.g72a8345 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.138.g9c02851
+                0+untagged.158.g72a8345
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -87,7 +87,7 @@
 <p>We’ll start by configuring the array appropriately, which in this case means specifying the appropriate <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object settings.  Relevant fields to specify include:</p>
 <ul class="simple">
 <li><p>the source being observed (M87)</p></li>
-<li><p>the observing frequency (230 GHz)</p></li>
+<li><p>the observing frequency (227.1 GHz)</p></li>
 <li><p>the bandwidth (2 GHz)</p></li>
 <li><p>the date of the observation (April 6, 2017)</p></li>
 <li><p>the starting time (1 UT) and duration (7 hours) of the observation</p></li>
@@ -95,7 +95,7 @@
 </ul>
 <p>We can package all of these settings into a dictionary:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;M87&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;frequency&#39;</span><span class="p">:</span> <span class="mf">230.0</span><span class="p">,</span>
+            <span class="s1">&#39;frequency&#39;</span><span class="p">:</span> <span class="mf">227.1</span><span class="p">,</span>
             <span class="s1">&#39;bandwidth&#39;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
             <span class="s1">&#39;month&#39;</span><span class="p">:</span> <span class="s1">&#39;Apr&#39;</span><span class="p">,</span>
             <span class="s1">&#39;day&#39;</span><span class="p">:</span> <span class="s1">&#39;6&#39;</span><span class="p">,</span>
@@ -191,19 +191,19 @@
 <h3>Additional effects<a class="headerlink" href="#additional-effects" title="Permalink to this heading"></a></h3>
 <p>The calibration of the 2017 EHT data is comprehensively covered in <a class="reference external" href="https://iopscience.iop.org/article/10.3847/2041-8213/ab0c57">M87 Paper 3</a>, and a number of practical details are relevant for closing the sensitivity gap between our synthetic data and the real data.  Here, we use the information from that paper (particularly Table 2) to improve our simulation of the EHT 2017 observing campaign.</p>
 <p>Though ngehtsim contains information about the diameter of each dish in the EHT array, not all dishes are always able to use their full collecting area.  For instance, during the 2017 EHT observing campaign, the ALMA array observed with only 37 dishes (out of ~60 in total), and the LMT was not able to use its full diameter of 50 meters.  To override the default dish sizes when simulating data with ngehtsim, we can specify a dictionary that gets passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">D_override_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ALMA&#39;</span><span class="p">:</span> <span class="mf">73.0</span><span class="p">,</span>
-                   <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="mf">32.5</span><span class="p">,</span>
-                   <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="mf">14.7</span><span class="p">}</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">D_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ALMA&#39;</span><span class="p">:</span> <span class="mf">73.0</span><span class="p">,</span>
+               <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="mf">32.5</span><span class="p">,</span>
+               <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="mf">14.7</span><span class="p">}</span>
 </pre></div>
 </div>
-<p>Another relevant factor is that not all stations have the same backend equipment.  The default receiver setup assumed within ngehtsim is a “sideband separated” receiver, but there during the 2017 EHT campaign the JCMT, LMT, and SMA sites all used “double sideband” receiver setups.  This means that they were operating with twice the system temperature as they would otherwise have done, which impacts their sensitivities.  To override the default sideband setup within ngehtsim, we can specify another dictionary that gets passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sideband_ratio_override_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;IRAM&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">2.663</span><span class="p">},</span>
-                                <span class="s1">&#39;JCMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">1.25</span><span class="p">},</span>
-                                <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
-                                <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}}</span>
+<p>Another relevant factor is that not all stations have the same backend equipment.  The default receiver setup assumed within ngehtsim is a “sideband separating” receiver, but during the 2017 EHT campaign the JCMT, LMT, and SMA sites all used “double sideband” receiver setups.  This means that they were operating with twice the system temperature as they would otherwise have done, which impacts their sensitivities.  To override the default sideband setup within ngehtsim, we can specify another dictionary that gets passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sideband_ratio_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;IRAM&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">2.663</span><span class="p">},</span>
+                            <span class="s1">&#39;JCMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">1.25</span><span class="p">},</span>
+                            <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">},</span>
+                            <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}}</span>
 </pre></div>
 </div>
-<p>The sideband ratio effectively sets a multiplier on the system temperature, such that a value of 0 corresponds to a perfectly sideband-separated receiver and a value of 1 corresponds to a perfect double sideband receiver.  Note that here we’ve also specified a nonzero sideband ratio for the IRAM 30-meter dish.  The IRAM dish in fact uses a sideband separated receiver, but this specification allows us to impart a multiplicative factor to the system temperature; such a factor is necessary because during the 2017 EHT observations, the IRAM dish suffered from instabilities in the signal chain that led to substantial amplitude loss.</p>
+<p>The sideband ratio effectively sets a multiplier on the system temperature, such that a value of 0 corresponds to a perfectly sideband-separating receiver and a value of 1 corresponds to a perfect double sideband receiver.  Note that here we’ve also specified a nonzero sideband ratio for the IRAM 30-meter dish.  The IRAM dish in fact uses a sideband separating receiver, but this specification allows us to impart a multiplicative factor to the system temperature; such a factor is necessary because during the 2017 EHT observations, the IRAM dish suffered from instabilities in the signal chain that led to substantial amplitude loss.</p>
 <p>Another relevant factor for station sensitivities is the receiver temperature.  The default assumed 230GHz receiver temperature within ngehtsim is 50K, which is the ALMA specification (see, e.g., <a class="reference external" href="http://www.ece.virginia.edu/sis/Papers/band6.pdf">here</a>).  However, several of the sites during the 2017 EHT campaign observed using receivers with worse performance than the ALMA specification:</p>
 <ul class="simple">
 <li><p>The APEX receiver temperature is about 90K (see <a class="reference external" href="https://www.apex-telescope.org/heterodyne/shfi/het230/characteristics/index.php#trec">here</a>).</p></li>
@@ -213,18 +213,19 @@
 <li><p>The SMT receiver temperature is about 66K (see <a class="reference external" href="https://aro.as.arizona.edu/?q=facilities/submillimeter-telescope">here</a>).</p></li>
 </ul>
 <p>Within ngehtsim, we can override the default receiver temperatures by specifying yet another dictionary that will get passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">T_R_override_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;APEX&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">90.0</span><span class="p">},</span>
-                     <span class="s1">&#39;IRAM&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">},</span>
-                     <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">70.0</span><span class="p">},</span>
-                     <span class="s1">&#39;SMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">66.0</span><span class="p">},</span>
-                     <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;230&#39;</span><span class="p">:</span> <span class="mf">66.0</span><span class="p">}}</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">T_R_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;APEX&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Band6&#39;</span><span class="p">:</span> <span class="mf">90.0</span><span class="p">},</span>
+                 <span class="s1">&#39;IRAM&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Band6&#39;</span><span class="p">:</span> <span class="mf">80.0</span><span class="p">},</span>
+                 <span class="s1">&#39;LMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Band6&#39;</span><span class="p">:</span> <span class="mf">70.0</span><span class="p">},</span>
+                 <span class="s1">&#39;SMT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Band6&#39;</span><span class="p">:</span> <span class="mf">66.0</span><span class="p">},</span>
+                 <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Band6&#39;</span><span class="p">:</span> <span class="mf">66.0</span><span class="p">}}</span>
 </pre></div>
 </div>
+<p>Note that we have to specify that the “Band6” receiver is the one whose temperature is being set.  ngehtsim contains default information – such as lower and upper frequency bounds, receiver temperatures, and sideband separation ratios – for all of the ALMA receivers.  Custom receivers can be supplied by a user by passing the “custom_receivers” keyword argument when initiating the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object.</p>
 <p>Given all of the above corrections, we can now re-generate the observations.  This time, we will pass additional arguments to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object that capture the above effects:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span>
-                          <span class="n">D_override_dict</span> <span class="o">=</span> <span class="n">D_override_dict</span><span class="p">,</span>
-                          <span class="n">sideband_ratio_override_dict</span> <span class="o">=</span> <span class="n">sideband_ratio_override_dict</span><span class="p">,</span>
-                          <span class="n">T_R_override_dict</span> <span class="o">=</span> <span class="n">T_R_override_dict</span><span class="p">)</span>
+                          <span class="n">D_overrides</span> <span class="o">=</span> <span class="n">D_overrides</span><span class="p">,</span>
+                          <span class="n">sideband_ratio_overrides</span> <span class="o">=</span> <span class="n">sideband_ratio_overrides</span><span class="p">,</span>
+                          <span class="n">T_R_overrides</span> <span class="o">=</span> <span class="n">T_R_overrides</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>And then after re-generating the observation:</p>

@@ -10,7 +10,7 @@ The Event Horizon Telescope (`EHT <https://eventhorizontelescope.org/>`_) is a g
 We'll start by configuring the array appropriately, which in this case means specifying the appropriate ``obs_generator`` object settings.  Relevant fields to specify include:
 
 * the source being observed (M87)
-* the observing frequency (230 GHz)
+* the observing frequency (227.1 GHz)
 * the bandwidth (2 GHz)
 * the date of the observation (April 6, 2017)
 * the starting time (1 UT) and duration (7 hours) of the observation
@@ -19,7 +19,7 @@ We'll start by configuring the array appropriately, which in this case means spe
 We can package all of these settings into a dictionary::
    
    settings = {'source': 'M87',
-               'frequency': 230.0,
+               'frequency': 227.1,
                'bandwidth': 2.0,
                'month': 'Apr',
                'day': '6',
@@ -130,18 +130,18 @@ The calibration of the 2017 EHT data is comprehensively covered in `M87 Paper 3 
 
 Though ngehtsim contains information about the diameter of each dish in the EHT array, not all dishes are always able to use their full collecting area.  For instance, during the 2017 EHT observing campaign, the ALMA array observed with only 37 dishes (out of ~60 in total), and the LMT was not able to use its full diameter of 50 meters.  To override the default dish sizes when simulating data with ngehtsim, we can specify a dictionary that gets passed to the ``obs_generator`` object::
 
-   D_override_dict = {'ALMA': 73.0,
-                      'LMT': 32.5,
-                      'SMA': 14.7}
+   D_overrides = {'ALMA': 73.0,
+                  'LMT': 32.5,
+                  'SMA': 14.7}
 
-Another relevant factor is that not all stations have the same backend equipment.  The default receiver setup assumed within ngehtsim is a "sideband separated" receiver, but there during the 2017 EHT campaign the JCMT, LMT, and SMA sites all used "double sideband" receiver setups.  This means that they were operating with twice the system temperature as they would otherwise have done, which impacts their sensitivities.  To override the default sideband setup within ngehtsim, we can specify another dictionary that gets passed to the ``obs_generator`` object::
+Another relevant factor is that not all stations have the same backend equipment.  The default receiver setup assumed within ngehtsim is a "sideband separating" receiver, but during the 2017 EHT campaign the JCMT, LMT, and SMA sites all used "double sideband" receiver setups.  This means that they were operating with twice the system temperature as they would otherwise have done, which impacts their sensitivities.  To override the default sideband setup within ngehtsim, we can specify another dictionary that gets passed to the ``obs_generator`` object::
 
-   sideband_ratio_override_dict = {'IRAM': {'230': 2.663},
-                                   'JCMT': {'230': 1.25},
-                                   'LMT': {'230': 1.0},
-                                   'SMA': {'230': 1.0}}
+   sideband_ratio_overrides = {'IRAM': {'230': 2.663},
+                               'JCMT': {'230': 1.25},
+                               'LMT': {'230': 1.0},
+                               'SMA': {'230': 1.0}}
 
-The sideband ratio effectively sets a multiplier on the system temperature, such that a value of 0 corresponds to a perfectly sideband-separated receiver and a value of 1 corresponds to a perfect double sideband receiver.  Note that here we've also specified a nonzero sideband ratio for the IRAM 30-meter dish.  The IRAM dish in fact uses a sideband separated receiver, but this specification allows us to impart a multiplicative factor to the system temperature; such a factor is necessary because during the 2017 EHT observations, the IRAM dish suffered from instabilities in the signal chain that led to substantial amplitude loss.
+The sideband ratio effectively sets a multiplier on the system temperature, such that a value of 0 corresponds to a perfectly sideband-separating receiver and a value of 1 corresponds to a perfect double sideband receiver.  Note that here we've also specified a nonzero sideband ratio for the IRAM 30-meter dish.  The IRAM dish in fact uses a sideband separating receiver, but this specification allows us to impart a multiplicative factor to the system temperature; such a factor is necessary because during the 2017 EHT observations, the IRAM dish suffered from instabilities in the signal chain that led to substantial amplitude loss.
 
 Another relevant factor for station sensitivities is the receiver temperature.  The default assumed 230GHz receiver temperature within ngehtsim is 50K, which is the ALMA specification (see, e.g., `here <http://www.ece.virginia.edu/sis/Papers/band6.pdf>`_).  However, several of the sites during the 2017 EHT campaign observed using receivers with worse performance than the ALMA specification:
 
@@ -153,18 +153,20 @@ Another relevant factor for station sensitivities is the receiver temperature.  
 
 Within ngehtsim, we can override the default receiver temperatures by specifying yet another dictionary that will get passed to the ``obs_generator`` object::
 
-   T_R_override_dict = {'APEX': {'230': 90.0},
-                        'IRAM': {'230': 80.0},
-                        'LMT': {'230': 70.0},
-                        'SMT': {'230': 66.0},
-                        'SMA': {'230': 66.0}}
+   T_R_overrides = {'APEX': {'Band6': 90.0},
+                    'IRAM': {'Band6': 80.0},
+                    'LMT': {'Band6': 70.0},
+                    'SMT': {'Band6': 66.0},
+                    'SMA': {'Band6': 66.0}}
+
+Note that we have to specify that the "Band6" receiver is the one whose temperature is being set.  ngehtsim contains default information -- such as lower and upper frequency bounds, receiver temperatures, and sideband separation ratios -- for all of the ALMA receivers.  Custom receivers can be supplied by a user by passing the "custom_receivers" keyword argument when initiating the ``obs_generator`` object.
 
 Given all of the above corrections, we can now re-generate the observations.  This time, we will pass additional arguments to the ``obs_generator`` object that capture the above effects::
 
    obsgen = og.obs_generator(settings,
-                             D_override_dict = D_override_dict,
-                             sideband_ratio_override_dict = sideband_ratio_override_dict,
-                             T_R_override_dict = T_R_override_dict)
+                             D_overrides = D_overrides,
+                             sideband_ratio_overrides = sideband_ratio_overrides,
+                             T_R_overrides = T_R_overrides)
 
 And then after re-generating the observation::
 

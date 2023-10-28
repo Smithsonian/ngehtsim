@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>weather.weather &mdash; ngehtsim 0+untagged.138.g6568e86 documentation</title>
+  <title>weather.weather &mdash; ngehtsim 0+untagged.158.g72a8345 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.138.g6568e86
+                0+untagged.158.g72a8345
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -74,27 +74,158 @@
 <span class="c1"># imports</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">ngehtutil</span> <span class="k">as</span> <span class="nn">ng</span>
 <span class="kn">import</span> <span class="nn">ngehtsim.const_def</span> <span class="k">as</span> <span class="nn">const</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+
+<span class="c1">###################################################</span>
+<span class="c1"># load eigenspectra</span>
+
+<span class="n">meanspec_tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_eigenspectra</span><span class="o">+</span><span class="s1">&#39;/spectrum_mean.txt&#39;</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">meanspec_Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_eigenspectra</span><span class="o">+</span><span class="s1">&#39;_Tb/spectrum_mean.txt&#39;</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">tau_spectra</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+<span class="n">Tb_spectra</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">number_of_components</span><span class="p">):</span>
+    <span class="n">spechere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_eigenspectra</span><span class="o">+</span><span class="s1">&#39;/spectrum_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.txt&#39;</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">spechere_Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_eigenspectra</span><span class="o">+</span><span class="s1">&#39;_Tb/spectrum_&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;.txt&#39;</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">tau_spectra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spechere</span><span class="p">)</span>
+    <span class="n">Tb_spectra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spechere_Tb</span><span class="p">)</span>
 
 <span class="c1">###################################################</span>
 <span class="c1"># function definitions</span>
 
-<div class="viewcode-block" id="opacity"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.opacity">[docs]</a><span class="k">def</span> <span class="nf">opacity</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;230&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="read_binary_atm"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.read_binary_atm">[docs]</a><span class="k">def</span> <span class="nf">read_binary_atm</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">Ncomps</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">number_of_components</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Retrieve the zenith opacity information for a specified site.</span>
+<span class="sd">    Read a stored weather data file containing either opacity or brightness temperature info.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      filename (str): The name of the weather data file</span>
+<span class="sd">      Ncomps (int): The number of PCA component coefficients that have been stored</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (numpy.ndarray): Several arrays containing the dates/times and PCA component coefficients</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">binary_file</span><span class="p">:</span>
+        <span class="n">contents</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">binary_file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+    <span class="n">linelength</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">prelength</span> <span class="o">=</span> <span class="n">linelength</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">Ncomps</span><span class="p">)</span>
+    <span class="n">Nlines</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">linelength</span><span class="p">)</span>
+
+    <span class="n">years</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nlines</span><span class="p">)</span>
+    <span class="n">months</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nlines</span><span class="p">)</span>
+    <span class="n">days</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nlines</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">prelength</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nlines</span><span class="p">)</span>
+    <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Nlines</span><span class="p">,</span><span class="n">Ncomps</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Nlines</span><span class="p">):</span>
+
+        <span class="n">istart</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">linelength</span><span class="o">*</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">iend</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="n">linelength</span>
+        <span class="n">linehere</span> <span class="o">=</span> <span class="n">contents</span><span class="p">[</span><span class="n">istart</span><span class="p">:</span><span class="n">iend</span><span class="p">]</span>
+
+        <span class="n">years</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;h&#39;</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">months</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">3</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">prelength</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">5</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">coeffs</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;&#39;</span><span class="o">+</span><span class="s1">&#39;e&#39;</span><span class="o">*</span><span class="n">Ncomps</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="n">prelength</span><span class="p">:]))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">prelength</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">coeffs</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">coeffs</span></div>
+
+<div class="viewcode-block" id="read_binary_weather"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.read_binary_weather">[docs]</a><span class="k">def</span> <span class="nf">read_binary_weather</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read a stored weather data file containing pressure, temperature, wind, or PWV info.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      filename (str): The name of the weather data file</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (numpy.ndarray): Several arrays containing the dates/times and weather values read from the file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">binary_file</span><span class="p">:</span>
+        <span class="n">contents</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">binary_file</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+    <span class="n">linelength</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">prelength</span> <span class="o">=</span> <span class="n">linelength</span> <span class="o">-</span> <span class="mi">8</span>
+    <span class="n">Nlines</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">linelength</span><span class="p">)</span>
+
+    <span class="n">years</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nlines</span><span class="p">)</span>
+    <span class="n">months</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nlines</span><span class="p">)</span>
+    <span class="n">days</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nlines</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">prelength</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nlines</span><span class="p">)</span>
+    <span class="n">vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nlines</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Nlines</span><span class="p">):</span>
+        <span class="n">istart</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">linelength</span><span class="o">*</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">iend</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="n">linelength</span>
+        <span class="n">linehere</span> <span class="o">=</span> <span class="n">contents</span><span class="p">[</span><span class="n">istart</span><span class="p">:</span><span class="n">iend</span><span class="p">]</span>
+
+        <span class="n">years</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;h&#39;</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">months</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">3</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">prelength</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">5</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">vals</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&lt;d&#39;</span><span class="p">,</span> <span class="n">linehere</span><span class="p">[</span><span class="n">prelength</span><span class="p">:])[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">prelength</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">vals</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">vals</span></div>
+
+<div class="viewcode-block" id="reconstruct_spectrum_tau"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.reconstruct_spectrum_tau">[docs]</a><span class="k">def</span> <span class="nf">reconstruct_spectrum_tau</span><span class="p">(</span><span class="n">coeffs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reconstruct an opacity spectrum from PCA component coefficients.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      coeffs (numpy.ndarray): Array containing the PCA component coefficients</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (numpy.ndarray): Array containing the opacity spectrum</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">reconstructed_spectrum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">length_of_spectrum</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ispec</span><span class="p">,</span> <span class="n">eigenspec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tau_spectra</span><span class="p">):</span>
+        <span class="n">reconstructed_spectrum</span> <span class="o">+=</span> <span class="n">coeffs</span><span class="p">[</span><span class="n">ispec</span><span class="p">]</span><span class="o">*</span><span class="n">eigenspec</span>
+    <span class="n">reconstructed_spectrum</span> <span class="o">+=</span> <span class="n">meanspec_tau</span>
+    <span class="n">reconstructed_spectrum</span> <span class="o">=</span> <span class="mf">10.0</span><span class="o">**</span><span class="n">reconstructed_spectrum</span>
+    <span class="k">return</span> <span class="n">reconstructed_spectrum</span></div>
+
+<div class="viewcode-block" id="reconstruct_spectrum_Tb"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.reconstruct_spectrum_Tb">[docs]</a><span class="k">def</span> <span class="nf">reconstruct_spectrum_Tb</span><span class="p">(</span><span class="n">coeffs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reconstruct a brightness temperature spectrum from PCA component coefficients.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      coeffs (numpy.ndarray): Array containing the PCA component coefficients</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (numpy.ndarray): Array containing the brightness temperature spectrum</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">reconstructed_spectrum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">length_of_spectrum</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ispec</span><span class="p">,</span> <span class="n">eigenspec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Tb_spectra</span><span class="p">):</span>
+        <span class="n">reconstructed_spectrum</span> <span class="o">+=</span> <span class="n">coeffs</span><span class="p">[</span><span class="n">ispec</span><span class="p">]</span><span class="o">*</span><span class="n">eigenspec</span>
+    <span class="n">reconstructed_spectrum</span> <span class="o">+=</span> <span class="n">meanspec_Tb</span>
+    <span class="k">return</span> <span class="n">reconstructed_spectrum</span></div>
+
+<div class="viewcode-block" id="opacity_spectrum"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.opacity_spectrum">[docs]</a><span class="k">def</span> <span class="nf">opacity_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve the zenith opacity information for a specified site as a function of frequency.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      site (str): The name of the site</span>
 <span class="sd">      form (str): The form of value to report; can be &#39;mean&#39;, &#39;median&#39;, &#39;good&#39;, &#39;bad&#39;, exact&#39;, or &#39;all&#39;</span>
-<span class="sd">      month (str): The month for which to report weather</span>
-<span class="sd">      day (int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
-<span class="sd">      year (int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
-<span class="sd">      freq (str): The observing frequency; can be &#39;86&#39;, &#39;230&#39;, &#39;345&#39;, &#39;410&#39;, or &#39;690&#39;</span>
+<span class="sd">      month (str or int): The month for which to report weather</span>
+<span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">      (float): The requested opacity value; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
+<span class="sd">      (numpy.ndarray): The requested opacity values; if form = &#39;all&#39;, then returns a 2D array</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># extract month number</span>
@@ -103,59 +234,102 @@
     <span class="k">if</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnams</span><span class="p">:</span>
         <span class="n">monthnum</span> <span class="o">=</span> <span class="n">monthnums</span><span class="p">[</span><span class="n">monthnams</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">month</span>
-    <span class="k">elif</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
-        <span class="n">monthnum</span> <span class="o">=</span> <span class="n">month</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
+        <span class="n">monthnum</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">monthnams</span><span class="p">[</span><span class="n">monthnums</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
-    <span class="c1"># check frequency</span>
-    <span class="k">if</span> <span class="n">freq</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;86&#39;</span><span class="p">,</span><span class="s1">&#39;230&#39;</span><span class="p">,</span><span class="s1">&#39;345&#39;</span><span class="p">,</span><span class="s1">&#39;410&#39;</span><span class="p">,</span><span class="s1">&#39;690&#39;</span><span class="p">]:</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified frequency not recognized; please pick one of 86, 230, 345, 410, or 690.&#39;</span><span class="p">)</span>
-
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_SEFD_info_&#39;</span> <span class="o">+</span> <span class="n">freq</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
+    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;tau.txt&#39;</span>
 
     <span class="c1"># read in the table</span>
-    <span class="n">yeardum</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">daydum</span><span class="p">,</span> <span class="n">taubase</span><span class="p">,</span> <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">coeffs</span> <span class="o">=</span> <span class="n">read_binary_atm</span><span class="p">(</span><span class="n">pathhere</span><span class="p">)</span>
 
-    <span class="c1"># retrieve the requested opacity value</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
-        <span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">taubase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
-        <span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">taubase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
-        <span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">taubase</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
-        <span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">taubase</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">yeardum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daydum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!&#39;</span><span class="p">)</span>
-        <span class="n">tau</span> <span class="o">=</span> <span class="n">taubase</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
-        <span class="n">tau</span> <span class="o">=</span> <span class="n">taubase</span>
+    <span class="c1"># remove false Feb 29 entries</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="s1">&#39;Feb&#39;</span><span class="p">):</span>
+        <span class="n">indlist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">indlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="n">years</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">months</span> <span class="o">=</span> <span class="n">months</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">days</span> <span class="o">=</span> <span class="n">days</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">coeffs</span> <span class="o">=</span> <span class="n">coeffs</span><span class="p">[</span><span class="n">indlist</span><span class="p">,:]</span>
+
+    <span class="c1"># retrieve the requested opacity values</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="p">((</span><span class="n">years</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">days</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date.&#39;</span><span class="p">)</span>
+        <span class="n">tauspec</span> <span class="o">=</span> <span class="n">reconstruct_spectrum_tau</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tauspec_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">coeffs</span><span class="p">),</span><span class="n">const</span><span class="o">.</span><span class="n">length_of_spectrum</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)):</span>
+            <span class="n">tauspec_arr</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">reconstruct_spectrum_tau</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+            <span class="n">tauspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">tauspec_arr</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
+            <span class="n">tauspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">tauspec_arr</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
+            <span class="n">tauspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tauspec_arr</span><span class="p">,</span><span class="mf">15.87</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
+            <span class="n">tauspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tauspec_arr</span><span class="p">,</span><span class="mf">84.13</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
+            <span class="n">tauspec</span> <span class="o">=</span> <span class="n">tauspec_arr</span>
+
+    <span class="k">return</span> <span class="n">tauspec</span></div>
+
+<div class="viewcode-block" id="opacity"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.opacity">[docs]</a><span class="k">def</span> <span class="nf">opacity</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">230.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve the zenith opacity information for a specified site at a specified frequency.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      site (str): The name of the site</span>
+<span class="sd">      form (str): The form of value to report; can be &#39;mean&#39;, &#39;median&#39;, &#39;good&#39;, &#39;bad&#39;, exact&#39;, or &#39;all&#39;</span>
+<span class="sd">      month (str or int): The month for which to report weather</span>
+<span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      freq (float): The observing frequency, in GHz</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (float): The requested opacity value(s); if form = &#39;all&#39;, then returns a numpy.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># check frequency</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">freq</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">freq</span> <span class="o">&gt;</span> <span class="mf">2000.0</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified frequency is outside of the acceptable range (0, 2000) GHz.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># get full spectrum</span>
+    <span class="n">tauspec</span> <span class="o">=</span> <span class="n">opacity_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">form</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">day</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">)</span>
+
+    <span class="c1"># isolate the specified frequency</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">spectrum_frequency</span><span class="p">,</span><span class="n">tauspec</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tauspec</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tauspec</span><span class="p">)):</span>
+            <span class="n">tau</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">spectrum_frequency</span><span class="p">,</span><span class="n">tauspec</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
     <span class="k">return</span> <span class="n">tau</span></div>
 
-
-<div class="viewcode-block" id="brightness_temperature"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.brightness_temperature">[docs]</a><span class="k">def</span> <span class="nf">brightness_temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;230&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="brightness_temperature_spectrum"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.brightness_temperature_spectrum">[docs]</a><span class="k">def</span> <span class="nf">brightness_temperature_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Retrieve the zenith brightness temperature information for a specified site.</span>
+<span class="sd">    Retrieve the zenith brightness temperature information for a specified site as a function of frequency.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      site (str): The name of the site</span>
 <span class="sd">      form (str): The form of value to report; can be &#39;mean&#39;, &#39;median&#39;, &#39;good&#39;, &#39;bad&#39;, exact&#39;, or &#39;all&#39;</span>
-<span class="sd">      month (str): The month for which to report weather</span>
-<span class="sd">      day (int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
-<span class="sd">      year (int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
-<span class="sd">      freq (str): The observing frequency; can be &#39;86&#39;, &#39;230&#39;, &#39;345&#39;, &#39;410&#39;, or &#39;690&#39;</span>
+<span class="sd">      month (str or int): The month for which to report weather</span>
+<span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">      (float): The requested brightness temperature value, in K; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
+<span class="sd">      (numpy.ndarray): The requested brightness temperature values; if form = &#39;all&#39;, then returns a 2D array</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># extract month number</span>
@@ -164,58 +338,102 @@
     <span class="k">if</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnams</span><span class="p">:</span>
         <span class="n">monthnum</span> <span class="o">=</span> <span class="n">monthnums</span><span class="p">[</span><span class="n">monthnams</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">month</span>
-    <span class="k">elif</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
-        <span class="n">monthnum</span> <span class="o">=</span> <span class="n">month</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
+        <span class="n">monthnum</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">monthnams</span><span class="p">[</span><span class="n">monthnums</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
-    <span class="c1"># check frequency</span>
-    <span class="k">if</span> <span class="n">freq</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;86&#39;</span><span class="p">,</span><span class="s1">&#39;230&#39;</span><span class="p">,</span><span class="s1">&#39;345&#39;</span><span class="p">,</span><span class="s1">&#39;410&#39;</span><span class="p">,</span><span class="s1">&#39;690&#39;</span><span class="p">]:</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified frequency not recognized; please pick one of 86, 230, 345, 410, or 690.&#39;</span><span class="p">)</span>
-
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_SEFD_info_&#39;</span> <span class="o">+</span> <span class="n">freq</span> <span class="o">+</span> <span class="s1">&#39;.csv&#39;</span>
+    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;Tb.txt&#39;</span>
 
     <span class="c1"># read in the table</span>
-    <span class="n">yeardum</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">daydum</span><span class="p">,</span> <span class="n">tau</span><span class="p">,</span> <span class="n">Tbbase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">coeffs</span> <span class="o">=</span> <span class="n">read_binary_atm</span><span class="p">(</span><span class="n">pathhere</span><span class="p">)</span>
 
-    <span class="c1"># retrieve the requested brightness temperature value</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
-        <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Tbbase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
-        <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">Tbbase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
-        <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tbbase</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
-        <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tbbase</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">yeardum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daydum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!&#39;</span><span class="p">)</span>
-        <span class="n">Tb</span> <span class="o">=</span> <span class="n">Tbbase</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
-        <span class="n">Tb</span> <span class="o">=</span> <span class="n">Tbbase</span>
+    <span class="c1"># remove false Feb 29 entries</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="s1">&#39;Feb&#39;</span><span class="p">):</span>
+        <span class="n">indlist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">indlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="n">years</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">months</span> <span class="o">=</span> <span class="n">months</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">days</span> <span class="o">=</span> <span class="n">days</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">coeffs</span> <span class="o">=</span> <span class="n">coeffs</span><span class="p">[</span><span class="n">indlist</span><span class="p">,:]</span>
+
+    <span class="c1"># retrieve the requested brightness temperature values</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="p">((</span><span class="n">years</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">days</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date.&#39;</span><span class="p">)</span>
+        <span class="n">Tbspec</span> <span class="o">=</span> <span class="n">reconstruct_spectrum_Tb</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Tbspec_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">coeffs</span><span class="p">),</span><span class="n">const</span><span class="o">.</span><span class="n">length_of_spectrum</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)):</span>
+            <span class="n">Tbspec_arr</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">reconstruct_spectrum_Tb</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+            <span class="n">Tbspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Tbspec_arr</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
+            <span class="n">Tbspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">Tbspec_arr</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
+            <span class="n">Tbspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tbspec_arr</span><span class="p">,</span><span class="mf">15.87</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
+            <span class="n">Tbspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tbspec_arr</span><span class="p">,</span><span class="mf">84.13</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
+            <span class="n">Tbspec</span> <span class="o">=</span> <span class="n">Tbspec_arr</span>
+    
+    <span class="k">return</span> <span class="n">Tbspec</span></div>
+
+<div class="viewcode-block" id="brightness_temperature"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.brightness_temperature">[docs]</a><span class="k">def</span> <span class="nf">brightness_temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">230.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve the zenith brightness temperature information for a specified site at a specified frequency.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      site (str): The name of the site</span>
+<span class="sd">      form (str): The form of value to report; can be &#39;mean&#39;, &#39;median&#39;, &#39;good&#39;, &#39;bad&#39;, exact&#39;, or &#39;all&#39;</span>
+<span class="sd">      month (str or int): The month for which to report weather</span>
+<span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      freq (float): The observing frequency, in GHz</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (float): The requested brightness temperature value(s), in K; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># check frequency</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">freq</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">freq</span> <span class="o">&gt;</span> <span class="mf">2000.0</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified frequency is outside of the acceptable range (0, 2000) GHz.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># get full spectrum</span>
+    <span class="n">Tbspec</span> <span class="o">=</span> <span class="n">brightness_temperature_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">form</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">day</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">)</span>
+
+    <span class="c1"># isolate the specified frequency</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
+        <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">spectrum_frequency</span><span class="p">,</span><span class="n">Tbspec</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Tb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Tbspec</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Tbspec</span><span class="p">)):</span>
+            <span class="n">Tb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span><span class="n">const</span><span class="o">.</span><span class="n">spectrum_frequency</span><span class="p">,</span><span class="n">Tbspec</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
     <span class="k">return</span> <span class="n">Tb</span></div>
 
-
-<div class="viewcode-block" id="pressure"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.pressure">[docs]</a><span class="k">def</span> <span class="nf">pressure</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="pressure"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.pressure">[docs]</a><span class="k">def</span> <span class="nf">pressure</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the surface pressure information for a specified site.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      site (str): The name of the site</span>
 <span class="sd">      form (str): The form of value to report; can be &#39;mean&#39;, &#39;median&#39;, &#39;good&#39;, &#39;bad&#39;, exact&#39;, or &#39;all&#39;</span>
-<span class="sd">      month (str): The month for which to report weather</span>
-<span class="sd">      day (int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
-<span class="sd">      year (int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      month (str or int): The month for which to report weather</span>
+<span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">      (float): The requested pressure value, in mbar; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
+<span class="sd">      (float): The requested pressure value(s), in mbar; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># extract month number</span>
@@ -224,54 +442,66 @@
     <span class="k">if</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnams</span><span class="p">:</span>
         <span class="n">monthnum</span> <span class="o">=</span> <span class="n">monthnums</span><span class="p">[</span><span class="n">monthnams</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">month</span>
-    <span class="k">elif</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
-        <span class="n">monthnum</span> <span class="o">=</span> <span class="n">month</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
+        <span class="n">monthnum</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">monthnams</span><span class="p">[</span><span class="n">monthnums</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_Pbase.csv&#39;</span>
+    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;Pbase.txt&#39;</span>
 
     <span class="c1"># read in the table</span>
-    <span class="n">yeardum</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">daydum</span><span class="p">,</span> <span class="n">Pbase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">vals</span> <span class="o">=</span> <span class="n">read_binary_weather</span><span class="p">(</span><span class="n">pathhere</span><span class="p">)</span>
 
-    <span class="c1"># retrieve the requested pressure value</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
-        <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Pbase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
-        <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">Pbase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
-        <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Pbase</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
-        <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Pbase</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">yeardum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daydum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!&#39;</span><span class="p">)</span>
-        <span class="n">P</span> <span class="o">=</span> <span class="n">Pbase</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
-        <span class="n">P</span> <span class="o">=</span> <span class="n">Pbase</span>
+    <span class="c1"># remove false Feb 29 entries</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="s1">&#39;Feb&#39;</span><span class="p">):</span>
+        <span class="n">indlist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">indlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="n">years</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">months</span> <span class="o">=</span> <span class="n">months</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">days</span> <span class="o">=</span> <span class="n">days</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+
+    <span class="c1"># retrieve the requested pressure value(s)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="p">((</span><span class="n">years</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">days</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date.&#39;</span><span class="p">)</span>
+        <span class="n">P</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="mf">15.87</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="mf">84.13</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
+            <span class="n">P</span> <span class="o">=</span> <span class="n">vals</span>
 
     <span class="k">return</span> <span class="n">P</span></div>
 
-
-<div class="viewcode-block" id="temperature"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.temperature">[docs]</a><span class="k">def</span> <span class="nf">temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="temperature"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.temperature">[docs]</a><span class="k">def</span> <span class="nf">temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the surface temperature information for a specified site.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      site (str): The name of the site</span>
 <span class="sd">      form (str): The form of value to report; can be &#39;mean&#39;, &#39;median&#39;, &#39;good&#39;, &#39;bad&#39;, exact&#39;, or &#39;all&#39;</span>
-<span class="sd">      month (str): The month for which to report weather</span>
-<span class="sd">      day (int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
-<span class="sd">      year (int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      month (str or int): The month for which to report weather</span>
+<span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">      (float): The requested temperature value, in K; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
+<span class="sd">      (float): The requested temperature value(s), in K; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># extract month number</span>
@@ -280,54 +510,66 @@
     <span class="k">if</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnams</span><span class="p">:</span>
         <span class="n">monthnum</span> <span class="o">=</span> <span class="n">monthnums</span><span class="p">[</span><span class="n">monthnams</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">month</span>
-    <span class="k">elif</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
-        <span class="n">monthnum</span> <span class="o">=</span> <span class="n">month</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
+        <span class="n">monthnum</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">monthnams</span><span class="p">[</span><span class="n">monthnums</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_Tbase.csv&#39;</span>
+    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;Tbase.txt&#39;</span>
 
     <span class="c1"># read in the table</span>
-    <span class="n">yeardum</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">daydum</span><span class="p">,</span> <span class="n">Tbase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">vals</span> <span class="o">=</span> <span class="n">read_binary_weather</span><span class="p">(</span><span class="n">pathhere</span><span class="p">)</span>
 
-    <span class="c1"># retrieve the requested temperature value</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
-        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Tbase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
-        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">Tbase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
-        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tbase</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
-        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">Tbase</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">yeardum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daydum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!&#39;</span><span class="p">)</span>
-        <span class="n">T</span> <span class="o">=</span> <span class="n">Tbase</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
-        <span class="n">T</span> <span class="o">=</span> <span class="n">Tbase</span>
+    <span class="c1"># remove false Feb 29 entries</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="s1">&#39;Feb&#39;</span><span class="p">):</span>
+        <span class="n">indlist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">indlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="n">years</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">months</span> <span class="o">=</span> <span class="n">months</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">days</span> <span class="o">=</span> <span class="n">days</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+
+    <span class="c1"># retrieve the requested temperature value(s)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="p">((</span><span class="n">years</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">days</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date.&#39;</span><span class="p">)</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="mf">15.87</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="mf">84.13</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="n">vals</span>
 
     <span class="k">return</span> <span class="n">T</span></div>
 
-
-<div class="viewcode-block" id="PWV"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.PWV">[docs]</a><span class="k">def</span> <span class="nf">PWV</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="PWV"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.PWV">[docs]</a><span class="k">def</span> <span class="nf">PWV</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the precipitable water vapor (PWV) information for a specified site.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      site (str): The name of the site</span>
 <span class="sd">      form (str): The form of value to report; can be &#39;mean&#39;, &#39;median&#39;, &#39;good&#39;, &#39;bad&#39;, exact&#39;, or &#39;all&#39;</span>
-<span class="sd">      month (str): The month for which to report weather</span>
-<span class="sd">      day (int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
-<span class="sd">      year (int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      month (str or int): The month for which to report weather</span>
+<span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">      (float): The requested PWV value, in mm; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
+<span class="sd">      (float): The requested PWV value(s), in mm; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># extract month number</span>
@@ -336,54 +578,66 @@
     <span class="k">if</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnams</span><span class="p">:</span>
         <span class="n">monthnum</span> <span class="o">=</span> <span class="n">monthnums</span><span class="p">[</span><span class="n">monthnams</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">month</span>
-    <span class="k">elif</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
-        <span class="n">monthnum</span> <span class="o">=</span> <span class="n">month</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
+        <span class="n">monthnum</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">monthnams</span><span class="p">[</span><span class="n">monthnums</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_PWV.csv&#39;</span>
+    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;PWV.txt&#39;</span>
 
     <span class="c1"># read in the table</span>
-    <span class="n">yeardum</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">daydum</span><span class="p">,</span> <span class="n">PWVhere</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">vals</span> <span class="o">=</span> <span class="n">read_binary_weather</span><span class="p">(</span><span class="n">pathhere</span><span class="p">)</span>
 
-    <span class="c1"># retrieve the requested temperature value</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
-        <span class="n">pwv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">PWVhere</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
-        <span class="n">pwv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">PWVhere</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
-        <span class="n">pwv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">PWVhere</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
-        <span class="n">pwv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">PWVhere</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">yeardum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daydum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!&#39;</span><span class="p">)</span>
-        <span class="n">pwv</span> <span class="o">=</span> <span class="n">PWVhere</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
-        <span class="n">pwv</span> <span class="o">=</span> <span class="n">PWVhere</span>
+    <span class="c1"># remove false Feb 29 entries</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="s1">&#39;Feb&#39;</span><span class="p">):</span>
+        <span class="n">indlist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">indlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="n">years</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">months</span> <span class="o">=</span> <span class="n">months</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">days</span> <span class="o">=</span> <span class="n">days</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+
+    <span class="c1"># retrieve the requested temperature value(s)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="p">((</span><span class="n">years</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">days</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date.&#39;</span><span class="p">)</span>
+        <span class="n">pwv</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+            <span class="n">pwv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
+            <span class="n">pwv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
+            <span class="n">pwv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="mf">15.87</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
+            <span class="n">pwv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="mf">84.13</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
+            <span class="n">pwv</span> <span class="o">=</span> <span class="n">vals</span>
 
     <span class="k">return</span> <span class="n">pwv</span></div>
 
-
-<div class="viewcode-block" id="windspeed"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.windspeed">[docs]</a><span class="k">def</span> <span class="nf">windspeed</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="windspeed"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.windspeed">[docs]</a><span class="k">def</span> <span class="nf">windspeed</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Retrieve the surface wind speed information for a specified site.</span>
+<span class="sd">    Retrieve the windspeed information for a specified site.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">      site (str): The name of the site</span>
 <span class="sd">      form (str): The form of value to report; can be &#39;mean&#39;, &#39;median&#39;, &#39;good&#39;, &#39;bad&#39;, exact&#39;, or &#39;all&#39;</span>
-<span class="sd">      month (str): The month for which to report weather</span>
-<span class="sd">      day (int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
-<span class="sd">      year (int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      month (str or int): The month for which to report weather</span>
+<span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">      (float): The requested wind speed value, in m/s; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
+<span class="sd">      (float): The requested windspeed value(s), in m/s; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c1"># extract month number</span>
@@ -392,95 +646,52 @@
     <span class="k">if</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnams</span><span class="p">:</span>
         <span class="n">monthnum</span> <span class="o">=</span> <span class="n">monthnums</span><span class="p">[</span><span class="n">monthnams</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">month</span>
-    <span class="k">elif</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
-        <span class="n">monthnum</span> <span class="o">=</span> <span class="n">month</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
+        <span class="n">monthnum</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">monthnam</span> <span class="o">=</span> <span class="n">monthnams</span><span class="p">[</span><span class="n">monthnums</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_wind_speed.csv&#39;</span>
+    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;windspeed.txt&#39;</span>
 
     <span class="c1"># read in the table</span>
-    <span class="n">yeardum</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">daydum</span><span class="p">,</span> <span class="n">WSbase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">years</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">days</span><span class="p">,</span> <span class="n">vals</span> <span class="o">=</span> <span class="n">read_binary_weather</span><span class="p">(</span><span class="n">pathhere</span><span class="p">)</span>
 
-    <span class="c1"># retrieve the requested temperature value</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
-        <span class="n">WS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">WSbase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
-        <span class="n">WS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">WSbase</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
-        <span class="n">WS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">WSbase</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
-        <span class="n">WS</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">WSbase</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">yeardum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daydum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!&#39;</span><span class="p">)</span>
-        <span class="n">WS</span> <span class="o">=</span> <span class="n">WSbase</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
-        <span class="n">WS</span> <span class="o">=</span> <span class="n">WSbase</span>
+    <span class="c1"># remove false Feb 29 entries</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">month</span> <span class="o">==</span> <span class="s1">&#39;Feb&#39;</span><span class="p">):</span>
+        <span class="n">indlist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">days</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">days</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">indlist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="n">years</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">months</span> <span class="o">=</span> <span class="n">months</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">days</span> <span class="o">=</span> <span class="n">days</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">indlist</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="n">WS</span></div>
+    <span class="c1"># retrieve the requested temperature value(s)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="p">((</span><span class="n">years</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">days</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date.&#39;</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="n">vals</span><span class="p">[</span><span class="n">ind</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 
-
-<div class="viewcode-block" id="relative_humidity"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.relative_humidity">[docs]</a><span class="k">def</span> <span class="nf">relative_humidity</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Retrieve the relative humidity information for a specified site.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">      site (str): The name of the site</span>
-<span class="sd">      form (str): The form of value to report; can be &#39;mean&#39;, &#39;median&#39;, &#39;good&#39;, &#39;bad&#39;, exact&#39;, or &#39;all&#39;</span>
-<span class="sd">      month (str): The month for which to report weather</span>
-<span class="sd">      day (int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
-<span class="sd">      year (int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">      (float): The requested relative humidity value; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># extract month number</span>
-    <span class="n">monthnums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;01&#39;</span><span class="p">,</span><span class="s1">&#39;02&#39;</span><span class="p">,</span><span class="s1">&#39;03&#39;</span><span class="p">,</span><span class="s1">&#39;04&#39;</span><span class="p">,</span><span class="s1">&#39;05&#39;</span><span class="p">,</span><span class="s1">&#39;06&#39;</span><span class="p">,</span><span class="s1">&#39;07&#39;</span><span class="p">,</span><span class="s1">&#39;08&#39;</span><span class="p">,</span><span class="s1">&#39;09&#39;</span><span class="p">,</span><span class="s1">&#39;10&#39;</span><span class="p">,</span><span class="s1">&#39;11&#39;</span><span class="p">,</span><span class="s1">&#39;12&#39;</span><span class="p">])</span>
-    <span class="n">monthnams</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s1">&#39;Jan&#39;</span><span class="p">,</span><span class="s1">&#39;Feb&#39;</span><span class="p">,</span><span class="s1">&#39;Mar&#39;</span><span class="p">,</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span><span class="s1">&#39;May&#39;</span><span class="p">,</span><span class="s1">&#39;Jun&#39;</span><span class="p">,</span><span class="s1">&#39;Jul&#39;</span><span class="p">,</span><span class="s1">&#39;Aug&#39;</span><span class="p">,</span><span class="s1">&#39;Sep&#39;</span><span class="p">,</span><span class="s1">&#39;Oct&#39;</span><span class="p">,</span><span class="s1">&#39;Nov&#39;</span><span class="p">,</span><span class="s1">&#39;Dec&#39;</span><span class="p">])</span>
-    <span class="k">if</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnams</span><span class="p">:</span>
-        <span class="n">monthnum</span> <span class="o">=</span> <span class="n">monthnums</span><span class="p">[</span><span class="n">monthnams</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">monthnam</span> <span class="o">=</span> <span class="n">month</span>
-    <span class="k">elif</span> <span class="n">month</span> <span class="ow">in</span> <span class="n">monthnums</span><span class="p">:</span>
-        <span class="n">monthnum</span> <span class="o">=</span> <span class="n">month</span>
-        <span class="n">monthnam</span> <span class="o">=</span> <span class="n">monthnams</span><span class="p">[</span><span class="n">monthnums</span> <span class="o">==</span> <span class="n">month</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="mf">15.87</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="mf">84.13</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
+            <span class="n">ws</span> <span class="o">=</span> <span class="n">vals</span>
 
-    <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-    <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-    <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
-    <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;mean_RH.csv&#39;</span>
-
-    <span class="c1"># read in the table</span>
-    <span class="n">yeardum</span><span class="p">,</span> <span class="n">monthdum</span><span class="p">,</span> <span class="n">daydum</span><span class="p">,</span> <span class="n">RH</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">pathhere</span><span class="p">,</span><span class="n">skiprows</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">unpack</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
-
-    <span class="c1"># retrieve the requested temperature value</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">):</span>
-        <span class="n">rh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">RH</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;median&#39;</span><span class="p">):</span>
-        <span class="n">rh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">RH</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;good&#39;</span><span class="p">):</span>
-        <span class="n">rh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">RH</span><span class="p">,</span><span class="mf">15.87</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;bad&#39;</span><span class="p">):</span>
-        <span class="n">rh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">RH</span><span class="p">,</span><span class="mf">84.13</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;exact&#39;</span><span class="p">):</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="p">((</span><span class="n">yeardum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">year</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">daydum</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">day</span><span class="p">)))</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;No weather on file for the selected date!&#39;</span><span class="p">)</span>
-        <span class="n">rh</span> <span class="o">=</span> <span class="n">RH</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">form</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
-        <span class="n">rh</span> <span class="o">=</span> <span class="n">RH</span>
-
-    <span class="k">return</span> <span class="n">rh</span></div>
+    <span class="k">return</span> <span class="n">ws</span></div>
 </pre></div>
 
            </div>
