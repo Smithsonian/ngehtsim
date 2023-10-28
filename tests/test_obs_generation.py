@@ -55,26 +55,15 @@ def test_MJD():
     assert og.determine_mjd('8', 'Feb', '2025') == trueval
 
 #######################################################
-# test array dish override
-
-
-def test_diameter_override():
-    sitelist = ['ALMA', 'APEX', 'JCMT', 'LMT', 'SMT']
-    D_new = 10.0
-    D_override_dict = {'APEX': 100.0}
-    array, arr = og.make_array(sitelist, D_new, D_override_dict=D_override_dict)
-    assert array.stations()[1].diameter() == D_override_dict['APEX']
-
-#######################################################
 # test eta_dish
 
 
 def test_eta_dish():
     freq = 230.0e9
-    sigma = 60.0e-6
-    offset = 60.0e-6
+    sigma = 60.0
+    offset = 60.0
     ap_eff = 1.0
-    trueval = ap_eff*np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/(const.c/freq))**2)
+    trueval = ap_eff*np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/((const.c*(1.0e6))/freq))**2)
     assert og.eta_dish(freq, sigma, offset, ap_eff) == trueval
 
 # #######################################################

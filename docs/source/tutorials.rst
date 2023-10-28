@@ -134,7 +134,7 @@ Though ngehtsim contains information about the diameter of each dish in the EHT 
                       'LMT': 32.5,
                       'SMA': 14.7}
 
-Another relevant factor is that not all stations have the same backend equipment.  The default receiver setup assumed within ngehtsim is a "sideband separated" receiver, but there during the 2017 EHT campaign the JCMT, LMT, and SMA sites all used "double sideband" receiver setups.  This means that they were operating with twice the system temperature as they would otherwise have done, which impacts their sensitivities.  To override the default sideband setup within ngehtsim, we can specify another dictionary that gets passed to the ``obs_generator`` object::
+Another relevant factor is that not all stations have the same backend equipment.  The default receiver setup assumed within ngehtsim is a "sideband separated" receiver, but during the 2017 EHT campaign the JCMT, LMT, and SMA sites all used "double sideband" receiver setups.  This means that they were operating with twice the system temperature as they would otherwise have done, which impacts their sensitivities.  To override the default sideband setup within ngehtsim, we can specify another dictionary that gets passed to the ``obs_generator`` object::
 
    sideband_ratio_override_dict = {'IRAM': {'230': 2.663},
                                    'JCMT': {'230': 1.25},

@@ -1,0 +1,11 @@
+﻿Name,Lo_freq,Hi_freq,Receiver_temperature,Sideband_ratio
+Band1,35,50,25,0.1
+Band2,67,116,30,0.1
+Band3,84,116,40,0.03
+Band4,125,163,40,0.1
+Band5,163,211,55,0.1
+Band6,211,275,50,0.03
+Band7,275,373,75,0.03
+Band8,385,500,150,0.1
+Band9,602,720,100,1
+Band10,787,950,100,1

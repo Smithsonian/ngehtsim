@@ -15,7 +15,10 @@ ff = fp.FF_symmetric_gaussian()
 # generate an observation
 
 # initialize the observation generator
-settings = {'weather': 'typical'}
+settings = {'source': 'M87',
+            'array': 'EHT2017',
+            'frequency': 230.0,
+            'weather': 'typical'}
 obsgen = og.obs_generator(settings)
 
 # generate the observation by passing the FisherForecast object and parameters
@@ -57,11 +60,6 @@ print('PSS metric value (in Jy) is: ',pss)
 for weighting in ['natural','uniform','robust']:
     ar = cm.calc_ar(obs,artype='mean',weighting=weighting)
     print('Average beam size (in uas) with ' + weighting + ' weighting is: ',ar)
-
-# compute array cost metric
-total_cost, operating_cost = cm.calc_cost(obs)
-print('Total cost to build this array is: $%.2fM' % (total_cost/(1.0e6)))
-print('Annual operating cost of this array is: $%.2fM' % (operating_cost/(1.0e6)))
 
 #######################################################
 # plot a metric versus time for the observation

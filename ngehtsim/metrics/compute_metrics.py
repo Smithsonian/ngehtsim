@@ -3,7 +3,6 @@
 
 import numpy as np
 import ehtim as eh
-import ngehtutil as ng
 
 import ngehtsim.metrics.fill_fracs as ff
 import ngehtsim.metrics.bfill_fracs as bff
@@ -464,43 +463,3 @@ def calc_ar_continuous(obs, artype='mean', weighting='natural', robust=0.0, star
     ars = ars[index]
 
     return t, ars
-
-###################################################
-# other metrics
-
-
-def calc_cost(obs, observations_per_year=1, days_per_observation=1, hours_per_observation=24):
-    """
-    Calculate the cost of an array.
-
-    Args:
-      obs (ehtim.obsdata.Obsdata): eht-imaging Obsdata object
-      observations_per_year (int): number of observating runs to be carried out per year
-      days_per_observation (int): number of days per observing run
-      hours_per_observation (float): number of hours in a single observation
-
-    Returns:
-      (float), (float): the total capital and annual operating costs of the array, in dollars
-
-    """
-
-    # deal with empty observation
-    if (len(obs.data) == 0):
-        return 0.0
-
-    # set configuration
-    config = ng.cost.CostConfig(observations_per_year=observations_per_year,
-                                days_per_observation=days_per_observation,
-                                hours_per_observation=hours_per_observation)
-
-    # make list of stations
-    stations = list()
-    for t in obs.tarr['site']:
-        stations.append(ng.Station.from_name(t))
-
-    # populate array object
-    arr = ng.Array('ngEHT', stations)
-
-    costs = ng.cost.calculate_costs(config, arr.stations())
-
-    return costs[0]['TOTAL CAPEX'], costs[0]['ANNUAL OPEX']
