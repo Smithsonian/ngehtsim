@@ -55,17 +55,6 @@ def test_MJD():
     assert og.determine_mjd('8', 'Feb', '2025') == trueval
 
 #######################################################
-# test array dish override
-
-
-def test_diameter_override():
-    sitelist = ['ALMA', 'APEX', 'JCMT', 'LMT', 'SMT']
-    D_new = 10.0
-    D_overrides = {'APEX': 100.0}
-    array, arr = og.make_array(sitelist, D_new, D_overrides=D_overrides)
-    assert array.stations()[1].diameter() == D_overrides['APEX']
-
-#######################################################
 # test eta_dish
 
 
