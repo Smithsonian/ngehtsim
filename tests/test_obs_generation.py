@@ -63,7 +63,7 @@ def test_eta_dish():
     sigma = 60.0
     offset = 60.0
     ap_eff = 1.0
-    trueval = ap_eff*np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/(const.c/freq))**2)
+    trueval = ap_eff*np.exp(-((4*np.pi*np.sqrt((sigma)**2+(offset)**2))/((const.c*(1.0e6))/freq))**2)
     assert og.eta_dish(freq, sigma, offset, ap_eff) == trueval
 
 # #######################################################
