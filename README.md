@@ -4,7 +4,7 @@
 [![Build status](https://github.com/Smithsonian/ngehtsim/actions/workflows/run_unit_tests.yml/badge.svg)](https://github.com/Smithsonian/ngehtsim/actions)
 [![Python versions](https://img.shields.io/badge/python-3.8|3.9|3.10-blue.svg)](https://github.com/Smithsonian/ngehtsim)
 
-A set of tools for generating synthetic data for the next-generation Event Horizon Telescope ([ngEHT](https://www.ngeht.org)).
+A set of tools for generating synthetic data for the Event Horizon Telescope ([EHT](https://eventhorizontelescope.org/)), the next-generation Event Horizon Telescope ([ngEHT](https://www.ngeht.org)), and other very long baseline interferometric arrays of radio telescopes.
 
 # Documentation
 
