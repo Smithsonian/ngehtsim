@@ -378,6 +378,7 @@ class obs_generator(object):
         # initialize dictionaries
         tau_dict = defaultdict(dict)
         Tatm_dict = defaultdict(dict)
+        Tgnd_dict = defaultdict(dict)
         Tb_dict = defaultdict(dict)
         windspeed_dict = defaultdict(dict)
 
@@ -422,8 +423,9 @@ class obs_generator(object):
                 tau_here = nw.opacity(site,form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year, freq=self.freq/(1.0e9))
                 Tb_here = nw.brightness_temperature(site,form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year, freq=self.freq/(1.0e9))
                 ws_here = nw.windspeed(site,form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year)
+                Tgnd_here = nw.temperature(site,form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year)
 
-                # divide out the opacity term to get the actual atmospheric temperature
+                # divide out the opacity term to get the effective atmospheric temperature
                 Tatm_here = (Tb_here - (const.T_CMB*np.exp(-tau_here))) / (1.0 - np.exp(-tau_here))
 
                 # store the info in the dictionaries
@@ -431,6 +433,7 @@ class obs_generator(object):
                 Tatm_dict[site] = Tatm_here
                 Tb_dict[site] = Tb_here
                 windspeed_dict[site] = ws_here
+                Tgnd_dict[site] = Tgnd_here
 
             else:
 
@@ -441,12 +444,14 @@ class obs_generator(object):
                 Tatm_dict[site] = 0.0
                 Tb_dict[site] = const.T_CMB
                 windspeed_dict[site] = 0.0
+                Tgnd_dict[site] = const.T_CMB
 
         # store the dictionaries
         self.tau_dict = tau_dict
         self.Tatm_dict = Tatm_dict
         self.Tb_dict = Tb_dict
         self.windspeed_dict = windspeed_dict
+        self.Tgnd_dict = Tgnd_dict
 
     # generate dictionaries of telescope properties
     def set_telescope_properties(self):
@@ -496,7 +501,7 @@ class obs_generator(object):
 
     # generate a raw observation
     def observe(self,input_model,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,
-                flagwind=True,el_min=const.el_min,el_max=const.el_max,p=None):
+                flagwind=True,addFR=False,el_min=const.el_min,el_max=const.el_max,p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
@@ -507,6 +512,7 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           flagwind (bool): flag for whether to derate sites with high wind
+          addFR (bool): flag for whether or not to add feed rotations
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
@@ -514,6 +520,10 @@ class obs_generator(object):
         Returns:
           (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation
         """
+
+        # warning for the feed rotations
+        if addFR:
+            print('WARNING: adding feed rotations is currently known to break with multi-frequency data generation, and it is suspect at all times.')
 
         # generate an empty obsdata object
         if ((self.obs_empty is None) or (self.obs_empty.rf != self.freq)):
@@ -597,8 +607,11 @@ class obs_generator(object):
         t2 = obs.data['t2']
         sites_obs = np.unique(np.concatenate((t1,t2)))
         els = obs.unpack(['el1','el2'],ang_unit='rad')
+        pars = obs.unpack(['par_ang1','par_ang2'],ang_unit='rad')
         el1 = els['el1']
         el2 = els['el2']
+        par1 = pars['par_ang1']
+        par2 = pars['par_ang2']
         times = obs.data['time']
         tuniq = np.unique(times)
 
@@ -613,6 +626,12 @@ class obs_generator(object):
         SEFD2 = np.zeros_like(el2)
         bw1 = np.zeros_like(el1)
         bw2 = np.zeros_like(el2)
+        f_el1 = np.zeros_like(el1)
+        f_el2 = np.zeros_like(el2)
+        f_par1 = np.zeros_like(el1)
+        f_par2 = np.zeros_like(el2)
+        phi_off1 = np.zeros_like(el1)
+        phi_off2 = np.zeros_like(el2)
 
         if addgains:
             gainamp1R = np.zeros_like(el1)
@@ -628,9 +647,10 @@ class obs_generator(object):
         flagsites = list()
         for isite, site in enumerate(sites_obs):
 
-            # zenith opacity, atmospheric temperature, and windspeed
+            # zenith opacity, atmospheric temperature, ground temperature, and windspeed
             tau_z = self.tau_dict[site]
             Tatm = self.Tatm_dict[site]
+            Tgnd = self.Tgnd_dict[site]
             ws = self.windspeed_dict[site]
 
             # if the windspeed exceeds the shutdown threshold, mark the site as to be flagged
@@ -672,8 +692,8 @@ class obs_generator(object):
                 sideband_ratio = self.receivers[site][band]['SSR']
 
             # determine system temperatures
-            Tsys1[ind1] = (T_R + Tb1[ind1])*(1.0 + sideband_ratio)
-            Tsys2[ind2] = (T_R + Tb2[ind2])*(1.0 + sideband_ratio)
+            Tsys1[ind1] = (T_R + (const.eta_ff*Tb1[ind1]) + ((1.0 - const.eta_ff)*Tgnd))*(1.0 + sideband_ratio)
+            Tsys2[ind2] = (T_R + (const.eta_ff*Tb2[ind2]) + ((1.0 - const.eta_ff)*Tgnd))*(1.0 + sideband_ratio)
 
             # determine SEFDs
             SEFD1[ind1] = (2.0*const.k*Tsys1[ind1])/((np.pi/4.0)*self.eta_dict[site]*(self.D_dict[site])**2)
@@ -691,6 +711,22 @@ class obs_generator(object):
                 valhere = obs.bw
             bw1[ind1] = valhere
             bw2[ind2] = valhere
+
+            # determine various angles relevant for feed rotations
+            if site in list(const.known_mount_types.keys()):
+                mttyp = const.known_mount_types[site]
+            else:
+                mttyp = const.mount_type
+            if site in list(const.known_feed_angles.keys()):
+                fdang = const.known_feed_angles[site]
+            else:
+                fdang = const.feed_angle
+            f_el1[ind1] = const.mount_type_dict[mttyp]['f_el']
+            f_el2[ind2] = const.mount_type_dict[mttyp]['f_el']
+            f_par1[ind1] = const.mount_type_dict[mttyp]['f_par']
+            f_par2[ind2] = const.mount_type_dict[mttyp]['f_par']
+            phi_off1[ind1] = fdang
+            phi_off2[ind2] = fdang
 
             # generate gains
             if addgains:
@@ -718,6 +754,18 @@ class obs_generator(object):
         ind2 = (bw2 <= bw1)
         bw[ind1] = bw1[ind1]
         bw[ind2] = bw2[ind2]
+
+        # store and apply feed rotations
+        if addFR:
+            fa_1 = (f_par1*par1) + (f_el1*el1) + ((np.pi/180.0)*phi_off1)
+            fa_2 = (f_par2*par2) + (f_el2*el2) + ((np.pi/180.0)*phi_off2)
+            if self.weight > 0:
+                self.fa_1 = fa_1
+                self.fa_2 = fa_2
+            obs.data['rrvis'] *= np.exp(-(1.0j)*fa_1)*np.exp((1.0j)*fa_2)
+            obs.data['rlvis'] *= np.exp(-(1.0j)*fa_1)*np.exp(-(1.0j)*fa_2)
+            obs.data['lrvis'] *= np.exp((1.0j)*fa_1)*np.exp((1.0j)*fa_2)
+            obs.data['llvis'] *= np.exp((1.0j)*fa_1)*np.exp(-(1.0j)*fa_2)
 
         # store and apply gains
         if addgains:
@@ -812,7 +860,7 @@ class obs_generator(object):
 
     # generate observation
     def make_obs(self,input_model=None,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,
-                 el_min=const.el_min,el_max=const.el_max,flagwind=True,p=None):
+                 addFR=False,el_min=const.el_min,el_max=const.el_max,flagwind=True,p=None):
         """
         Generate an observation that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
@@ -824,6 +872,7 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           flagwind (bool): flag for whether to derate sites with high wind
+          addFR (bool): flag for whether or not to add feed rotations
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
@@ -845,7 +894,7 @@ class obs_generator(object):
                     print('No input model passed to make_obs; using the model provided in the settings.')
 
         # generate raw observation
-        obs = self.observe(input_model,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,flagwind=flagwind,el_min=el_min,el_max=el_max,p=p)
+        obs = self.observe(input_model,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,flagwind=flagwind,addFR=addFR,el_min=el_min,el_max=el_max,p=p)
 
         # apply naive SNR thresholding
         if (snr_algo.lower() == 'naive'):
@@ -869,7 +918,7 @@ class obs_generator(object):
             freq_ref = snr_args[2]
             model_path_ref = snr_args[3]
 
-            mask = FPT(self,obs,snr_ref,tint_ref,freq_ref,model_path_ref,ephem=self.ephem,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,flagwind=flagwind,el_min=el_min,el_max=el_max,p=p)
+            mask = FPT(self,obs,snr_ref,tint_ref,freq_ref,model_path_ref,ephem=self.ephem,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,flagwind=flagwind,addFR=addFR,el_min=el_min,el_max=el_max,p=p)
 
         # unrecognized SNR thresholding scheme
         else:
@@ -966,7 +1015,7 @@ class obs_generator(object):
 
     # generate multifrequency observation, assuming that FPT will be used wherever possible
     def make_obs_mf(self,freqs,input_models,addnoise=True,addgains=True,gainamp=0.04,opacitycal=True,
-                    el_min=const.el_min,el_max=const.el_max,flagwind=True,p=None):
+                    addFR=False,el_min=const.el_min,el_max=const.el_max,flagwind=True,p=None):
         """
         Generate a multi-frequency observation
         
@@ -977,6 +1026,7 @@ class obs_generator(object):
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
+          addFR (bool): flag for whether or not to add feed rotations
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
           flagwind (bool): flag for whether to derate sites with high wind
@@ -1072,7 +1122,7 @@ class obs_generator(object):
                     obsgen_here.im = model_target
 
                 # generate observation at target frequency
-                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,el_min=el_min,el_max=el_max,flagwind=flagwind,p=p_target)
+                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im,addnoise=addnoise,addgains=addgains,gainamp=gainamp,opacitycal=opacitycal,addFR=addFR,el_min=el_min,el_max=el_max,flagwind=flagwind,p=p_target)
 
                 # add any new detections to the running datatable
                 if count == 0:
@@ -1205,51 +1255,54 @@ def determine_mjd(day,month,year):
 
     if (month == 'Jan'):
         if int(day) > 31:
-            raise Exception('January has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('January has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-01-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Feb'):
         if int(day) > 28:
-            raise Exception('February has fewer than ' + str(day).zfill(2) + 'days!')
+            try:
+                t = Time(str(year)+'-02-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
+            except:
+                raise Exception('February has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-02-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Mar'):
         if int(day) > 31:
-            raise Exception('March has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('March has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-03-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Apr'):
         if int(day) > 30:
-            raise Exception('April has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('April has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-04-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'May'):
         if int(day) > 31:
-            raise Exception('May has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('May has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-05-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Jun'):
         if int(day) > 30:
-            raise Exception('June has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('June has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-06-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Jul'):
         if int(day) > 31:
-            raise Exception('July has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('July has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-07-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Aug'):
         if int(day) > 31:
-            raise Exception('August has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('August has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-08-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Sep'):
         if int(day) > 30:
-            raise Exception('September has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('September has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-09-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Oct'):
         if int(day) > 31:
-            raise Exception('October has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('October has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-10-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Nov'):
         if int(day) > 30:
-            raise Exception('November has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('November has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-11-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     elif (month == 'Dec'):
         if int(day) > 31:
-            raise Exception('December has fewer than ' + str(day).zfill(2) + 'days!')
+            raise Exception('December has fewer than ' + str(day).zfill(2) + ' days!')
         t = Time(str(year)+'-12-'+str(day).zfill(2)+'T00:00:00', format='isot', scale='utc')
     else:
         raise Exception('This month abbreviation is not recognized; should be one of: Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec')
@@ -1534,7 +1587,8 @@ def fringegroups(obsgen,obs,snr_ref,tint_ref):
     count = 0
 
     # create blank dummy obsdata objects
-    obs_here = obs.copy()
+    obs = obs.switch_polrep(polrep_out='circ')
+    obs_here = copy.deepcopy(obs)
     obs_here.data = None
     obs_search = obs_here.copy()
 
@@ -1548,7 +1602,9 @@ def fringegroups(obsgen,obs,snr_ref,tint_ref):
         snr_scaled = snr_ref*np.sqrt(obs_here.data['tint'] / tint_ref)
 
         # determine which baselines are "strong"
-        index = (np.abs(obs_here.data['vis'])/obs_here.data['sigma']) >= snr_scaled
+        pseudo_I_amp = 0.5*(np.abs(obs_here.data['rrvis']) + np.abs(obs_here.data['llvis']))
+        pseudo_I_sig = obs_here.data['rrsigma'] / np.sqrt(2.0)
+        index = (pseudo_I_amp/pseudo_I_sig) >= snr_scaled
 
         # determine which sites are available to observe at this frequency
         t1_available = np.isin(obs_here.data['t1'], available_sites)

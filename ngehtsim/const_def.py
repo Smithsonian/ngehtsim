@@ -61,6 +61,9 @@ ap_eff = 0.7
 # quantization efficiency
 quant_eff = 0.88
 
+# antenna forward efficiency
+eta_ff = 0.95
+
 # default surface RMS, in microns
 surf_rms = 40.0
 
@@ -421,6 +424,14 @@ for i in range(len(known_stations)):
 number_of_components = 40
 length_of_spectrum = 2001
 spectrum_frequency = np.linspace(0.0,2000.0,length_of_spectrum)
+
+# mount type to angle conversion
+mount_type_dict = {'ALT-AZ': {'f_el': 0.0,
+                              'f_par': 1.0},
+                   'ALT-AZ+NASMYTH-R': {'f_el': 1.0,
+                                        'f_par': 1.0},
+                   'ALT-AZ+NASMYTH-L': {'f_el': -1.0,
+                                        'f_par': 1.0}}
 
 SYMBA_master_input_arguments = OrderedDict({'rpicard_path': '/usr/local/src/picard/input_template',
                                             'meqsilhouette_path': '/usr/local/src/MeqSilhouette/meqsilhouette/data',
