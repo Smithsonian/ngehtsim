@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Introduction &mdash; ngehtsim 0+untagged.158.g72a8345 documentation</title>
+  <title>Introduction &mdash; ngehtsim 0+untagged.160.g4971f51 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                0+untagged.158.g72a8345
+                0+untagged.160.g4971f51
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -87,7 +87,7 @@
 <span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>When called with no arguments, this function will return an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object with the default settings, which are stored in <code class="docutils literal notranslate"><span class="pre">obsgen.settings</span></code>.  To specify non-default settings during initializion, a user can either provide path to a YAML file or else pass a dictionary to the initialization function.  For instance, to specify the right ascension and declination of a target source while also aiming to observe with only a small array consisting of the ALMA, LMT, and SMT telescopes, we could pass a settings dictionary:</p>
+<p>When called with no arguments, this function will return an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object with the default settings, which are stored in <code class="docutils literal notranslate"><span class="pre">obsgen.settings</span></code>.  To specify non-default settings during initialization, a user can either provide path to a YAML file or else pass a dictionary to the initialization function.  For instance, to specify the right ascension and declination of a target source while also aiming to observe with only a small array consisting of the ALMA, LMT, and SMT telescopes, we could pass a settings dictionary:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;RA&#39;</span><span class="p">:</span> <span class="mf">12.5137</span><span class="p">,</span>
             <span class="s1">&#39;DEC&#39;</span><span class="p">:</span> <span class="mf">12.3911</span><span class="p">,</span>
             <span class="s1">&#39;sites&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;ALMA&#39;</span><span class="p">,</span> <span class="s1">&#39;LMT&#39;</span><span class="p">,</span> <span class="s1">&#39;SMT&#39;</span><span class="p">]}</span>
@@ -124,7 +124,7 @@
 <span class="n">tau</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">opacity</span><span class="p">(</span><span class="s1">&#39;LMT&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">230.0</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2017</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The ngehtsim library also contains similar functions for accessing the atmospheric pressure, temperature, level of precipitable water vaport (PWV), and ground windspeed at each site.</p>
+<p>The ngehtsim library also contains similar functions for accessing the atmospheric pressure, temperature, level of precipitable water vapor (PWV), and ground windspeed at each site.</p>
 </section>
 <section id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this heading"></a></h2>

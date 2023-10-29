@@ -2,7 +2,7 @@
 Welcome to ngehtsim's documentation!
 ====================================
 
-ngehtsim is a set of Python_ tools for generating synthetic data appropriate for Very Long Baseline Interferometry (VLBI) facilities operating at (sub)millimeter wavelengths, such as the Event Horizon Telescope (EHT_) and the next-generation Event Horizon Telescope (ngEHT_).  ngehtsim builds on synthetic data generation capabilities contained in the ehtim_ library, primarily by adding utilies for incorporating local weather effects, telescope properties, and fringe-finding proxies to the data generation procedure.
+ngehtsim is a set of Python_ tools for generating synthetic data appropriate for Very Long Baseline Interferometry (VLBI) facilities operating at (sub)millimeter wavelengths, such as the Event Horizon Telescope (EHT_) and the next-generation Event Horizon Telescope (ngEHT_).  ngehtsim builds on synthetic data generation capabilities contained in the ehtim_ library, primarily by adding utilities for incorporating local weather effects, telescope properties, and fringe-finding proxies to the data generation procedure.
 
 .. _Python: https://www.python.org/
 .. _EHT: https://eventhorizontelescope.org/
