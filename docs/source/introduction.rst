@@ -12,7 +12,7 @@ The primary functionality provided by the ngehtsim package is synthetic data gen
    import ngehtsim.obs.obs_generator as og
    obsgen = og.obs_generator()
 
-When called with no arguments, this function will return an ``obs_generator`` object with the default settings, which are stored in ``obsgen.settings``.  To specify non-default settings during initializion, a user can either provide path to a YAML file or else pass a dictionary to the initialization function.  For instance, to specify the right ascension and declination of a target source while also aiming to observe with only a small array consisting of the ALMA, LMT, and SMT telescopes, we could pass a settings dictionary::
+When called with no arguments, this function will return an ``obs_generator`` object with the default settings, which are stored in ``obsgen.settings``.  To specify non-default settings during initialization, a user can either provide path to a YAML file or else pass a dictionary to the initialization function.  For instance, to specify the right ascension and declination of a target source while also aiming to observe with only a small array consisting of the ALMA, LMT, and SMT telescopes, we could pass a settings dictionary::
 
    settings = {'RA': 12.5137,
                'DEC': 12.3911,
@@ -52,7 +52,7 @@ We can access the available weather information for an individual site using the
    import ngehtsim.weather.weather as nw
    tau = nw.opacity('LMT', freq=230.0, day=10, month='Apr', year=2017)
 
-The ngehtsim library also contains similar functions for accessing the atmospheric pressure, temperature, level of precipitable water vaport (PWV), and ground windspeed at each site.
+The ngehtsim library also contains similar functions for accessing the atmospheric pressure, temperature, level of precipitable water vapor (PWV), and ground windspeed at each site.
 
 References
 ========================

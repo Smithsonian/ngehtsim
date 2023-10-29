@@ -95,6 +95,11 @@ class obs_generator(object):
             if self.settings['array'] is not None:
                 self.array = self.settings['array']
 
+        # if sites are specified, ignore the array
+        if (self.settings['sites'] is not None):
+            if len(self.settings['sites']) > 0:
+                self.array = None
+
         # check that any custom receivers have all of the necessary settings
         if len(self.custom_receivers.keys()) > 0:
             for rec in list(self.custom_receivers.keys()):
