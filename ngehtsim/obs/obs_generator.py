@@ -988,7 +988,7 @@ class obs_generator(object):
         sites_to_remove = get_unready_sites(obs.tarr['site'], self.settings['tech_readiness'], rng=self.rng)
         if len(sites_to_remove) > 0:
             if self.verbosity > 0:
-                print("Dropping {0} due to technical (un)readiness.".format(sites_to_drop))
+                print("Dropping {0} due to technical (un)readiness.".format(sites_to_remove))
             if len(obs.data) > 0:
                 t1_list = obs.unpack('t1')['t1']
                 t2_list = obs.unpack('t2')['t2']
