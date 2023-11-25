@@ -34,7 +34,7 @@ class obs_generator(object):
       verbosity (float): Set to >0 for more verbose output
       weight (float): Set to >0 to store more information in the obs_generator object
       D_overrides (dict): A dictionary of station names and diameters to override defaults
-      surf_rms_overrides (dict): A dictionary of station names and surface RMS values to override defaults
+      surf_rms_overrides (dict): A dictionary of station names and surface RMS values (in microns) to override defaults
       receiver_configuration_overrides (dict): A dictionary of station names and available receivers to override defaults
       bandwidth_overrides (dict): A dictionary of station names and bandwidth values to override defaults
       T_R_overrides (dict): A dictionary of station names and receiver temperature values to override defaults

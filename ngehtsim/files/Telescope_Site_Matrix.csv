@@ -50,6 +50,7 @@ KVNYS,KY,Korea,37.565159,126.941027,92,Korean VLBI Network Yonsei,21,70,ALT-AZ,0
 LAS,LA,Chile,-29.031711,-70.685063,2321,Las Campanas Observatory,,,,,LCO
 LLA,LL,Argentina,-24.192081,-66.474786,4781,Large Latin American Millimeter Array,12,25,ALT-AZ,0,
 LOS,LO,US,35.880473,-106.675016,2000,site of a shuttered gamma-ray observatory,,,,,
+MATJ,MA,South Africa,-33.266,20.582,1340,Matjiesfontein,,,,,
 MET,MT,Finland,60.2178,24.39307,52,Metsähovi Radio Observatory,13.7,100,ALT-AZ,0,
 MOR,MR,Morocco,31.206771,-7.866164,2743,Cadi Ayyad University Space Science and Research Center near Marrakesh,,,,,
 MUZ,MZ,China,38.330119,74.896783,4527,Muztag; developed summit of a minor peak located in Akto County China,,,,,
@@ -66,6 +67,7 @@ SAN,SN,US,34.099287,-116.824632,3502,summit of San Gorgonio mountain,,,,,
 SGO,SG,Chile,-33.346151,-70.269859,3345,Cima Tres Puntas mountain peak,,,,,
 SKS,SK,Greece,35.211771,24.898374,1743,Skinakas Observatory,,,,,
 SPX,SX,Switzerland,46.54759,7.98526,3505,Sphinx Observatory,,,,,
+STL,SL,South Africa,-32.378,20.813,1800,site of the South African Astronomical Observatory in Sutherland,,,,,
 SUF,SF,Uzbekistan,39.62321,68.467537,2437,site of an unfinished Suffa RT-70 Soviet radio dish,,,,,
 TRL,TR,Antarctica,-72.010456,2.536986,1275,site of the Norwegian research station Troll,,,,,
 VLA,VL,US,34.079048,-107.618354,2123,Very Large Array,130,420,ALT-AZ,0,SOC
