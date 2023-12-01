@@ -949,6 +949,11 @@ class obs_generator(object):
             self.Tb2 = self.Tb2[mask]
             self.SEFD1 = self.SEFD1[mask]
             self.SEFD2 = self.SEFD2[mask]
+            if addgains:
+                self.station_gains1R = self.station_gains1R[mask]
+                self.station_gains2R = self.station_gains2R[mask]
+                self.station_gains1L = self.station_gains1L[mask]
+                self.station_gains2L = self.station_gains2L[mask]
 
         # remove sites that can't observe at the requested frequency
         sites_to_remove = list()
@@ -983,6 +988,11 @@ class obs_generator(object):
                     self.Tb2 = self.Tb2[mask]
                     self.SEFD1 = self.SEFD1[mask]
                     self.SEFD2 = self.SEFD2[mask]
+                    if addgains:
+                        self.station_gains1R = self.station_gains1R[mask]
+                        self.station_gains2R = self.station_gains2R[mask]
+                        self.station_gains1L = self.station_gains1L[mask]
+                        self.station_gains2L = self.station_gains2L[mask]
 
         # drop any sites that are randomly deemed to be technically unready
         sites_to_remove = get_unready_sites(obs.tarr['site'], self.settings['tech_readiness'], rng=self.rng)
@@ -1014,6 +1024,11 @@ class obs_generator(object):
                     self.Tb2 = self.Tb2[mask]
                     self.SEFD1 = self.SEFD1[mask]
                     self.SEFD2 = self.SEFD2[mask]
+                    if addgains:
+                        self.station_gains1R = self.station_gains1R[mask]
+                        self.station_gains2R = self.station_gains2R[mask]
+                        self.station_gains1L = self.station_gains1L[mask]
+                        self.station_gains2L = self.station_gains2L[mask]
 
         # return observation object
         return obs
