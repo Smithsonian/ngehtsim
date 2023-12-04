@@ -566,6 +566,7 @@ class obs_generator(object):
                     obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'])
             else:
                 obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'])
+            F0 = np.abs(input_model.sample_uv([[0.0, 0.0]], ttype=self.settings['ttype'])[0][0])
         elif isinstance(input_model, eh.movie.Movie):
             input_model.ra = self.RA
             input_model.dec = self.DEC
@@ -577,6 +578,7 @@ class obs_generator(object):
                     obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'],repeat=True)
             else:
                 obs = input_model.observe_same_nonoise(self.obs_empty,ttype=self.settings['ttype'],fft_pad_factor=self.settings['fft_pad_factor'],repeat=True)
+            F0 = np.mean(input_model.lightcurve)
         elif isinstance(input_model, eh.model.Model):
             input_model.ra = self.RA
             input_model.dec = self.DEC
@@ -588,6 +590,7 @@ class obs_generator(object):
                     obs = input_model.observe_same_nonoise(self.obs_empty)
             else:
                 obs = input_model.observe_same_nonoise(self.obs_empty)
+            F0 = np.abs(input_model.sample_uv(0.0, 0.0))
         elif isinstance(input_model, fp.FisherForecast):
             if p is None:
                 raise Exception('When observing an ngEHTforecast model, the parameter vector keyword argument p must be specified!')
@@ -603,6 +606,12 @@ class obs_generator(object):
                 obs.data['llvis'] = LLvis
                 obs.data['rlvis'] = RLvis
                 obs.data['lrvis'] = LRvis
+            dumobs = self.obs_empty.copy()
+            dumdatatable = dumobs.data[0]
+            dumdatatable['u'] = 0.0
+            dumdatatable['v'] = 0.0
+            dumobs.data = dumdatatable
+            F0 = np.abs(input_model.visibilities(dumobs,p))
 
         # make sure we're in a circular basis
         obs = obs.switch_polrep(polrep_out='circ')
@@ -658,6 +667,9 @@ class obs_generator(object):
             Tgnd = self.Tgnd_dict[site]
             ws = self.windspeed_dict[site]
 
+            # determine effective collecting area
+            Aeff = (np.pi/4.0)*self.eta_dict[site]*((self.D_dict[site])**2)
+
             # if the windspeed exceeds the shutdown threshold, mark the site as to be flagged
             if (ws > const.windspeed_shutdown):
                 if flagwind:
@@ -678,12 +690,14 @@ class obs_generator(object):
                 tau2[ind2] = 0.0
 
             # get Tb contributions at each timestamp
+            Tsource = (F0*Aeff)/(2.0*const.k)
+
             if site != 'space':
-                Tb1[ind1] = (const.T_CMB*np.exp(-tau1[ind1])) + (Tatm*(1.0 - np.exp(-tau1[ind1])))
-                Tb2[ind2] = (const.T_CMB*np.exp(-tau2[ind2])) + (Tatm*(1.0 - np.exp(-tau2[ind2])))
+                Tb1[ind1] = ((const.T_CMB + Tsource)*np.exp(-tau1[ind1])) + (Tatm*(1.0 - np.exp(-tau1[ind1])))
+                Tb2[ind2] = ((const.T_CMB + Tsource)*np.exp(-tau2[ind2])) + (Tatm*(1.0 - np.exp(-tau2[ind2])))
             else:
-                Tb1[ind1] = const.T_CMB
-                Tb2[ind2] = const.T_CMB
+                Tb1[ind1] = const.T_CMB + Tsource
+                Tb2[ind2] = const.T_CMB + Tsource
 
             # if this site does not have an appropriate receiver, temporarily assign it some values
             band = self.bands[site]
@@ -701,8 +715,8 @@ class obs_generator(object):
             Tsys2[ind2] = (T_R + (const.eta_ff*Tb2[ind2]) + ((1.0 - const.eta_ff)*Tgnd))*(1.0 + sideband_ratio)
 
             # determine SEFDs
-            SEFD1[ind1] = (2.0*const.k*Tsys1[ind1])/((np.pi/4.0)*self.eta_dict[site]*(self.D_dict[site])**2)
-            SEFD2[ind2] = (2.0*const.k*Tsys2[ind2])/((np.pi/4.0)*self.eta_dict[site]*(self.D_dict[site])**2)
+            SEFD1[ind1] = (2.0*const.k*Tsys1[ind1])/Aeff
+            SEFD2[ind2] = (2.0*const.k*Tsys2[ind2])/Aeff
 
             # modify SEFDs to account for wind
             SEFD_factor = windspeed_SEFD_modification(ws)
