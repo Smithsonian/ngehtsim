@@ -200,13 +200,13 @@ def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015):
         for i in range(len(coeffs)):
             tauspec_arr[i,:] = reconstruct_spectrum_tau(coeffs[i])
         if (form == 'mean'):
-            tauspec = np.mean(tauspec_arr,axis=0)
+            tauspec = np.nanmean(tauspec_arr,axis=0)
         elif (form == 'median'):
-            tauspec = np.median(tauspec_arr,axis=0)
+            tauspec = np.nanmedian(tauspec_arr,axis=0)
         elif (form == 'good'):
-            tauspec = np.percentile(tauspec_arr,15.87,axis=0)
+            tauspec = np.nanpercentile(tauspec_arr,15.87,axis=0)
         elif (form == 'bad'):
-            tauspec = np.percentile(tauspec_arr,84.13,axis=0)
+            tauspec = np.nanpercentile(tauspec_arr,84.13,axis=0)
         elif (form == 'all'):
             tauspec = tauspec_arr
 
@@ -304,13 +304,13 @@ def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, yea
         for i in range(len(coeffs)):
             Tbspec_arr[i,:] = reconstruct_spectrum_Tb(coeffs[i])
         if (form == 'mean'):
-            Tbspec = np.mean(Tbspec_arr,axis=0)
+            Tbspec = np.nanmean(Tbspec_arr,axis=0)
         elif (form == 'median'):
-            Tbspec = np.median(Tbspec_arr,axis=0)
+            Tbspec = np.nanmedian(Tbspec_arr,axis=0)
         elif (form == 'good'):
-            Tbspec = np.percentile(Tbspec_arr,15.87,axis=0)
+            Tbspec = np.nanpercentile(Tbspec_arr,15.87,axis=0)
         elif (form == 'bad'):
-            Tbspec = np.percentile(Tbspec_arr,84.13,axis=0)
+            Tbspec = np.nanpercentile(Tbspec_arr,84.13,axis=0)
         elif (form == 'all'):
             Tbspec = Tbspec_arr
     
@@ -405,13 +405,13 @@ def pressure(site, form='exact', month='Apr', day=15, year=2015):
 
     else:
         if (form == 'mean'):
-            P = np.mean(vals)
+            P = np.nanmean(vals)
         elif (form == 'median'):
-            P = np.median(vals)
+            P = np.nanmedian(vals)
         elif (form == 'good'):
-            P = np.percentile(vals,15.87,axis=0)
+            P = np.nanpercentile(vals,15.87,axis=0)
         elif (form == 'bad'):
-            P = np.percentile(vals,84.13,axis=0)
+            P = np.nanpercentile(vals,84.13,axis=0)
         elif (form == 'all'):
             P = vals
 
@@ -473,13 +473,13 @@ def temperature(site, form='exact', month='Apr', day=15, year=2015):
 
     else:
         if (form == 'mean'):
-            T = np.mean(vals)
+            T = np.nanmean(vals)
         elif (form == 'median'):
-            T = np.median(vals)
+            T = np.nanmedian(vals)
         elif (form == 'good'):
-            T = np.percentile(vals,15.87,axis=0)
+            T = np.nanpercentile(vals,15.87,axis=0)
         elif (form == 'bad'):
-            T = np.percentile(vals,84.13,axis=0)
+            T = np.nanpercentile(vals,84.13,axis=0)
         elif (form == 'all'):
             T = vals
 
@@ -541,13 +541,13 @@ def PWV(site, form='exact', month='Apr', day=15, year=2015):
 
     else:
         if (form == 'mean'):
-            pwv = np.mean(vals)
+            pwv = np.nanmean(vals)
         elif (form == 'median'):
-            pwv = np.median(vals)
+            pwv = np.nanmedian(vals)
         elif (form == 'good'):
-            pwv = np.percentile(vals,15.87,axis=0)
+            pwv = np.nanpercentile(vals,15.87,axis=0)
         elif (form == 'bad'):
-            pwv = np.percentile(vals,84.13,axis=0)
+            pwv = np.nanpercentile(vals,84.13,axis=0)
         elif (form == 'all'):
             pwv = vals
 
@@ -609,13 +609,13 @@ def windspeed(site, form='exact', month='Apr', day=15, year=2015):
 
     else:
         if (form == 'mean'):
-            ws = np.mean(vals)
+            ws = np.nanmean(vals)
         elif (form == 'median'):
-            ws = np.median(vals)
+            ws = np.nanmedian(vals)
         elif (form == 'good'):
-            ws = np.percentile(vals,15.87,axis=0)
+            ws = np.nanpercentile(vals,15.87,axis=0)
         elif (form == 'bad'):
-            ws = np.percentile(vals,84.13,axis=0)
+            ws = np.nanpercentile(vals,84.13,axis=0)
         elif (form == 'all'):
             ws = vals
 
