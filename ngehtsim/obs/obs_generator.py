@@ -482,7 +482,8 @@ class obs_generator(object):
             if site in list(self.surf_rms_overrides.keys()):
                 rms_here = self.surf_rms_overrides[site]
             if site in list(self.ap_eff_overrides.keys()):
-                ap_eff_here = self.ap_eff_overrides[site][self.bands[site]]
+                if self.bands[site] in list(self.ap_eff_overrides[site].keys()):
+                    ap_eff_here = self.ap_eff_overrides[site][self.bands[site]]
 
             eta_dict[site] = eta_dish(self.freq,rms_here,const.focus_offset,ap_eff_here)
 
