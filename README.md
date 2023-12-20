@@ -6,6 +6,31 @@
 
 A set of tools for generating synthetic data for the Event Horizon Telescope ([EHT](https://eventhorizontelescope.org/)), the next-generation Event Horizon Telescope ([ngEHT](https://www.ngeht.org)), and other very long baseline interferometric arrays of radio telescopes.
 
-# Documentation
+# Getting started
 
 Details about installing and using ngehtsim can be found in the [online documentation](https://smithsonian.github.io/ngehtsim/).
+
+## Setting up the environment
+
+ngehtsim is only tested on Python 3.8 and higher, and it may break for earlier versions.  It is recommended that you install ngehtsim using a virtual environment, e.g.:
+
+```
+    $ git clone https://github.com/Smithsonian/ngehtsim
+    $ python -m venv .venv
+    $ source .venv/bin/activate
+    (.venv) $ python -m pip install --upgrade pip
+    (.venv) $ pip install ./ngehtsim
+```
+
+## Checking that it works
+
+There are a number of example scripts contained in the [examples](./examples/) folder.  You can check to make sure your ngehtsim installation is working by running one of these scripts, e.g.:
+
+```
+    (.venv) $ cd ./ngehtsim/examples/example_data_generation
+    (.venv) $ python ./generate_observation.py
+```
+# Licensing
+
+See the [LICENSE](./LICENSE) file for details on the licensing of this software.
+
