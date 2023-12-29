@@ -26,10 +26,10 @@ setup(name='ngehtsim',
       packages=find_packages(),
       package_data={'': extra_files},
       include_package_data=True,
-      install_requires=['astropy',
-                        'ehtim',
-                        'matplotlib',
-                        'numpy',
-                        'scipy',
-                        'ngEHTforecast @ git+https://github.com/aeb/ngEHTforecast.git']
+      install_requires=['astropy>=6.0.0',
+                        'ehtim>=1.2.7',
+                        'matplotlib>=3.8.2',
+                        'numpy>=1.26.2',
+                        'scipy>=1.11.4',
+                        'ngEHTforecast @ git+https://github.com/aeb/ngEHTforecast.git#115bf73e77f23336516ce385521aeb2bae2f9a98']
       )
