@@ -26,7 +26,8 @@ ngehtsim uses the following packages:
 * `matplotlib <https://matplotlib.org>`_
 * `scipy <https://www.scipy.org>`_
 * `astropy <https://www.astropy.org/>`_
+* `ngEHTforecast <https://aeb.github.io/ngEHTforecast/html/docs/src/index.html>`_
 
-Generating a local version of the documation for ngehtsim requires:
+Dependencies are specified in setup.py and will be handled via the pip install process. Generating a local version of the documentation for ngehtsim requires:
 
 * `Sphinx <https://www.sphinx-doc.org>`_
