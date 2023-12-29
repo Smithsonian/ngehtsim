@@ -33,7 +33,7 @@ There are a number of example scripts contained in the [examples](./examples/) f
     (.venv) $ python ./generate_observation.py
 ```
 
-## Versioning scheme
+# Versioning scheme
 
 For this repository, we attempt to adhere to the `major.minor.patch` [Semantic Versioning](https://semver.org) numbering scheme.
 
