@@ -1,11 +1,8 @@
 #######################################################
 # imports
 
-import numpy as np
-import ehtim as eh
 import ngehtsim.obs.obs_generator as og
 import ngehtsim.obs.obs_plotter as op
-import ngehtsim.metrics as cm
 
 #######################################################
 # generate an observation
@@ -33,7 +30,8 @@ receiver_configuration_overrides = {'ALMA': ['Band7'],
                                     'SPT': ['Band3', 'Band6', 'Band7']}
 
 # initialize the observation generator
-obsgen = og.obs_generator(settings_file=yamlfile,verbosity=2,
+obsgen = og.obs_generator(settings_file=yamlfile,
+                          verbosity=2,
                           receiver_configuration_overrides=receiver_configuration_overrides)
 
 # specify the frequencies at which to observe
@@ -45,17 +43,17 @@ input_models = ['../data_files/M87_86GHz_Chael.fits',
                 '../data_files/M87_345GHz_Chael.fits']
 
 # generate the multi-frequency observation
-obslist = obsgen.make_obs_mf(freqs,input_models)
+obslist = obsgen.make_obs_mf(freqs, input_models)
 
 # save the observations as uvfits files
 for iobs, obs in enumerate(obslist):
-    obs.save_uvfits('./datafile_'+str(int(freqs[iobs]))+'GHz.uvfits')
+    obs.save_uvfits('./datafile_' + str(int(freqs[iobs])) + 'GHz.uvfits')
 
 #######################################################
 # make some plots of the data
 
 for iobs, obs in enumerate(obslist):
-    op.plot_uv(obs,filename='./plot_uv_'+str(int(freqs[iobs]))+'GHz.png',umax=15)
-    op.plot_amp(obs,filename='./plot_amp_'+str(int(freqs[iobs]))+'GHz.png',xlim=(0,15),ylim=(0.001,10.0))
-    op.plot_phase(obs,filename='./plot_phase_'+str(int(freqs[iobs]))+'GHz.png',xlim=(0,15))
-    op.plot_snr(obs,filename='./plot_snr_'+str(int(freqs[iobs]))+'GHz.png',xlim=(0,15),ylim=(0.1,1.0e4))
+    op.plot_uv(obs, filename='./plot_uv_'+str(int(freqs[iobs]))+'GHz.png', umax=15)
+    op.plot_amp(obs, filename='./plot_amp_'+str(int(freqs[iobs]))+'GHz.png', xlim=(0, 15), ylim=(0.001, 10.0))
+    op.plot_phase(obs, filename='./plot_phase_'+str(int(freqs[iobs]))+'GHz.png', xlim=(0, 15))
+    op.plot_snr(obs, filename='./plot_snr_'+str(int(freqs[iobs]))+'GHz.png', xlim=(0, 15), ylim=(0.1, 1.0e4))
