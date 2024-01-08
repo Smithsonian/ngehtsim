@@ -113,11 +113,11 @@ for i in range(len(rec_name)):
 ###################################################
 # known arrays
 
-known_arrays = {'EHT2017': ['ALMA', 'APEX', 'IRAM', 'JCMT', 'LMT', 'SMA', 'SMT', 'SPT'], 
-                'EHT2018': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'LMT', 'SMA', 'SMT', 'SPT'], 
-                'EHT2021': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'NOEMA', 'SMA', 'SMT', 'SPT'], 
-                'EHT2022': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT', 'SPT'], 
-                'EHT2023': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT', 'SPT'], 
+known_arrays = {'EHT2017': ['ALMA', 'APEX', 'IRAM', 'JCMT', 'LMT', 'SMA', 'SMT', 'SPT'],
+                'EHT2018': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'LMT', 'SMA', 'SMT', 'SPT'],
+                'EHT2021': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'NOEMA', 'SMA', 'SMT', 'SPT'],
+                'EHT2022': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT', 'SPT'],
+                'EHT2023': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT', 'SPT'],
                 'ngEHT':   ['ALMA', 'APEX', 'BAJA', 'CNI', 'GAM', 'GLT', 'HAY', 'IRAM', 'JCMT', 'JELM', 'KP', 'KVNYS', 'KVNPC', 'LAS', 'LLA', 'LMT', 'OVRO', 'NOEMA', 'SMA', 'SMT', 'SPT']
                 }
 

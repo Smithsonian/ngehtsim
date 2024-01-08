@@ -44,7 +44,7 @@ def grid_obs(obs, N, psize):
     out[(out_temp != 0.0)] = 1
     out = np.transpose(out)
 
-    return(out)
+    return out
 
 
 def radial_fill(grid, radius):
