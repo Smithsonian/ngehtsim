@@ -103,7 +103,7 @@ rec_name = np.loadtxt(path_to_rf,
 rec_lo, rec_hi, rec_T, rec_SSR = np.loadtxt(path_to_rf,
                                             delimiter=',',
                                             skiprows=1,
-                                            usecols=(1,2,3,4),
+                                            usecols=(1, 2, 3, 4),
                                             unpack=True)
 
 receivers = {}
@@ -113,12 +113,12 @@ for i in range(len(rec_name)):
 ###################################################
 # known arrays
 
-known_arrays = {'EHT2017': ['ALMA','APEX','IRAM','JCMT','LMT','SMA','SMT','SPT'],
-                'EHT2018': ['ALMA','APEX','GLT','IRAM','JCMT','LMT','SMA','SMT','SPT'],
-                'EHT2021': ['ALMA','APEX','GLT','IRAM','JCMT','KP','NOEMA','SMA','SMT','SPT'],
-                'EHT2022': ['ALMA','APEX','GLT','IRAM','JCMT','KP','LMT','NOEMA','SMA','SMT','SPT'],
-                'EHT2023': ['ALMA','APEX','GLT','IRAM','JCMT','KP','LMT','NOEMA','SMA','SMT','SPT'],
-                'ngEHT':   ['ALMA','APEX','BAJA','CNI','GAM','GLT','HAY','IRAM','JCMT','JELM','KP','KVNYS','KVNPC','LAS','LLA','LMT','OVRO','NOEMA','SMA','SMT','SPT']
+known_arrays = {'EHT2017': ['ALMA', 'APEX', 'IRAM', 'JCMT', 'LMT', 'SMA', 'SMT', 'SPT'], 
+                'EHT2018': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'LMT', 'SMA', 'SMT', 'SPT'], 
+                'EHT2021': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'NOEMA', 'SMA', 'SMT', 'SPT'], 
+                'EHT2022': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT', 'SPT'], 
+                'EHT2023': ['ALMA', 'APEX', 'GLT', 'IRAM', 'JCMT', 'KP', 'LMT', 'NOEMA', 'SMA', 'SMT', 'SPT'], 
+                'ngEHT':   ['ALMA', 'APEX', 'BAJA', 'CNI', 'GAM', 'GLT', 'HAY', 'IRAM', 'JCMT', 'JELM', 'KP', 'KVNYS', 'KVNPC', 'LAS', 'LLA', 'LMT', 'OVRO', 'NOEMA', 'SMA', 'SMT', 'SPT']
                 }
 
 known_array_D_overrides = {'EHT2017': {'ALMA': 73.0, 'LMT': 32.5},
@@ -188,25 +188,25 @@ known_array_receiver_configuration_overrides = {'EHT2017': {'ALMA': ['Band6'],
                                                             'SPT': ['Band6']},
                                                 'ngEHT': {'ALMA': ['Band6'],
                                                           'APEX': ['Band6'],
-                                                          'BAJA': ['Band3','Band6','Band7'],
-                                                          'CNI': ['Band3','Band6','Band7'],
-                                                          'GAM': ['Band3','Band6','Band7'],
-                                                          'GLT': ['Band3','Band6','Band7'],
-                                                          'HAY': ['Band3','Band6'],
-                                                          'IRAM': ['Band3','Band6'],
-                                                          'JCMT': ['Band3','Band6','Band7'],
-                                                          'JELM': ['Band3','Band6','Band7'],
-                                                          'KP': ['Band3','Band6'],
-                                                          'KVNYS': ['Band3','Band6','Band7'],
-                                                          'KVNPC': ['Band3','Band6','Band7'],
-                                                          'LAS': ['Band3','Band6','Band7'],
-                                                          'LLA': ['Band3','Band6','Band7'],
-                                                          'LMT': ['Band3','Band6','Band7'],
-                                                          'OVRO': ['Band3','Band6'],
-                                                          'NOEMA': ['Band3','Band6'],
+                                                          'BAJA': ['Band3', 'Band6', 'Band7'],
+                                                          'CNI': ['Band3', 'Band6', 'Band7'],
+                                                          'GAM': ['Band3', 'Band6', 'Band7'],
+                                                          'GLT': ['Band3', 'Band6', 'Band7'],
+                                                          'HAY': ['Band3', 'Band6'],
+                                                          'IRAM': ['Band3', 'Band6'],
+                                                          'JCMT': ['Band3', 'Band6', 'Band7'],
+                                                          'JELM': ['Band3', 'Band6', 'Band7'],
+                                                          'KP': ['Band3', 'Band6'],
+                                                          'KVNYS': ['Band3', 'Band6', 'Band7'],
+                                                          'KVNPC': ['Band3', 'Band6', 'Band7'],
+                                                          'LAS': ['Band3', 'Band6', 'Band7'],
+                                                          'LLA': ['Band3', 'Band6', 'Band7'],
+                                                          'LMT': ['Band3', 'Band6', 'Band7'],
+                                                          'OVRO': ['Band3', 'Band6'],
+                                                          'NOEMA': ['Band3', 'Band6'],
                                                           'SMA': ['Band6'],
-                                                          'SMT': ['Band3','Band6','Band7'],
-                                                          'SPT': ['Band3','Band6','Band7']},
+                                                          'SMT': ['Band3', 'Band6', 'Band7'],
+                                                          'SPT': ['Band3', 'Band6', 'Band7']},
                                                 }
 
 known_array_bandwidth_overrides = {'EHT2017': {'ALMA': {'Band6': 2.0},
@@ -260,25 +260,25 @@ known_array_bandwidth_overrides = {'EHT2017': {'ALMA': {'Band6': 2.0},
                                                'SPT': {'Band6': 2.0}},
                                    'ngEHT': {'ALMA': {'Band6': 8.0},
                                              'APEX': {'Band6': 16.0},
-                                             'BAJA': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'CNI': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'GAM': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'GLT': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'HAY': {'Band3':8.0, 'Band6': 16.0},
-                                             'IRAM': {'Band3':8.0, 'Band6': 8.0},
-                                             'JCMT': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'JELM': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'KP': {'Band3':8.0, 'Band6': 16.0},
-                                             'KVNYS': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'KVNPC': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'LAS': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'LLA': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'LMT': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'OVRO': {'Band3':8.0, 'Band6': 16.0},
-                                             'NOEMA': {'Band3':8.0, 'Band6': 8.0},
+                                             'BAJA': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'CNI': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'GAM': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'GLT': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'HAY': {'Band3': 8.0, 'Band6': 16.0},
+                                             'IRAM': {'Band3': 8.0, 'Band6': 8.0},
+                                             'JCMT': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'JELM': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'KP': {'Band3': 8.0, 'Band6': 16.0},
+                                             'KVNYS': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'KVNPC': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'LAS': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'LLA': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'LMT': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'OVRO': {'Band3': 8.0, 'Band6': 16.0},
+                                             'NOEMA': {'Band3': 8.0, 'Band6': 8.0},
                                              'SMA': {'Band6': 8.0},
-                                             'SMT': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0},
-                                             'SPT': {'Band3':8.0, 'Band6': 16.0, 'Band7':16.0}}
+                                             'SMT': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0},
+                                             'SPT': {'Band3': 8.0, 'Band6': 16.0, 'Band7': 16.0}}
                                    }
 
 known_array_T_R_overrides = {'EHT2017': {'APEX': {'Band6': 90.0},
@@ -349,7 +349,7 @@ known_sources = {'M87': {'RA': 12.51373,
                  '3C279': {'RA': 12.93642,
                            'DEC': -5.78944},
                  '3C 279': {'RA': 12.93642,
-                            'DEC': -5.78944},}
+                            'DEC': -5.78944}}
 
 ###################################################
 # pull antenna properties from table
@@ -357,13 +357,13 @@ known_sources = {'M87': {'RA': 12.51373,
 known_stations, tlcs, diam_arr, surf_arr, mnts_arr, fa_arr, altnames = np.loadtxt(path_to_tsm,
                                                                                   delimiter=',',
                                                                                   skiprows=1,
-                                                                                  usecols=(0,1,7,8,9,10,11),
+                                                                                  usecols=(0, 1, 7, 8, 9, 10, 11),
                                                                                   dtype=str,
                                                                                   unpack=True)
 lat_arr, lon_arr, elev_arr = np.loadtxt(path_to_tsm,
                                         delimiter=',',
                                         skiprows=1,
-                                        usecols=(3,4,5),
+                                        usecols=(3, 4, 5),
                                         unpack=True)
 
 known_diameters = {}
@@ -423,7 +423,7 @@ for i in range(len(known_stations)):
 # PCA spectral decomposition quantities
 number_of_components = 40
 length_of_spectrum = 2001
-spectrum_frequency = np.linspace(0.0,2000.0,length_of_spectrum)
+spectrum_frequency = np.linspace(0.0, 2000.0, length_of_spectrum)
 
 # mount type to angle conversion
 mount_type_dict = {'ALT-AZ': {'f_el': 0.0,
