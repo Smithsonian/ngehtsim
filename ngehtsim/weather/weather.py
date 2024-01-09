@@ -141,7 +141,7 @@ def reconstruct_spectrum_Tb(coeffs):
     reconstructed_spectrum += meanspec_Tb
     return reconstructed_spectrum
 
-def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015):
+def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
     """
     Retrieve the zenith opacity information for a specified site as a function of frequency.
 
@@ -151,6 +151,7 @@ def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015):
       month (str or int): The month for which to report weather
       day (str or int): The day of the month for which to report weather; only used for form = 'exact'
       year (str or int): The year for which to report weather; only used for form = 'exact'
+      path_to_weather (str): The file path for the top-level weather data directory
 
     Returns:
       (numpy.ndarray): The requested opacity values; if form = 'all', then returns a 2D array
@@ -169,7 +170,7 @@ def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015):
         raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
 
     # determine which table to read
-    pathhere = const.path_to_weather + '/'
+    pathhere = path_to_weather + '/'
     pathhere += site + '/'
     pathhere += monthnum + monthnam + '/'
     pathhere += 'tau.txt'
@@ -212,7 +213,7 @@ def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015):
 
     return tauspec
 
-def opacity(site, form='exact', month='Apr', day=15, year=2015, freq=230.0):
+def opacity(site, form='exact', month='Apr', day=15, year=2015, freq=230.0, path_to_weather=const.path_to_weather):
     """
     Retrieve the zenith opacity information for a specified site at a specified frequency.
 
@@ -223,6 +224,7 @@ def opacity(site, form='exact', month='Apr', day=15, year=2015, freq=230.0):
       day (str or int): The day of the month for which to report weather; only used for form = 'exact'
       year (str or int): The year for which to report weather; only used for form = 'exact'
       freq (float): The observing frequency, in GHz
+      path_to_weather (str): The file path for the top-level weather data directory
 
     Returns:
       (float): The requested opacity value(s); if form = 'all', then returns a numpy.ndarray
@@ -233,7 +235,7 @@ def opacity(site, form='exact', month='Apr', day=15, year=2015, freq=230.0):
         raise Exception('Specified frequency is outside of the acceptable range (0, 2000) GHz.')
 
     # get full spectrum
-    tauspec = opacity_spectrum(site, form=form, month=month, day=day, year=year)
+    tauspec = opacity_spectrum(site, form=form, month=month, day=day, year=year, path_to_weather=path_to_weather)
 
     # isolate the specified frequency
     if (form != 'all'):
@@ -245,7 +247,7 @@ def opacity(site, form='exact', month='Apr', day=15, year=2015, freq=230.0):
 
     return tau
 
-def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, year=2015):
+def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
     """
     Retrieve the zenith brightness temperature information for a specified site as a function of frequency.
 
@@ -255,6 +257,7 @@ def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, yea
       month (str or int): The month for which to report weather
       day (str or int): The day of the month for which to report weather; only used for form = 'exact'
       year (str or int): The year for which to report weather; only used for form = 'exact'
+      path_to_weather (str): The file path for the top-level weather data directory
 
     Returns:
       (numpy.ndarray): The requested brightness temperature values; if form = 'all', then returns a 2D array
@@ -273,7 +276,7 @@ def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, yea
         raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
 
     # determine which table to read
-    pathhere = const.path_to_weather + '/'
+    pathhere = path_to_weather + '/'
     pathhere += site + '/'
     pathhere += monthnum + monthnam + '/'
     pathhere += 'Tb.txt'
@@ -316,7 +319,7 @@ def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, yea
     
     return Tbspec
 
-def brightness_temperature(site, form='exact', month='Apr', day=15, year=2015, freq=230.0):
+def brightness_temperature(site, form='exact', month='Apr', day=15, year=2015, freq=230.0, path_to_weather=const.path_to_weather):
     """
     Retrieve the zenith brightness temperature information for a specified site at a specified frequency.
 
@@ -327,6 +330,7 @@ def brightness_temperature(site, form='exact', month='Apr', day=15, year=2015, f
       day (str or int): The day of the month for which to report weather; only used for form = 'exact'
       year (str or int): The year for which to report weather; only used for form = 'exact'
       freq (float): The observing frequency, in GHz
+      path_to_weather (str): The file path for the top-level weather data directory
 
     Returns:
       (float): The requested brightness temperature value(s), in K; if form = 'all', then returns a numpy.ndarray
@@ -337,7 +341,7 @@ def brightness_temperature(site, form='exact', month='Apr', day=15, year=2015, f
         raise Exception('Specified frequency is outside of the acceptable range (0, 2000) GHz.')
 
     # get full spectrum
-    Tbspec = brightness_temperature_spectrum(site, form=form, month=month, day=day, year=year)
+    Tbspec = brightness_temperature_spectrum(site, form=form, month=month, day=day, year=year, path_to_weather=path_to_weather)
 
     # isolate the specified frequency
     if (form != 'all'):
@@ -349,7 +353,7 @@ def brightness_temperature(site, form='exact', month='Apr', day=15, year=2015, f
 
     return Tb
 
-def pressure(site, form='exact', month='Apr', day=15, year=2015):
+def pressure(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
     """
     Retrieve the surface pressure information for a specified site.
 
@@ -359,6 +363,7 @@ def pressure(site, form='exact', month='Apr', day=15, year=2015):
       month (str or int): The month for which to report weather
       day (str or int): The day of the month for which to report weather; only used for form = 'exact'
       year (str or int): The year for which to report weather; only used for form = 'exact'
+      path_to_weather (str): The file path for the top-level weather data directory
 
     Returns:
       (float): The requested pressure value(s), in mbar; if form = 'all', then returns a numpy.ndarray
@@ -377,7 +382,7 @@ def pressure(site, form='exact', month='Apr', day=15, year=2015):
         raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
 
     # determine which table to read
-    pathhere = const.path_to_weather + '/'
+    pathhere = path_to_weather + '/'
     pathhere += site + '/'
     pathhere += monthnum + monthnam + '/'
     pathhere += 'Pbase.txt'
@@ -417,7 +422,7 @@ def pressure(site, form='exact', month='Apr', day=15, year=2015):
 
     return P
 
-def temperature(site, form='exact', month='Apr', day=15, year=2015):
+def temperature(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
     """
     Retrieve the surface temperature information for a specified site.
 
@@ -427,6 +432,7 @@ def temperature(site, form='exact', month='Apr', day=15, year=2015):
       month (str or int): The month for which to report weather
       day (str or int): The day of the month for which to report weather; only used for form = 'exact'
       year (str or int): The year for which to report weather; only used for form = 'exact'
+      path_to_weather (str): The file path for the top-level weather data directory
 
     Returns:
       (float): The requested temperature value(s), in K; if form = 'all', then returns a numpy.ndarray
@@ -445,7 +451,7 @@ def temperature(site, form='exact', month='Apr', day=15, year=2015):
         raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
 
     # determine which table to read
-    pathhere = const.path_to_weather + '/'
+    pathhere = path_to_weather + '/'
     pathhere += site + '/'
     pathhere += monthnum + monthnam + '/'
     pathhere += 'Tbase.txt'
@@ -485,7 +491,7 @@ def temperature(site, form='exact', month='Apr', day=15, year=2015):
 
     return T
 
-def PWV(site, form='exact', month='Apr', day=15, year=2015):
+def PWV(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
     """
     Retrieve the precipitable water vapor (PWV) information for a specified site.
 
@@ -495,6 +501,7 @@ def PWV(site, form='exact', month='Apr', day=15, year=2015):
       month (str or int): The month for which to report weather
       day (str or int): The day of the month for which to report weather; only used for form = 'exact'
       year (str or int): The year for which to report weather; only used for form = 'exact'
+      path_to_weather (str): The file path for the top-level weather data directory
 
     Returns:
       (float): The requested PWV value(s), in mm; if form = 'all', then returns a numpy.ndarray
@@ -513,7 +520,7 @@ def PWV(site, form='exact', month='Apr', day=15, year=2015):
         raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
 
     # determine which table to read
-    pathhere = const.path_to_weather + '/'
+    pathhere = path_to_weather + '/'
     pathhere += site + '/'
     pathhere += monthnum + monthnam + '/'
     pathhere += 'PWV.txt'
@@ -553,7 +560,7 @@ def PWV(site, form='exact', month='Apr', day=15, year=2015):
 
     return pwv
 
-def windspeed(site, form='exact', month='Apr', day=15, year=2015):
+def windspeed(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
     """
     Retrieve the windspeed information for a specified site.
 
@@ -563,6 +570,7 @@ def windspeed(site, form='exact', month='Apr', day=15, year=2015):
       month (str or int): The month for which to report weather
       day (str or int): The day of the month for which to report weather; only used for form = 'exact'
       year (str or int): The year for which to report weather; only used for form = 'exact'
+      path_to_weather (str): The file path for the top-level weather data directory
 
     Returns:
       (float): The requested windspeed value(s), in m/s; if form = 'all', then returns a numpy.ndarray
@@ -581,7 +589,7 @@ def windspeed(site, form='exact', month='Apr', day=15, year=2015):
         raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
 
     # determine which table to read
-    pathhere = const.path_to_weather + '/'
+    pathhere = path_to_weather + '/'
     pathhere += site + '/'
     pathhere += monthnum + monthnam + '/'
     pathhere += 'windspeed.txt'
