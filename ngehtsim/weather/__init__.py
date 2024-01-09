@@ -2,7 +2,7 @@
 Tools for generating and plotting observations.
 """
 
-__author__="Dom Pesce"
+__author__ = "Dom Pesce"
 
-__all__=['weather']
+__all__ = ['weather']
 from . import *

@@ -1182,8 +1182,6 @@ class obs_generator(object):
     ###################################################
     # other functions
 
-
-    # export SYMBA-compatible input files
     def export_SYMBA(self, symba_workdir='./data',
                      output_filenames=['obsgen.antennas', 'master_input.txt'],
                      t_coh=10.0, RMS_point=0.0, PB_model='gaussian', use_two_letter=True,
