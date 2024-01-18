@@ -1974,11 +1974,18 @@ def export_SYMBA_master_input(obsgen, input_args={}, input_comments={}, output_f
     args['ms_DEC'] = str(obsgen.DEC)
 
     # observation start time
+    t_start = obsgen.settings['t_start']
     t = Time(obsgen.mjd, format='mjd')
     dumt = t.fits
     dumt2 = '/'.join(dumt.split('-'))
-    dumt3 = '/'.join(dumt2.split('T'))
-    args['ms_StartTime'] = 'UTC,' + dumt3[:-1]
+    dumt3 = dumt2.split('T')
+    dumt4 = dumt3[1].split(':')
+    dumt5 = str(int(float(dumt4[0])+np.floor(t_start))).zfill(2)
+    dumt6 = str(int(np.floor((t_start - np.floor(t_start))*60.0))).zfill(2)
+    dumt7 = '{:05.2f}'.format((((t_start - float(dumt5))*60.0) - float(dumt6))*60.0)
+    dumt8 = ':'.join([dumt5,dumt6,dumt7])
+    dumt9 = '/'.join([dumt3[0],dumt8])
+    args['ms_StartTime'] = 'UTC,' + dumt9
 
     # other observation time parameters
     args['ms_obslength'] = str(len(obsgen.t_seg_times)*obsgen.settings['t_int'] / 3600.0)
