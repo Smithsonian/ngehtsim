@@ -28,6 +28,11 @@ ngehtsim uses the following packages:
 * `astropy <https://www.astropy.org/>`_
 * `ngEHTforecast <https://aeb.github.io/ngEHTforecast/html/docs/src/index.html>`_
 
+ngehtsim also has the option to include additional calibration capabilities during installation, which further requires:
+
+* `pandas <https://pandas.pydata.org/>`_
+* `eat <https://github.com/sao-eht/eat.git>`_
+
 Dependencies are specified in setup.py and will be handled via the pip install process. Generating a local version of the documentation for ngehtsim requires:
 
 * `Sphinx <https://www.sphinx-doc.org>`_

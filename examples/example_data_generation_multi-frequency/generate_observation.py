@@ -38,9 +38,9 @@ obsgen = og.obs_generator(settings_file=yamlfile,
 freqs = [86.0, 230.0, 345.0]
 
 # specify the corresponding model files
-input_models = ['../data_files/M87_86GHz_Chael.fits',
-                '../data_files/M87_230GHz_Chael.fits',
-                '../data_files/M87_345GHz_Chael.fits']
+input_models = ['../data_files/M87_86GHz.fits',
+                '../data_files/M87_230GHz.fits',
+                '../data_files/M87_345GHz.fits']
 
 # generate the multi-frequency observation
 obslist = obsgen.make_obs_mf(freqs, input_models)

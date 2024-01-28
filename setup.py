@@ -31,5 +31,9 @@ setup(name='ngehtsim',
                         'matplotlib>=3.7.4',
                         'numpy>=1.23.1',
                         'scipy>=1.10.1',
-                        'ngEHTforecast @ git+https://github.com/aeb/ngEHTforecast.git#115bf73e77f23336516ce385521aeb2bae2f9a98']
+                        'ngEHTforecast @ git+https://github.com/aeb/ngEHTforecast.git#115bf73e77f23336516ce385521aeb2bae2f9a98'],
+      extras_require={
+                      'calib': ['eat @ git+https://github.com/sao-eht/eat.git#94df36a7b45a6ce6dd2dc005c2b71a81c5d80a00',
+                                'pandas>=1.4.3']
+                     }
       )

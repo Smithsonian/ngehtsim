@@ -1,5 +1,5 @@
 """
-Tools for generating and plotting observations.
+Tools for accessing weather info.
 """
 
 __author__ = "Dom Pesce"
