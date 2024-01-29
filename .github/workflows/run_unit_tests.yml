@@ -70,9 +70,13 @@ jobs:
       - name: Combine
         run: |
           python -m coverage combine
-          
+                    
           # Report and write to summary.
           python -m coverage report | sed 's/^/    /' >> $GITHUB_STEP_SUMMARY
+
+          export TOTAL=$(python -c "import json;print(json.load(open('coverage.json'))['totals']['percent_covered_display'])")
+          echo "total=$TOTAL" >> $GITHUB_ENV
+          echo "### Total coverage: ${TOTAL}%" >> $GITHUB_STEP_SUMMARY
 
       - name: Make badge
         uses: schneegans/dynamic-badges-action@v1.6.0
@@ -80,7 +84,7 @@ jobs:
           auth: ${{ secrets.GIST_TOKEN }}
           gistID: de229c48256d967a1cb8b29dbf575602
           filename: covbadge.json
-          label: Coverage
+          label: code coverage
           message: ${{ env.total }}%
           minColorRange: 50
           maxColorRange: 90
