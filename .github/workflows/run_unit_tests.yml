@@ -50,12 +50,10 @@ jobs:
           name: covdata
       - name: Combine
         run: |
-                    
-          # Report and write to summary.
           python -m coverage report
           python -m coverage report | sed 's/^/    /' >> $GITHUB_STEP_SUMMARY
           python -m coverage json
-
+          
           export TOTAL=$(python -c "import json;print(json.load(open('coverage.json'))['totals']['percent_covered_display'])")
           echo "total=$TOTAL" >> $GITHUB_ENV
           echo "### Total coverage: ${TOTAL}%" >> $GITHUB_STEP_SUMMARY
