@@ -57,3 +57,7 @@ for weighting in ['natural', 'uniform', 'robust']:
 # plot a metric versus time for the observation
 
 op.plot_snapshot(obs, obsgen, 'FF', fov=200.0, filename='./tests/data_generation/example_plot_FF.png')
+op.plot_snapshot(obs, obsgen, 'LCG', filename='./tests/data_generation/example_plot_LCG.png')
+op.plot_snapshot(obs, obsgen, 'BFF', filename='./tests/data_generation/example_plot_BFF.png')
+op.plot_snapshot(obs, obsgen, 'PSS', filename='./tests/data_generation/example_plot_PSS.png')
+op.plot_snapshot(obs, obsgen, 'AR', ylim=(0,100), filename='./tests/data_generation/example_plot_AR.png')
