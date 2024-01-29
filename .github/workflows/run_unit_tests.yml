@@ -50,6 +50,7 @@ jobs:
           name: covdata
       - name: Combine
         run: |
+          pip install tox combine
           python -m coverage combine
           
           # Report and write to summary.
