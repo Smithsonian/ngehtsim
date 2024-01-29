@@ -50,8 +50,7 @@ jobs:
           name: covdata
       - name: Combine
         run: |
-          python -m coverage combine
-          
+                    
           # Report and write to summary.
           python -m coverage report
           python -m coverage report | sed 's/^/    /' >> $GITHUB_STEP_SUMMARY
