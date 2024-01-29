@@ -47,7 +47,7 @@ jobs:
 
   coverage:
     name: Coverage
-    needs: tests
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
