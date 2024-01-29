@@ -58,17 +58,17 @@ for site in sites:
     for imonth, month in enumerate(months):
         tau = nw.opacity(site, freq=freq, form='all', month=month)
         if (imonth == 0):
-            tau16[-1] = tau16[imonth+1] = np.percentile(tau, 16)
-            tau50[-1] = tau50[imonth+1] = np.percentile(tau, 50)
-            tau84[-1] = tau84[imonth+1] = np.percentile(tau, 84)
+            tau16[-1] = tau16[imonth+1] = np.nanpercentile(tau, 16)
+            tau50[-1] = tau50[imonth+1] = np.nanpercentile(tau, 50)
+            tau84[-1] = tau84[imonth+1] = np.nanpercentile(tau, 84)
         elif ((imonth > 0) & (imonth < 11)):
-            tau16[imonth+1] = np.percentile(tau, 16)
-            tau50[imonth+1] = np.percentile(tau, 50)
-            tau84[imonth+1] = np.percentile(tau, 84)
+            tau16[imonth+1] = np.nanpercentile(tau, 16)
+            tau50[imonth+1] = np.nanpercentile(tau, 50)
+            tau84[imonth+1] = np.nanpercentile(tau, 84)
         else:
-            tau16[0] = tau16[imonth+1] = np.percentile(tau, 16)
-            tau50[0] = tau50[imonth+1] = np.percentile(tau, 50)
-            tau84[0] = tau84[imonth+1] = np.percentile(tau, 84)
+            tau16[0] = tau16[imonth+1] = np.nanpercentile(tau, 16)
+            tau50[0] = tau50[imonth+1] = np.nanpercentile(tau, 50)
+            tau84[0] = tau84[imonth+1] = np.nanpercentile(tau, 84)
 
     # plot opacity
     xdum = np.linspace(0.0, 13.0, 14)
@@ -112,17 +112,17 @@ for site in sites:
     for imonth, month in enumerate(months):
         PWV = nw.PWV(site, form='all', month=month)
         if (imonth == 0):
-            PWV16[-1] = PWV16[imonth+1] = np.percentile(PWV, 16)
-            PWV50[-1] = PWV50[imonth+1] = np.percentile(PWV, 50)
-            PWV84[-1] = PWV84[imonth+1] = np.percentile(PWV, 84)
+            PWV16[-1] = PWV16[imonth+1] = np.nanpercentile(PWV, 16)
+            PWV50[-1] = PWV50[imonth+1] = np.nanpercentile(PWV, 50)
+            PWV84[-1] = PWV84[imonth+1] = np.nanpercentile(PWV, 84)
         elif ((imonth > 0) & (imonth < 11)):
-            PWV16[imonth+1] = np.percentile(PWV, 16)
-            PWV50[imonth+1] = np.percentile(PWV, 50)
-            PWV84[imonth+1] = np.percentile(PWV, 84)
+            PWV16[imonth+1] = np.nanpercentile(PWV, 16)
+            PWV50[imonth+1] = np.nanpercentile(PWV, 50)
+            PWV84[imonth+1] = np.nanpercentile(PWV, 84)
         else:
-            PWV16[0] = PWV16[imonth+1] = np.percentile(PWV, 16)
-            PWV50[0] = PWV50[imonth+1] = np.percentile(PWV, 50)
-            PWV84[0] = PWV84[imonth+1] = np.percentile(PWV, 84)
+            PWV16[0] = PWV16[imonth+1] = np.nanpercentile(PWV, 16)
+            PWV50[0] = PWV50[imonth+1] = np.nanpercentile(PWV, 50)
+            PWV84[0] = PWV84[imonth+1] = np.nanpercentile(PWV, 84)
 
     # plot opacity
     xdum = np.linspace(0.0, 13.0, 14)

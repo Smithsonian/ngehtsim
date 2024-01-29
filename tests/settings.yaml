@@ -1,7 +1,7 @@
 ############################################################
 # input files
 
-model_file: './tests/M87_230GHz_Chael.fits'
+model_file: './examples/data_files/M87_230GHz.fits'
 
 ############################################################
 # observation specs
