@@ -24,6 +24,12 @@ ngehtsim is only tested on Python 3.8 and higher, and it may break for earlier v
     (.venv) $ pip install ./ngehtsim
 ```
 
+There is an optional calibration functionality that requires some additional dependencies; it can be installed using:
+
+```
+    (.venv) $ pip install ./ngehtsim[calib]
+```
+
 ## Checking that it works
 
 There are a number of example scripts contained in the [examples](./examples/) folder.  You can check to make sure your ngehtsim installation is working by running one of these scripts, e.g.:

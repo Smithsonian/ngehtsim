@@ -15,6 +15,12 @@ To install ngehtsim, run pip from the main directory:
 
    $ pip install [--upgrade] . [--user]
 
+If you would like to additionally install the calibration dependencies, run:
+
+.. code-block:: console
+
+   $ pip install [--upgrade] .[calib] [--user]
+
 Dependencies
 ------------------------
 
