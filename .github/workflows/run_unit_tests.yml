@@ -37,7 +37,7 @@ jobs:
         continue-on-error: true
       - name: Test with tox
         run: |
-          pip install tox combine
+          pip install tox coverage
           tox -e py
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
@@ -50,7 +50,6 @@ jobs:
           name: covdata
       - name: Combine
         run: |
-          pip install tox combine
           python -m coverage combine
           
           # Report and write to summary.
