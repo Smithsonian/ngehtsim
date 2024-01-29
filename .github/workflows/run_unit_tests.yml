@@ -37,7 +37,7 @@ jobs:
         continue-on-error: true
       - name: Test with tox
         run: |
-          pip install tox
+          pip install tox combine
           tox -e py
       - name: Upload coverage data
         uses: actions/upload-artifact@v3
@@ -51,7 +51,7 @@ jobs:
       - name: Combine
         run: |
           python -m coverage combine
-                    
+          
           # Report and write to summary.
           python -m coverage report
           python -m coverage report | sed 's/^/    /' >> $GITHUB_STEP_SUMMARY
