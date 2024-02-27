@@ -712,9 +712,10 @@ class obs_generator(object):
             SEFD2[ind2] = (2.0*const.k*Tsys2[ind2])/Aeff
 
             # modify SEFDs to account for wind
-            SEFD_factor = windspeed_SEFD_modification(ws)
-            SEFD1[ind1] *= SEFD_factor
-            SEFD2[ind2] *= SEFD_factor
+            if flagwind:
+                SEFD_factor = windspeed_SEFD_modification(ws)
+                SEFD1[ind1] *= SEFD_factor
+                SEFD2[ind2] *= SEFD_factor
 
             # determine bandwidth
             if band in list(self.bandwidth_setup[site].keys()):
@@ -1577,8 +1578,8 @@ def windspeed_SEFD_modification(windspeed, windspeed_degradation=const.windspeed
 
     centerpoint = 0.5*(windspeed_degradation + windspeed_shutdown)
     rate = (windspeed_shutdown - windspeed_degradation) / 10.0
-    scale_factor = 1.0 - (1.0 / (1.0 + np.exp(-(windspeed - centerpoint)/rate)))
-
+    scale_factor = 1.0 - (1.0 / (1.0 + np.exp(-5.0*((windspeed / (2.0*(windspeed_shutdown - windspeed_degradation))) - 1.0))))
+    
     return 1.0/scale_factor
 
 
