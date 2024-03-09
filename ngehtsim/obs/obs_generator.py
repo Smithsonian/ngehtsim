@@ -1826,8 +1826,8 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
                     strhere += site.ljust(9)
 
                 # add receiver temperature, in K
-                sthere += str(np.round(obsgen.receivers[site][band]['T_R'], 2)).ljust(11)
-                
+                strhere += str(np.round(obsgen.receivers[site][band]['T_R'], 2)).ljust(11)
+
                 # add PWV, in mm
                 PWV = nw.PWV(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
                 strhere += str(np.round(PWV, 4)).ljust(9)
