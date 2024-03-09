@@ -87,6 +87,11 @@ class obs_generator(object):
         #############################
         # check/fix some easy issues
 
+        # make sure the passed settings are all valid
+        for key in self.settings.keys():
+            if key not in const.default_settings.keys():
+                raise Exception(key+' is not a recognized setting!')
+
         # set array name if it is provided
         if self.array is None:
             if self.settings['array'] is not None:
