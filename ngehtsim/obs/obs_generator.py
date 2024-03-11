@@ -687,23 +687,24 @@ class obs_generator(object):
 
             # flag the daytime observations, if desired
             if flagday:
+                if site != 'space':
+                    
+                    # get location of this site
+                    lon = const.known_longitudes[site]
+                    lat = const.known_latitudes[site]
+                    elev = const.known_elevations[site]
+                    location = EarthLocation.from_geodetic(lon,lat,height=elev)
 
-                # get location of this site
-                lon = const.known_longitudes[site]
-                lat = const.known_latitudes[site]
-                elev = const.known_elevations[site]
-                location = EarthLocation.from_geodetic(lon,lat,height=elev)
+                    # get the altitude of the Sun over time
+                    jd = obs.mjd + 2400000.5 + (times/24.0)
+                    timehere = Time(jd, format='jd')
+                    altazframe = AltAz(obstime=timehere, location=location)
+                    sun_altaz = get_sun(timehere).transform_to(altazframe)
+                    alt = sun_altaz.alt.value
 
-                # get the altitude of the Sun over time
-                jd = obs.mjd + 2400000.5 + (times/24.0)
-                timehere = Time(jd, format='jd')
-                altazframe = AltAz(obstime=timehere, location=location)
-                sun_altaz = get_sun(timehere).transform_to(altazframe)
-                alt = sun_altaz.alt.value
-
-                # mark as to-be-flagged all times for which the Sun is above the horizon
-                ind_daytime = (((t1 == site) | (t2 == site)) & (sun_altaz.alt.value > 0.0))
-                uptime_mask[ind_daytime] = False
+                    # mark as to-be-flagged all times for which the Sun is above the horizon
+                    ind_daytime = (((t1 == site) | (t2 == site)) & (sun_altaz.alt.value > 0.0))
+                    uptime_mask[ind_daytime] = False
 
             # flag the times that fall outside of the specified station uptime window
             if site in list(self.station_uptimes.keys()):
