@@ -40,6 +40,7 @@ class obs_generator(object):
       hi_freq_overrides (dict): A dictionary of station names and receiver lowest frequency values to override defaults
       ap_eff_overrides (dict): A dictionary of station names and aperture efficiency values to override defaults
       custom_receivers (dict): A dictionary of custom receiver names and properties
+      station_uptimes (dict): A dictionary of station names and associated uptime ranges, in UT
       array (str): Provide the name of a known array to load the corresponding sites and configuration
       ephem (str): path to the ephemeris for a space station
     """
@@ -48,7 +49,7 @@ class obs_generator(object):
     def __init__(self, settings={}, settings_file=None, verbosity=0, weight=0, D_overrides={},
                  surf_rms_overrides={}, receiver_configuration_overrides={}, bandwidth_overrides={},
                  T_R_overrides={}, sideband_ratio_overrides={}, lo_freq_overrides={}, hi_freq_overrides={},
-                 ap_eff_overrides={}, custom_receivers={}, array=None, ephem='ephemeris/space'):
+                 ap_eff_overrides={}, custom_receivers={}, station_uptimes={}, array=None, ephem='ephemeris/space'):
 
         #############################
         # parse inputs
@@ -66,6 +67,7 @@ class obs_generator(object):
         self.hi_freq_overrides = copy.deepcopy(hi_freq_overrides)
         self.ap_eff_overrides = copy.deepcopy(ap_eff_overrides)
         self.custom_receivers = copy.deepcopy(custom_receivers)
+        self.station_uptimes = copy.deepcopy(station_uptimes)
         self.array = array
         self.ephem = ephem
 
@@ -113,6 +115,12 @@ class obs_generator(object):
                     raise Exception('Custom receivers must contain a "T_R" key specifying the receiver temperature (in K).')
                 if ('SSR' not in self.custom_receivers[rec].keys()):
                     raise Exception('Custom receivers must contain a "SSR" key specifying sideband separation ratio.')
+
+        # check that all station uptimes specify two times
+        if len(self.station_uptimes.keys()) > 0:
+            for site in list(self.station_uptimes.keys()):
+                if len(self.station_uptimes[site]) != 2:
+                    raise Exception('Station uptime dictionary must provide an earliest and latest time for each specified station.')
 
         #############################
         # extract commonly-used settings
@@ -658,7 +666,7 @@ class obs_generator(object):
 
         # loop through the sites in the array
         flagsites = list()
-        daymask = np.ones(len(obs.data),dtype=bool)
+        uptime_mask = np.ones(len(obs.data),dtype=bool)
         for isite, site in enumerate(sites_obs):
 
             # zenith opacity, atmospheric temperature, ground temperature, and windspeed
@@ -694,8 +702,15 @@ class obs_generator(object):
                 alt = sun_altaz.alt.value
 
                 # mark as to-be-flagged all times for which the Sun is above the horizon
-                ind = (((t1 == site) | (t2 == site)) & (sun_altaz.alt.value > 0.0))
-                daymask[ind] = False
+                ind_daytime = (((t1 == site) | (t2 == site)) & (sun_altaz.alt.value > 0.0))
+                uptime_mask[ind_daytime] = False
+
+            # flag the times that fall outside of the specified station uptime window
+            if site in list(self.station_uptimes.keys()):
+                ind_too_early = (((t1 == site) | (t2 == site)) & (times < self.station_uptimes[site][0]))
+                ind_too_late = (((t1 == site) | (t2 == site)) & (times > self.station_uptimes[site][1]))
+                uptime_mask[ind_too_early] = False
+                uptime_mask[ind_too_late] = False
 
             # indices for this site
             ind1 = (t1 == site)
@@ -868,7 +883,7 @@ class obs_generator(object):
         mask = np.array([t1_list[j] not in flagsites and t2_list[j] not in flagsites for j in range(len(t1_list))])
 
         # add the daytime flags
-        mask &= daymask
+        mask &= uptime_mask
 
         # apply the flags to the observation
         data_copy = obs.data.copy()
@@ -1175,6 +1190,7 @@ class obs_generator(object):
                                             hi_freq_overrides=copy.deepcopy(self.hi_freq_overrides),
                                             ap_eff_overrides=copy.deepcopy(self.ap_eff_overrides),
                                             custom_receivers=copy.deepcopy(self.custom_receivers),
+                                            station_uptimes=copy.deepcopy(self.station_uptimes),
                                             array=self.array,
                                             ephem=self.ephem)
 
@@ -1740,6 +1756,7 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
     new_hi_freq_overrides = copy.deepcopy(obsgen.hi_freq_overrides)
     new_ap_eff_overrides = copy.deepcopy(obsgen.ap_eff_overrides)
     new_custom_receivers = copy.deepcopy(obsgen.custom_receivers)
+    new_station_uptimes = copy.deepcopy(obsgen.station_uptimes)
 
     # create dummy obsgen object
     obsgen_ref = obs_generator(new_settings,
@@ -1753,6 +1770,7 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
                                hi_freq_overrides=new_hi_freq_overrides,
                                ap_eff_overrides=new_ap_eff_overrides,
                                custom_receivers=new_custom_receivers,
+                               station_uptimes=new_station_uptimes,
                                ephem=ephem)
     if ((model_ref is not None) & (not isinstance(model_ref, str))):
         obsgen_ref.im = model_ref
