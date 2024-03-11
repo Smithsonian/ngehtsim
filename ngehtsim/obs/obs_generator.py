@@ -5,7 +5,7 @@ import numpy as np
 import ehtim as eh
 from collections import defaultdict
 from astropy.time import Time
-from astropy.coordinates import EarthLocation
+from astropy.coordinates import EarthLocation, AltAz, get_sun
 import ngEHTforecast.fisher as fp
 import yaml
 import time
@@ -504,7 +504,7 @@ class obs_generator(object):
 
     # generate a raw observation
     def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                flagwind=True, addFR=False, el_min=const.el_min, el_max=const.el_max, p=None):
+                flagwind=True, flagday=False, addFR=False, el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
@@ -515,6 +515,7 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           flagwind (bool): flag for whether to derate sites with high wind
+          flagday (bool): flag for whether to flag sites during the local daytime
           addFR (bool): flag for whether or not to add feed rotations
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
@@ -657,6 +658,7 @@ class obs_generator(object):
 
         # loop through the sites in the array
         flagsites = list()
+        daymask = np.ones(len(obs.data),dtype=bool)
         for isite, site in enumerate(sites_obs):
 
             # zenith opacity, atmospheric temperature, ground temperature, and windspeed
@@ -674,6 +676,26 @@ class obs_generator(object):
                     flagsites.append(site)
                     if self.verbosity > 0:
                         print(site + ' cannot observe because of high wind.')
+
+            # flag the daytime observations, if desired
+            if flagday:
+
+                # get location of this site
+                lon = const.known_longitudes[site]
+                lat = const.known_latitudes[site]
+                elev = const.known_elevations[site]
+                location = EarthLocation.from_geodetic(lon,lat,height=elev)
+
+                # get the altitude of the Sun over time
+                jd = obs.mjd + 2400000.5 + (times/24.0)
+                timehere = Time(jd, format='jd')
+                altazframe = AltAz(obstime=timehere, location=location)
+                sun_altaz = get_sun(timehere).transform_to(altazframe)
+                alt = sun_altaz.alt.value
+
+                # mark as to-be-flagged all times for which the Sun is above the horizon
+                ind = (((t1 == site) | (t2 == site)) & (sun_altaz.alt.value > 0.0))
+                daymask[ind] = False
 
             # indices for this site
             ind1 = (t1 == site)
@@ -845,7 +867,10 @@ class obs_generator(object):
         t2_list = obs.unpack('t2')['t2']
         mask = np.array([t1_list[j] not in flagsites and t2_list[j] not in flagsites for j in range(len(t1_list))])
 
-        # apply the wind flags to the observation
+        # add the daytime flags
+        mask &= daymask
+
+        # apply the flags to the observation
         data_copy = obs.data.copy()
         obs.data = data_copy[mask]
         if self.verbosity > 0:
@@ -878,7 +903,7 @@ class obs_generator(object):
 
     # generate observation
     def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                 addFR=False, el_min=const.el_min, el_max=const.el_max, flagwind=True, p=None):
+                 addFR=False, el_min=const.el_min, el_max=const.el_max, flagwind=True, flagday=False, p=None):
         """
         Generate an observation that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
@@ -890,6 +915,7 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           flagwind (bool): flag for whether to derate sites with high wind
+          flagday (bool): flag for whether to flag sites during the local daytime
           addFR (bool): flag for whether or not to add feed rotations
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
@@ -912,7 +938,7 @@ class obs_generator(object):
                     print('No input model passed to make_obs; using the model provided in the settings.')
 
         # generate raw observation
-        obs = self.observe(input_model, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, flagwind=flagwind, addFR=addFR, el_min=el_min, el_max=el_max, p=p)
+        obs = self.observe(input_model, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, addFR=addFR, el_min=el_min, el_max=el_max, p=p)
 
         # apply naive SNR thresholding
         if (snr_algo.lower() == 'naive'):
@@ -936,7 +962,7 @@ class obs_generator(object):
             freq_ref = snr_args[2]
             model_path_ref = snr_args[3]
 
-            mask = FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, flagwind=flagwind, addFR=addFR, el_min=el_min, el_max=el_max, p=p)
+            mask = FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, addFR=addFR, el_min=el_min, el_max=el_max, p=p)
 
         # unrecognized SNR thresholding scheme
         else:
@@ -1048,7 +1074,7 @@ class obs_generator(object):
 
     # generate multifrequency observation, assuming that FPT will be used wherever possible
     def make_obs_mf(self, freqs, input_models, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                    addFR=False, el_min=const.el_min, el_max=const.el_max, flagwind=True, p=None):
+                    addFR=False, el_min=const.el_min, el_max=const.el_max, flagwind=True, flagday=False, p=None):
         """
         Generate a multi-frequency observation
 
@@ -1063,6 +1089,7 @@ class obs_generator(object):
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
           flagwind (bool): flag for whether to derate sites with high wind
+          flagday (bool): flag for whether to flag sites during the local daytime
           p (list): list of lists of parameters for input ngEHTforecast.fisher.fisher_forecast.FisherForecast objects; one for each frequency
 
         Returns:
@@ -1155,7 +1182,7 @@ class obs_generator(object):
                     obsgen_here.im = model_target
 
                 # generate observation at target frequency
-                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, addFR=addFR, el_min=el_min, el_max=el_max, flagwind=flagwind, p=p_target)
+                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, addFR=addFR, el_min=el_min, el_max=el_max, flagwind=flagwind, flagday=flagday, p=p_target)
 
                 # add any new detections to the running datatable
                 if count == 0:
