@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>weather.weather &mdash; ngehtsim v1.0.0 documentation</title>
+  <title>weather.weather &mdash; ngehtsim v1.1.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                v1.0.0
+                v1.1.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -213,7 +213,7 @@
     <span class="n">reconstructed_spectrum</span> <span class="o">+=</span> <span class="n">meanspec_Tb</span>
     <span class="k">return</span> <span class="n">reconstructed_spectrum</span></div>
 
-<div class="viewcode-block" id="opacity_spectrum"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.opacity_spectrum">[docs]</a><span class="k">def</span> <span class="nf">opacity_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="opacity_spectrum"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.opacity_spectrum">[docs]</a><span class="k">def</span> <span class="nf">opacity_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the zenith opacity information for a specified site as a function of frequency.</span>
 
@@ -223,6 +223,7 @@
 <span class="sd">      month (str or int): The month for which to report weather</span>
 <span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      path_to_weather (str): The file path for the top-level weather data directory</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (numpy.ndarray): The requested opacity values; if form = &#39;all&#39;, then returns a 2D array</span>
@@ -241,7 +242,7 @@
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;tau.txt&#39;</span>
@@ -284,7 +285,7 @@
 
     <span class="k">return</span> <span class="n">tauspec</span></div>
 
-<div class="viewcode-block" id="opacity"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.opacity">[docs]</a><span class="k">def</span> <span class="nf">opacity</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">230.0</span><span class="p">):</span>
+<div class="viewcode-block" id="opacity"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.opacity">[docs]</a><span class="k">def</span> <span class="nf">opacity</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">230.0</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the zenith opacity information for a specified site at a specified frequency.</span>
 
@@ -295,6 +296,7 @@
 <span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      freq (float): The observing frequency, in GHz</span>
+<span class="sd">      path_to_weather (str): The file path for the top-level weather data directory</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (float): The requested opacity value(s); if form = &#39;all&#39;, then returns a numpy.ndarray</span>
@@ -305,7 +307,7 @@
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified frequency is outside of the acceptable range (0, 2000) GHz.&#39;</span><span class="p">)</span>
 
     <span class="c1"># get full spectrum</span>
-    <span class="n">tauspec</span> <span class="o">=</span> <span class="n">opacity_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">form</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">day</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">)</span>
+    <span class="n">tauspec</span> <span class="o">=</span> <span class="n">opacity_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">form</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">day</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">path_to_weather</span><span class="p">)</span>
 
     <span class="c1"># isolate the specified frequency</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
@@ -317,7 +319,7 @@
 
     <span class="k">return</span> <span class="n">tau</span></div>
 
-<div class="viewcode-block" id="brightness_temperature_spectrum"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.brightness_temperature_spectrum">[docs]</a><span class="k">def</span> <span class="nf">brightness_temperature_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="brightness_temperature_spectrum"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.brightness_temperature_spectrum">[docs]</a><span class="k">def</span> <span class="nf">brightness_temperature_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the zenith brightness temperature information for a specified site as a function of frequency.</span>
 
@@ -327,6 +329,7 @@
 <span class="sd">      month (str or int): The month for which to report weather</span>
 <span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      path_to_weather (str): The file path for the top-level weather data directory</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (numpy.ndarray): The requested brightness temperature values; if form = &#39;all&#39;, then returns a 2D array</span>
@@ -345,7 +348,7 @@
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;Tb.txt&#39;</span>
@@ -388,7 +391,7 @@
     
     <span class="k">return</span> <span class="n">Tbspec</span></div>
 
-<div class="viewcode-block" id="brightness_temperature"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.brightness_temperature">[docs]</a><span class="k">def</span> <span class="nf">brightness_temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">230.0</span><span class="p">):</span>
+<div class="viewcode-block" id="brightness_temperature"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.brightness_temperature">[docs]</a><span class="k">def</span> <span class="nf">brightness_temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">230.0</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the zenith brightness temperature information for a specified site at a specified frequency.</span>
 
@@ -399,6 +402,7 @@
 <span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      freq (float): The observing frequency, in GHz</span>
+<span class="sd">      path_to_weather (str): The file path for the top-level weather data directory</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (float): The requested brightness temperature value(s), in K; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
@@ -409,7 +413,7 @@
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified frequency is outside of the acceptable range (0, 2000) GHz.&#39;</span><span class="p">)</span>
 
     <span class="c1"># get full spectrum</span>
-    <span class="n">Tbspec</span> <span class="o">=</span> <span class="n">brightness_temperature_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">form</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">day</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">)</span>
+    <span class="n">Tbspec</span> <span class="o">=</span> <span class="n">brightness_temperature_spectrum</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="n">form</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="n">day</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">year</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">path_to_weather</span><span class="p">)</span>
 
     <span class="c1"># isolate the specified frequency</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">form</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span><span class="p">):</span>
@@ -421,7 +425,7 @@
 
     <span class="k">return</span> <span class="n">Tb</span></div>
 
-<div class="viewcode-block" id="pressure"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.pressure">[docs]</a><span class="k">def</span> <span class="nf">pressure</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="pressure"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.pressure">[docs]</a><span class="k">def</span> <span class="nf">pressure</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the surface pressure information for a specified site.</span>
 
@@ -431,6 +435,7 @@
 <span class="sd">      month (str or int): The month for which to report weather</span>
 <span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      path_to_weather (str): The file path for the top-level weather data directory</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (float): The requested pressure value(s), in mbar; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
@@ -449,7 +454,7 @@
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;Pbase.txt&#39;</span>
@@ -489,7 +494,7 @@
 
     <span class="k">return</span> <span class="n">P</span></div>
 
-<div class="viewcode-block" id="temperature"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.temperature">[docs]</a><span class="k">def</span> <span class="nf">temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="temperature"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.temperature">[docs]</a><span class="k">def</span> <span class="nf">temperature</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the surface temperature information for a specified site.</span>
 
@@ -499,6 +504,7 @@
 <span class="sd">      month (str or int): The month for which to report weather</span>
 <span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      path_to_weather (str): The file path for the top-level weather data directory</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (float): The requested temperature value(s), in K; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
@@ -517,7 +523,7 @@
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;Tbase.txt&#39;</span>
@@ -557,7 +563,7 @@
 
     <span class="k">return</span> <span class="n">T</span></div>
 
-<div class="viewcode-block" id="PWV"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.PWV">[docs]</a><span class="k">def</span> <span class="nf">PWV</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="PWV"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.PWV">[docs]</a><span class="k">def</span> <span class="nf">PWV</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the precipitable water vapor (PWV) information for a specified site.</span>
 
@@ -567,6 +573,7 @@
 <span class="sd">      month (str or int): The month for which to report weather</span>
 <span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      path_to_weather (str): The file path for the top-level weather data directory</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (float): The requested PWV value(s), in mm; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
@@ -585,7 +592,7 @@
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;PWV.txt&#39;</span>
@@ -625,7 +632,7 @@
 
     <span class="k">return</span> <span class="n">pwv</span></div>
 
-<div class="viewcode-block" id="windspeed"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.windspeed">[docs]</a><span class="k">def</span> <span class="nf">windspeed</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">):</span>
+<div class="viewcode-block" id="windspeed"><a class="viewcode-back" href="../../docs/source/weather.html#weather.weather.windspeed">[docs]</a><span class="k">def</span> <span class="nf">windspeed</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s1">&#39;exact&#39;</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2015</span><span class="p">,</span> <span class="n">path_to_weather</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Retrieve the windspeed information for a specified site.</span>
 
@@ -635,6 +642,7 @@
 <span class="sd">      month (str or int): The month for which to report weather</span>
 <span class="sd">      day (str or int): The day of the month for which to report weather; only used for form = &#39;exact&#39;</span>
 <span class="sd">      year (str or int): The year for which to report weather; only used for form = &#39;exact&#39;</span>
+<span class="sd">      path_to_weather (str): The file path for the top-level weather data directory</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      (float): The requested windspeed value(s), in m/s; if form = &#39;all&#39;, then returns a numpy.ndarray</span>
@@ -653,7 +661,7 @@
         <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).&#39;</span><span class="p">)</span>
 
     <span class="c1"># determine which table to read</span>
-    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
+    <span class="n">pathhere</span> <span class="o">=</span> <span class="n">path_to_weather</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">site</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="n">monthnum</span> <span class="o">+</span> <span class="n">monthnam</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span>
     <span class="n">pathhere</span> <span class="o">+=</span> <span class="s1">&#39;windspeed.txt&#39;</span>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation Guide &mdash; ngehtsim v1.0.0+1.gae0633f0 documentation</title>
+  <title>Installation Guide &mdash; ngehtsim v1.1.0 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                v1.0.0+1.gae0633f0
+                v1.1.0
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -89,6 +89,10 @@
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip install <span class="o">[</span>--upgrade<span class="o">]</span> . <span class="o">[</span>--user<span class="o">]</span>
 </pre></div>
 </div>
+<p>If you would like to additionally install the calibration dependencies, run:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip install <span class="o">[</span>--upgrade<span class="o">]</span> .<span class="o">[</span>calib<span class="o">]</span> <span class="o">[</span>--user<span class="o">]</span>
+</pre></div>
+</div>
 </section>
 <section id="dependencies">
 <h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this heading"></a></h2>
@@ -101,6 +105,11 @@
 <li><p><a class="reference external" href="https://www.scipy.org">scipy</a></p></li>
 <li><p><a class="reference external" href="https://www.astropy.org/">astropy</a></p></li>
 <li><p><a class="reference external" href="https://aeb.github.io/ngEHTforecast/html/docs/src/index.html">ngEHTforecast</a></p></li>
+</ul>
+<p>ngehtsim also has the option to include additional calibration capabilities during installation, which further requires:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://pandas.pydata.org/">pandas</a></p></li>
+<li><p><a class="reference external" href="https://github.com/sao-eht/eat.git">eat</a></p></li>
 </ul>
 <p>Dependencies are specified in setup.py and will be handled via the pip install process. Generating a local version of the documentation for ngehtsim requires:</p>
 <ul class="simple">

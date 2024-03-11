@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>calibration.calibration &mdash; ngehtsim v1.1.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
+          </a>
+              <div class="version">
+                v1.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/installation.html">Installation Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../docs/source/api.html">API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../docs/source/index.html">ngehtsim</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../docs/source/index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>calibration.calibration</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for calibration.calibration</h1><div class="highlight"><pre>
+<span></span><span class="c1">###################################################</span>
+<span class="c1"># imports</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">ehtim</span> <span class="k">as</span> <span class="nn">eh</span>
+<span class="kn">import</span> <span class="nn">ngehtsim.obs.obs_generator</span> <span class="k">as</span> <span class="nn">og</span>
+<span class="kn">import</span> <span class="nn">ngehtsim.const_def</span> <span class="k">as</span> <span class="nn">const</span>
+<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="kn">import</span> <span class="n">Time</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">eat.io.hops</span> <span class="kn">import</span> <span class="n">read_alist</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1">###################################################</span>
+<span class="c1"># define various dictionaries</span>
+
+<span class="c1"># station code conversion dictionary</span>
+<span class="n">known_station_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="s1">&#39;ALMA&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;G&#39;</span><span class="p">:</span> <span class="s1">&#39;GLT&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;J&#39;</span><span class="p">:</span> <span class="s1">&#39;JCMT&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;K&#39;</span><span class="p">:</span> <span class="s1">&#39;KP&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;L&#39;</span><span class="p">:</span> <span class="s1">&#39;LMT&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;N&#39;</span><span class="p">:</span> <span class="s1">&#39;NOEMA&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;P&#39;</span><span class="p">:</span> <span class="s1">&#39;IRAM&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;S&#39;</span><span class="p">:</span> <span class="s1">&#39;SMA&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;X&#39;</span><span class="p">:</span> <span class="s1">&#39;APEX&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;Y&#39;</span><span class="p">:</span> <span class="s1">&#39;SPT&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;Z&#39;</span><span class="p">:</span> <span class="s1">&#39;SMT&#39;</span><span class="p">}</span>
+
+<span class="c1">###################################################</span>
+<span class="c1"># function definitions</span>
+
+<div class="viewcode-block" id="apriorical"><a class="viewcode-back" href="../../docs/source/calibration.html#calibration.calibration.apriorical">[docs]</a><span class="k">def</span> <span class="nf">apriorical</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">sourcename</span><span class="p">,</span><span class="n">bandwidth</span><span class="p">,</span><span class="n">debias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">remove_autocorr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+               <span class="n">RA</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">DEC</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">station_codes</span><span class="o">=</span><span class="p">{},</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read an alist data file and carry out a priori flux density calibration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      filename (str): The name of the input alist data file</span>
+<span class="sd">      sourcename (str): The name of the source whose data to calibrate</span>
+<span class="sd">      bandwidth (float): The bandwidth over which the data have been averaged, in GHz</span>
+<span class="sd">      debias (bool): Flag for whether to debias the amplitudes stored in the alist file</span>
+<span class="sd">      remove_autocorr (bool): Flag for whether to remove autocorrelations during calibration</span>
+<span class="sd">      RA (float): Right ascension of the source, in decimal hours</span>
+<span class="sd">      DEC (float): Declination of the source, in decimal degrees</span>
+<span class="sd">      station_codes (dict): Dictionary containing conversions between single- and multi-letter station codes</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (pandas.DataFrame): pandas DataFrame containing the calibrated data and associated metainfo</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># check inputs</span>
+
+    <span class="c1"># make sure source is known or else RA+DEC are supplied</span>
+    <span class="k">if</span> <span class="n">sourcename</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">RA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">DEC</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">RA</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">[</span><span class="n">sourcename</span><span class="p">][</span><span class="s1">&#39;RA&#39;</span><span class="p">]</span>
+            <span class="n">DEC</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">[</span><span class="n">sourcename</span><span class="p">][</span><span class="s1">&#39;DEC&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">RA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">DEC</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Source with name &#39;</span> <span class="o">+</span> <span class="n">sourcename</span> <span class="o">+</span> <span class="s1">&#39; is not already known, so RA and DEC values need to be provided.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># update the station codes if needed</span>
+    <span class="n">station_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">known_station_dict</span><span class="p">)</span>
+    <span class="n">station_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">station_codes</span><span class="p">)</span>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># parse the alist file</span>
+
+    <span class="c1"># read in the alist file using eat</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">read_alist</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+    <span class="c1"># extract the relevant quantities</span>
+    <span class="n">datetime_orig</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">datetime</span>
+    <span class="n">timetag_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">timetag</span><span class="p">)</span>
+    <span class="n">source_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">source</span><span class="p">)</span>
+    <span class="n">bl_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">baseline</span><span class="p">)</span>
+    <span class="n">pl_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">polarization</span><span class="p">)</span>
+    <span class="n">tint_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+    <span class="n">amp_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">amp</span><span class="p">)</span>
+    <span class="n">snr_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">snr</span><span class="p">)</span>
+    <span class="n">phase_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">resid_phas</span><span class="p">)</span>
+    <span class="n">elev1_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ref_elev</span><span class="p">)</span>
+    <span class="n">elev2_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">rem_elev</span><span class="p">)</span>
+    <span class="n">u_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
+    <span class="n">v_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
+    <span class="n">freq_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ref_freq</span><span class="p">)</span>
+
+    <span class="c1"># debias SNR if desired</span>
+    <span class="k">if</span> <span class="n">debias</span><span class="p">:</span>
+        <span class="n">snr_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">snr_orig</span><span class="o">**</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="c1"># determine uncertainties</span>
+    <span class="n">amp_err_orig</span> <span class="o">=</span> <span class="n">amp_orig</span> <span class="o">/</span> <span class="n">snr_orig</span>
+
+    <span class="c1"># determine time in hours</span>
+    <span class="n">t_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">datetime_orig</span><span class="p">))</span>
+    <span class="n">day_orig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">datetime_orig</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">datetime_orig</span><span class="p">):</span>
+        <span class="n">t_orig</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">hour</span> <span class="o">+</span> <span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">minute</span><span class="o">/</span><span class="mf">60.0</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">second</span><span class="o">/</span><span class="mf">3600.0</span><span class="p">)</span>
+        <span class="n">day_orig</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">timetag_orig</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># convert (u,v) to lambda</span>
+    <span class="n">u_orig</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">1.0e6</span><span class="p">)</span>
+    <span class="n">v_orig</span> <span class="o">*=</span> <span class="p">(</span><span class="mf">1.0e6</span><span class="p">)</span>
+
+    <span class="c1"># convert frequency to GHz</span>
+    <span class="n">freq_orig</span> <span class="o">/=</span> <span class="p">(</span><span class="mf">1.0e3</span><span class="p">)</span>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># extract only the data associated with the desired source</span>
+
+    <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span><span class="n">source_orig</span> <span class="o">==</span> <span class="n">sourcename</span><span class="p">)</span>
+    <span class="n">datetime</span> <span class="o">=</span> <span class="n">datetime_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">timetag</span> <span class="o">=</span> <span class="n">timetag_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">t_hr</span> <span class="o">=</span> <span class="n">t_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">t_hr</span> <span class="o">+</span> <span class="p">(</span><span class="n">day_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span><span class="o">*</span><span class="mf">24.0</span><span class="p">)</span>
+    <span class="n">day</span> <span class="o">=</span> <span class="n">day_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">bl</span> <span class="o">=</span> <span class="n">bl_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">pl</span> <span class="o">=</span> <span class="n">pl_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">u_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">v_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">freq_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">amp</span> <span class="o">=</span> <span class="n">amp_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">phase_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+    <span class="n">snr</span> <span class="o">=</span> <span class="n">snr_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">elev1</span> <span class="o">=</span> <span class="n">elev1_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+    <span class="n">elev2</span> <span class="o">=</span> <span class="n">elev2_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+    <span class="n">amp_err</span> <span class="o">=</span> <span class="n">amp_err_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+    <span class="n">tint</span> <span class="o">=</span> <span class="n">tint_orig</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+
+    <span class="c1"># construct complex visibilities</span>
+    <span class="n">vis</span> <span class="o">=</span> <span class="n">amp</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="mi">1</span><span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="n">phase</span><span class="p">)</span>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># remove autocorrelations</span>
+
+    <span class="k">if</span> <span class="n">remove_autocorr</span><span class="p">:</span>
+
+        <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timetag</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">timetag</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">bl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">bl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">ind</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">datetime</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">timetag</span> <span class="o">=</span> <span class="n">timetag</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">t_hr</span> <span class="o">=</span> <span class="n">t_hr</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">day</span> <span class="o">=</span> <span class="n">day</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">bl</span> <span class="o">=</span> <span class="n">bl</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">pl</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">freq</span> <span class="o">=</span> <span class="n">freq</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">amp</span> <span class="o">=</span> <span class="n">amp</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">phase</span> <span class="o">=</span> <span class="n">phase</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">snr</span> <span class="o">=</span> <span class="n">snr</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">elev1</span> <span class="o">=</span> <span class="n">elev1</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">elev2</span> <span class="o">=</span> <span class="n">elev2</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">amp_err</span> <span class="o">=</span> <span class="n">amp_err</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">tint</span> <span class="o">=</span> <span class="n">tint</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">vis</span> <span class="o">=</span> <span class="n">vis</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># simulate the observation with ngehtsim</span>
+
+    <span class="n">months</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Jan&#39;</span><span class="p">,</span><span class="s1">&#39;Feb&#39;</span><span class="p">,</span><span class="s1">&#39;Mar&#39;</span><span class="p">,</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span><span class="s1">&#39;May&#39;</span><span class="p">,</span><span class="s1">&#39;Jun&#39;</span><span class="p">,</span><span class="s1">&#39;Jul&#39;</span><span class="p">,</span><span class="s1">&#39;Aug&#39;</span><span class="p">,</span><span class="s1">&#39;Sep&#39;</span><span class="p">,</span><span class="s1">&#39;Oct&#39;</span><span class="p">,</span><span class="s1">&#39;Nov&#39;</span><span class="p">,</span><span class="s1">&#39;Dec&#39;</span><span class="p">]</span>
+
+    <span class="c1"># make dummy input model</span>
+    <span class="n">mod</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span>
+    <span class="n">mod</span> <span class="o">=</span> <span class="n">mod</span><span class="o">.</span><span class="n">add_point</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="c1"># loop through scans</span>
+    <span class="n">t_uniq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+    <span class="n">vis_corrected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">vis</span><span class="p">)</span>
+    <span class="n">amp_corrected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">amp</span><span class="p">)</span>
+    <span class="n">amp_err_corrected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">amp_err</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">itime</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t_uniq</span><span class="p">)):</span>
+
+        <span class="n">there</span> <span class="o">=</span> <span class="n">t_uniq</span><span class="p">[</span><span class="n">itime</span><span class="p">]</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span> <span class="o">==</span> <span class="n">there</span><span class="p">)</span>
+        <span class="n">there</span> <span class="o">-=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">day</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span><span class="o">*</span><span class="mf">24.0</span><span class="p">)</span>
+
+        <span class="c1"># determine the sites that are observing</span>
+        <span class="n">bl_here</span> <span class="o">=</span> <span class="n">bl</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">sites</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bl_here</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">station_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Unrecognized station with single-letter code &#39;</span><span class="o">+</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;; please specify this station using the station_codes keyword argument.&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">station_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Unrecognized station with single-letter code &#39;</span><span class="o">+</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;; please specify this station using the station_codes keyword argument.&#39;</span><span class="p">)</span> 
+            <span class="n">sites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">station_dict</span><span class="p">[</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="n">sites</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">station_dict</span><span class="p">[</span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">sites</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">sites</span><span class="p">))</span>
+
+        <span class="c1"># other relevant quantities</span>
+        <span class="n">freq_here</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">freq</span><span class="p">[</span><span class="n">ind</span><span class="p">])</span>
+        <span class="n">pl_here</span> <span class="o">=</span> <span class="n">pl</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">vis_here</span> <span class="o">=</span> <span class="n">vis</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">amp_here</span> <span class="o">=</span> <span class="n">amp</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">amp_err_here</span> <span class="o">=</span> <span class="n">amp_err</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">tint_here</span> <span class="o">=</span> <span class="n">tint</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">tint_here</span><span class="p">)</span>
+
+        <span class="c1"># settings</span>
+        <span class="n">settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="n">sourcename</span><span class="p">,</span>
+                    <span class="s1">&#39;RA&#39;</span><span class="p">:</span> <span class="n">RA</span><span class="p">,</span>
+                    <span class="s1">&#39;DEC&#39;</span><span class="p">:</span> <span class="n">DEC</span><span class="p">,</span>
+                    <span class="s1">&#39;frequency&#39;</span><span class="p">:</span> <span class="n">freq_here</span><span class="p">,</span>
+                    <span class="s1">&#39;bandwidth&#39;</span><span class="p">:</span> <span class="n">bandwidth</span><span class="p">,</span>
+                    <span class="s1">&#39;day&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="p">[</span><span class="n">itime</span><span class="p">]</span><span class="o">.</span><span class="n">day</span><span class="p">),</span>
+                    <span class="s1">&#39;month&#39;</span><span class="p">:</span> <span class="n">months</span><span class="p">[</span><span class="n">datetime</span><span class="p">[</span><span class="n">itime</span><span class="p">]</span><span class="o">.</span><span class="n">month</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="p">[</span><span class="n">itime</span><span class="p">]</span><span class="o">.</span><span class="n">year</span><span class="p">),</span>
+                    <span class="s1">&#39;t_start&#39;</span><span class="p">:</span> <span class="n">there</span><span class="p">,</span>
+                    <span class="s1">&#39;dt&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">3600.0</span><span class="p">),</span>
+                    <span class="s1">&#39;t_int&#39;</span><span class="p">:</span> <span class="n">dt</span><span class="p">,</span>
+                    <span class="s1">&#39;t_rest&#39;</span><span class="p">:</span> <span class="n">dt</span><span class="p">,</span>
+                    <span class="s1">&#39;fringe_finder&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;naive&#39;</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span>
+                    <span class="s1">&#39;sites&#39;</span><span class="p">:</span> <span class="n">sites</span><span class="p">,</span>
+                    <span class="s1">&#39;weather&#39;</span><span class="p">:</span> <span class="s1">&#39;exact&#39;</span><span class="p">}</span>
+
+        <span class="c1"># simulate this scan, tracking SEFDs</span>
+        <span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span><span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">make_obs</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="n">addnoise</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">addgains</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">flagwind</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">el_min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">el_max</span><span class="o">=</span><span class="mf">90.0</span><span class="p">)</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">switch_polrep</span><span class="p">(</span><span class="s1">&#39;circ&#39;</span><span class="p">)</span>
+
+        <span class="c1"># flag any unwanted times</span>
+        <span class="n">UT_start_hour</span> <span class="o">=</span> <span class="n">there</span><span class="o">-</span><span class="mf">0.0001</span>
+        <span class="n">UT_stop_hour</span> <span class="o">=</span> <span class="n">there</span><span class="o">+</span><span class="mf">0.0001</span>
+        <span class="n">UT_mask</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">UT_start_hour</span>
+        <span class="n">UT_mask</span> <span class="o">=</span> <span class="n">UT_mask</span> <span class="o">+</span> <span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">UT_stop_hour</span><span class="p">)</span>
+        <span class="n">what_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">False</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">UT_mask</span><span class="p">))])</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">UT_mask</span> <span class="o">|</span> <span class="n">what_mask</span>
+        <span class="n">SEFD1</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">SEFD1</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span>
+        <span class="n">SEFD2</span> <span class="o">=</span> <span class="n">obsgen</span><span class="o">.</span><span class="n">SEFD2</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span>
+        <span class="k">with</span> <span class="n">eh</span><span class="o">.</span><span class="n">parloop</span><span class="o">.</span><span class="n">HiddenPrints</span><span class="p">():</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">flag_UT_range</span><span class="p">(</span><span class="n">UT_start_hour</span><span class="p">,</span> <span class="n">UT_stop_hour</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;flagged&#39;</span><span class="p">)</span>
+
+        <span class="c1"># determine amplitude scaling factor</span>
+        <span class="n">sites_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sites</span><span class="p">)</span>
+        <span class="n">bw</span> <span class="o">=</span> <span class="n">bandwidth</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0e9</span><span class="p">)</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t1&#39;</span><span class="p">]</span>
+        <span class="n">t2</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t2&#39;</span><span class="p">]</span>
+        <span class="n">scale_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">amp_here</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">amp_here</span><span class="p">)):</span>
+            <span class="n">ind_here</span> <span class="o">=</span> <span class="p">((</span><span class="n">t1</span> <span class="o">==</span> <span class="n">station_dict</span><span class="p">[</span><span class="n">bl_here</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">]])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">t2</span> <span class="o">==</span> <span class="n">station_dict</span><span class="p">[</span><span class="n">bl_here</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">]]))</span>
+            <span class="n">ind_here</span> <span class="o">|=</span> <span class="p">((</span><span class="n">t2</span> <span class="o">==</span> <span class="n">station_dict</span><span class="p">[</span><span class="n">bl_here</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">]])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">t1</span> <span class="o">==</span> <span class="n">station_dict</span><span class="p">[</span><span class="n">bl_here</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">1</span><span class="p">]]))</span>
+            <span class="n">scale_factor</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0e-4</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">SEFD1</span><span class="p">[</span><span class="n">ind_here</span><span class="p">]</span><span class="o">*</span><span class="n">SEFD2</span><span class="p">[</span><span class="n">ind_here</span><span class="p">])</span>
+
+        <span class="c1"># apply the scaling factor</span>
+        <span class="n">vis_corrected</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">vis_here</span> <span class="o">*</span> <span class="n">scale_factor</span>
+        <span class="n">amp_corrected</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">amp_here</span> <span class="o">*</span> <span class="n">scale_factor</span>
+        <span class="n">amp_err_corrected</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">amp_err_here</span> <span class="o">*</span> <span class="n">scale_factor</span>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># return the calibrated data</span>
+
+    <span class="n">struct</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;freq&#39;</span><span class="p">:</span> <span class="n">freq</span><span class="p">,</span>
+              <span class="s1">&#39;t&#39;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span>
+              <span class="s1">&#39;t_hr&#39;</span><span class="p">:</span> <span class="n">t_hr</span><span class="p">,</span>
+              <span class="s1">&#39;bl&#39;</span><span class="p">:</span> <span class="n">bl</span><span class="p">,</span>
+              <span class="s1">&#39;pl&#39;</span><span class="p">:</span> <span class="n">pl</span><span class="p">,</span>
+              <span class="s1">&#39;u&#39;</span><span class="p">:</span> <span class="n">u</span><span class="p">,</span>
+              <span class="s1">&#39;v&#39;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span>
+              <span class="s1">&#39;elev1&#39;</span><span class="p">:</span> <span class="n">elev1</span><span class="p">,</span>
+              <span class="s1">&#39;elev2&#39;</span><span class="p">:</span> <span class="n">elev2</span><span class="p">,</span>
+              <span class="s1">&#39;datetime&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+              <span class="s1">&#39;vis&#39;</span><span class="p">:</span> <span class="n">vis_corrected</span><span class="p">,</span>
+              <span class="s1">&#39;err&#39;</span><span class="p">:</span> <span class="n">amp_err_corrected</span><span class="p">,</span>
+              <span class="s1">&#39;snr&#39;</span><span class="p">:</span> <span class="n">snr</span><span class="p">}</span>
+
+    <span class="n">df_out</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">struct</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df_out</span></div>
+
+
+<div class="viewcode-block" id="write_dlist"><a class="viewcode-back" href="../../docs/source/calibration.html#calibration.calibration.write_dlist">[docs]</a><span class="k">def</span> <span class="nf">write_dlist</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">sourcename</span><span class="p">,</span><span class="n">bandwidth</span><span class="p">,</span><span class="n">outname</span><span class="p">,</span><span class="n">debias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">remove_autocorr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+               <span class="n">RA</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">DEC</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">station_codes</span><span class="o">=</span><span class="p">{},</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write a &quot;dlist&quot; data file from an &quot;alist&quot; file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      filename (str): The name of the input alist data file</span>
+<span class="sd">      sourcename (str): The name of the source whose data to calibrate</span>
+<span class="sd">      bandwidth (float): The bandwidth over which the data have been averaged, in GHz</span>
+<span class="sd">      outname (str): The name of the output dlist data file</span>
+<span class="sd">      debias (bool): Flag for whether to debias the amplitudes stored in the alist file</span>
+<span class="sd">      remove_autocorr (bool): Flag for whether to remove autocorrelations during calibration</span>
+<span class="sd">      RA (float): Right ascension of the source, in decimal hours</span>
+<span class="sd">      DEC (float): Declination of the source, in decimal degrees</span>
+<span class="sd">      station_codes (dict): Dictionary containing conversions between single- and multi-letter station codes</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      (numpy.ndarray): Several arrays containing the calibrated data and associated metainfo</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># check inputs</span>
+
+    <span class="c1"># make sure source is known or else RA+DEC are supplied</span>
+    <span class="k">if</span> <span class="n">sourcename</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">RA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">DEC</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">RA</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">[</span><span class="n">sourcename</span><span class="p">][</span><span class="s1">&#39;RA&#39;</span><span class="p">]</span>
+            <span class="n">DEC</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_sources</span><span class="p">[</span><span class="n">sourcename</span><span class="p">][</span><span class="s1">&#39;DEC&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">RA</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">DEC</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Source with name &#39;</span> <span class="o">+</span> <span class="n">sourcename</span> <span class="o">+</span> <span class="s1">&#39; is not already known, so RA and DEC values need to be provided.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># update the station codes if needed</span>
+    <span class="n">station_dict</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">known_station_dict</span><span class="p">)</span>
+    <span class="n">station_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">station_codes</span><span class="p">)</span>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># carry out the flux density calibration</span>
+        
+    <span class="n">df</span> <span class="o">=</span> <span class="n">apriorical</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">sourcename</span><span class="p">,</span><span class="n">bandwidth</span><span class="p">,</span><span class="n">debias</span><span class="o">=</span><span class="n">debias</span><span class="p">,</span><span class="n">remove_autocorr</span><span class="o">=</span><span class="n">remove_autocorr</span><span class="p">,</span><span class="n">RA</span><span class="o">=</span><span class="n">RA</span><span class="p">,</span><span class="n">DEC</span><span class="o">=</span><span class="n">DEC</span><span class="p">,</span><span class="n">station_codes</span><span class="o">=</span><span class="n">station_codes</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">freq</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">freq</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">t</span>
+    <span class="n">t_hr</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">t_hr</span>
+    <span class="n">bl</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">bl</span>
+    <span class="n">pl</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">pl</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">u</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">v</span>
+    <span class="n">elev1</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">elev1</span>
+    <span class="n">elev2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">elev2</span>
+    <span class="n">datetime</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">datetime</span>
+    <span class="n">vis_corrected</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">vis</span>
+    <span class="n">err_corrected</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">err</span>
+    <span class="n">snr</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">snr</span>
+
+    <span class="c1">############################################</span>
+    <span class="c1"># write reformatted &quot;dlist&quot; table</span>
+
+    <span class="c1"># convert source RA and DEC to radians</span>
+    <span class="n">RA_rad</span> <span class="o">=</span> <span class="n">RA</span><span class="o">*</span><span class="mf">15.0</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+    <span class="n">DEC_rad</span> <span class="o">=</span> <span class="n">DEC</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+
+    <span class="c1"># write file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">outname</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+
+        <span class="n">header</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;Freq&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;Time&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;Station1&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;Station2&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;Pol1&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;Pol2&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;u&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;v&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;elev1&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;elev2&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;parang1&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;parang2&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;Re(vis)&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;Im(vis)&#39;</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+        <span class="n">header</span> <span class="o">+=</span> <span class="s1">&#39;sigma&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">292</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">vis_corrected</span><span class="p">)):</span>
+
+            <span class="c1"># populate table entries</span>
+            <span class="n">strhere</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">freq</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="mi">12</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="n">station_dict</span><span class="p">[</span><span class="n">bl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="n">station_dict</span><span class="p">[</span><span class="n">bl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="n">pl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="n">pl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="mi">10</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="mi">10</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">elev1</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="mi">10</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">elev2</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="mi">10</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+
+            <span class="c1"># compute parallactic angle</span>
+            <span class="n">timestr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">year</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">day</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">hour</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">minute</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">second</span><span class="p">)</span><span class="o">.</span><span class="n">zfill</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">timeobj</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="n">timestr</span><span class="p">,</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;iso&#39;</span><span class="p">)</span>
+            <span class="n">MJD</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">timeobj</span><span class="o">.</span><span class="n">mjd</span><span class="p">)</span>
+            <span class="n">gst</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">12.0</span><span class="p">)</span><span class="o">*</span><span class="n">eh</span><span class="o">.</span><span class="n">observing</span><span class="o">.</span><span class="n">obs_helpers</span><span class="o">.</span><span class="n">utc_to_gmst</span><span class="p">(</span><span class="n">t_hr</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">MJD</span><span class="p">)</span>        
+            <span class="n">lat1</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_latitudes</span><span class="p">[</span><span class="n">station_dict</span><span class="p">[</span><span class="n">bl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]]]</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+            <span class="n">lat2</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_latitudes</span><span class="p">[</span><span class="n">station_dict</span><span class="p">[</span><span class="n">bl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]]]</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+            <span class="n">lon1</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_longitudes</span><span class="p">[</span><span class="n">station_dict</span><span class="p">[</span><span class="n">bl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]]]</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+            <span class="n">lon2</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_longitudes</span><span class="p">[</span><span class="n">station_dict</span><span class="p">[</span><span class="n">bl</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]]]</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+            <span class="n">hr_angle1</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">observing</span><span class="o">.</span><span class="n">obs_helpers</span><span class="o">.</span><span class="n">hr_angle</span><span class="p">(</span><span class="n">gst</span><span class="p">,</span><span class="n">lon1</span><span class="p">,</span><span class="n">RA</span><span class="p">)</span>
+            <span class="n">hr_angle2</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">observing</span><span class="o">.</span><span class="n">obs_helpers</span><span class="o">.</span><span class="n">hr_angle</span><span class="p">(</span><span class="n">gst</span><span class="p">,</span><span class="n">lon2</span><span class="p">,</span><span class="n">RA</span><span class="p">)</span>
+            <span class="n">par_angle1</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">observing</span><span class="o">.</span><span class="n">obs_helpers</span><span class="o">.</span><span class="n">par_angle</span><span class="p">(</span><span class="n">hr_angle1</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">DEC</span><span class="p">)</span>
+            <span class="n">par_angle2</span> <span class="o">=</span> <span class="n">eh</span><span class="o">.</span><span class="n">observing</span><span class="o">.</span><span class="n">obs_helpers</span><span class="o">.</span><span class="n">par_angle</span><span class="p">(</span><span class="n">hr_angle2</span><span class="p">,</span> <span class="n">lat2</span><span class="p">,</span> <span class="n">DEC</span><span class="p">)</span>
+
+            <span class="c1"># continue populating table entries</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">par_angle1</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">par_angle2</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">vis_corrected</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span><span class="mi">12</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">imag</span><span class="p">(</span><span class="n">vis_corrected</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span><span class="mi">12</span><span class="p">))</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">err_corrected</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="mi">12</span><span class="p">))</span>
+            <span class="n">strhere</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">strhere</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Dom Pesce.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
