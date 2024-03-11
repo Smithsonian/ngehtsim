@@ -1,8 +1,6 @@
 #######################################################
 # imports
 
-import numpy as np
-import ehtim as eh
 import ngehtsim.obs.obs_generator as og
 import ngehtsim.obs.obs_plotter as op
 import ngehtsim.metrics as cm
@@ -25,37 +23,37 @@ obs.save_uvfits('./example_datafile.uvfits')
 #######################################################
 # make some plots of the data
 
-op.plot_uv(obs,filename='./example_plot_uv.png')
-op.plot_amp(obs,filename='./example_plot_amp.png')
-op.plot_phase(obs,filename='./example_plot_phase.png')
-op.plot_snr(obs,filename='./example_plot_snr.png')
+op.plot_uv(obs, filename='./example_plot_uv.png')
+op.plot_amp(obs, filename='./example_plot_amp.png')
+op.plot_phase(obs, filename='./example_plot_phase.png')
+op.plot_snr(obs, filename='./example_plot_snr.png')
 
 #######################################################
 # compute various metrics
 
 # compute FF metric
-ff = cm.calc_ff(obs,fov=200.0)
-print('FF metric value is: ',ff)
+ff = cm.calc_ff(obs, fov=200.0)
+print('FF metric value is: ', ff)
 
 # compute BFF metric for each Stokes parameter
-for stokes in ['I','Q','U','V']:
-    bff = cm.calc_bff(obs,fov=200.0,stokes=stokes)
-    print('Stokes ' + stokes + ' BFF metric value is: ',bff)
+for stokes in ['I', 'Q', 'U', 'V']:
+    bff = cm.calc_bff(obs, fov=200.0, stokes=stokes)
+    print('Stokes ' + stokes + ' BFF metric value is: ', bff)
 
 # compute LCG metric
 lcg = cm.calc_lcg(obs)
-print('LCG metric value is: ',lcg)
+print('LCG metric value is: ', lcg)
 
 # compute PSS metric
 pss = cm.calc_pss(obs)
-print('PSS metric value (in Jy) is: ',pss)
+print('PSS metric value (in Jy) is: ', pss)
 
 # compute angular resolution metric with different weightings
-for weighting in ['natural','uniform','robust']:
-    ar = cm.calc_ar(obs,artype='mean',weighting=weighting)
-    print('Average beam size (in uas) with ' + weighting + ' weighting is: ',ar)
+for weighting in ['natural', 'uniform', 'robust']:
+    ar = cm.calc_ar(obs, artype='mean', weighting=weighting)
+    print('Average beam size (in uas) with ' + weighting + ' weighting is: ', ar)
 
 #######################################################
 # plot a metric versus time for the observation
 
-op.plot_snapshot(obs,obsgen,'FF',fov=200.0,filename='./example_plot_FF.png')
+op.plot_snapshot(obs, obsgen, 'FF', fov=200.0, filename='./example_plot_FF.png')

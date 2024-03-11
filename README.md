@@ -2,7 +2,8 @@
 
 [![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://smithsonian.github.io/ngehtsim/)
 [![Build status](https://github.com/Smithsonian/ngehtsim/actions/workflows/run_unit_tests.yml/badge.svg)](https://github.com/Smithsonian/ngehtsim/actions)
-[![Python versions](https://img.shields.io/badge/python-3.8|3.9|3.10-blue.svg)](https://github.com/Smithsonian/ngehtsim)
+[![Python versions](https://img.shields.io/badge/python-3.8|3.9|3.10|3.11-blue.svg)](https://github.com/Smithsonian/ngehtsim)
+[![Code coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/dpesce/de229c48256d967a1cb8b29dbf575602/raw/covbadge.json)](https://github.com/Smithsonian/ngehtsim/actions)
 
 A set of tools for generating synthetic data for the Event Horizon Telescope ([EHT](https://eventhorizontelescope.org/)), the next-generation Event Horizon Telescope ([ngEHT](https://www.ngeht.org)), and other very long baseline interferometric arrays of radio telescopes.
 
@@ -22,6 +23,12 @@ ngehtsim is only tested on Python 3.8 and higher, and it may break for earlier v
     $ source .venv/bin/activate
     (.venv) $ python -m pip install --upgrade pip
     (.venv) $ pip install ./ngehtsim
+```
+
+There is an optional calibration functionality that requires some additional dependencies; it can be installed using:
+
+```
+    (.venv) $ pip install ./ngehtsim[calib]
 ```
 
 ## Checking that it works

@@ -179,4 +179,4 @@ def mask_highres_points(u_in, v_in, res_limit):
     mask = (u_in**2 + v_in**2) < (spatial_freq_limit**2)
     u_out = u_in[mask]
     v_out = v_in[mask]
-    return(u_out, v_out)
+    return u_out, v_out

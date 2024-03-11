@@ -1,7 +1,7 @@
 ############################################################
 # input files
 
-model_file: '../data_files/M87_345GHz_Chael.fits'
+model_file: '../data_files/M87_345GHz.fits'
 
 ############################################################
 # observation specs
@@ -25,7 +25,7 @@ t_rest: 600.        # time interval between consecutive integrations, in seconds
 # ['naive',threshold]
 # ['fringegroups', [strong baseline SNR threshold, strong baseline coherence time (in seconds)]
 # ['fpt', [strong baseline SNR threshold, strong baseline coherence time (in seconds), FPT reference frequency (in GHz), path to FPT reference model]
-fringe_finder: ['fpt', [20., 5., 86., '../data_files/M87_86GHz_Chael.fits']]
+fringe_finder: ['fpt', [20., 5., 86., '../data_files/M87_86GHz.fits']]
 
 ############################################################
 # array specs

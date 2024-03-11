@@ -1,0 +1,46 @@
+############################################################
+# input files
+
+model_file: './examples/data_files/M87_345GHz.fits'
+
+############################################################
+# observation specs
+
+source: 'M87'       # name of science target
+RA:                 # right ascension of science target, in J2000 hours
+DEC:                # declination of science target, in J2000 degrees
+frequency: 345.0    # observing frequency, in GHz
+bandwidth: 2.0      # fringe-finding bandwidth, in GHz
+
+day: '15'           # day of the month for the observation
+month: 'Apr'        # month of observation; uses three-letter abbreviations
+year: '2025'        # year of observation
+
+t_start: 0.         # start time of observation, in hours
+dt: 24.             # total duration of observation, in hours
+t_int: 300.         # integration time, in seconds
+t_rest: 600.        # time interval between consecutive integrations, in seconds
+
+# fringe finding scheme; options are:
+# ['naive',threshold]
+# ['fringegroups', [strong baseline SNR threshold, strong baseline coherence time (in seconds)]
+# ['fpt', [strong baseline SNR threshold, strong baseline coherence time (in seconds), FPT reference frequency (in GHz), path to FPT reference model]
+fringe_finder: ['fpt', [20., 5., 86., './examples/data_files/M87_86GHz.fits']]
+
+############################################################
+# array specs
+
+array:                 # name of the array to use
+D_new: 9.0             # new dish diameter, in meters
+tech_readiness: 1.0    # derating for technical readiness
+
+# list containing sites to include
+sites: ['ALMA','APEX','BAJA','CNI','GLT','IRAM','JCMT','JELM','KP','LAS','LMT','NOEMA','SMA','SMT','SPT']
+
+############################################################
+# other settings
+
+weather: 'random'               # way to select the weather ('random', 'exact', 'good', 'typical', or 'poor')
+ttype: 'fast'                   # type of Fourier transform ('direct', 'nfft', or 'fast')
+fft_pad_factor: 2               # zero pad the image to fft_pad_factor * image size in the FFT
+random_seed: 12345              # random number seed; if blank, will be auto-generated
