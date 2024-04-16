@@ -33,7 +33,7 @@ ERB,ER,IQ,36.584237,44.465782,2111,site of the inactive Erbil Observatory,,,,,
 FAIR,FA,US,64.988399,-147.598528,616,The Fox Range near Fairbanks,,,,,
 FLWO,FL,US,31.675479,-110.951028,1274,Fred Lawrence Whipple Observatory,,,,,HOP
 FUJI,FU,Japan,35.36652,138.729687,3748,Mount Fuji,,,,,
-GAM,AM,Namibia,-23.3393,16.229246,2342,site of the Africa Millimeter Telescope on the Gamsberg Mountain,15,25,ALT-AZ,0,AMT
+GAM,AM,Namibia,-23.3393,16.229246,2342,Gamsberg Mountain site considered for the Africa Millimeter Telescope,15,25,ALT-AZ,0,
 GARS,GA,Antarctica,-63.320456,-57.895441,20,German Antarctic Receiving Stations at General Bernardo O'Higgins Base,,,,,
 GBT,GB,US,38.433502,-79.83967,807,Green Bank Telescope,100,260,ALT-AZ,0,
 GGAO,GG,US,39.02202151,-76.82730398,19,GGAO VGOS station,12,100,ALT-AZ,0,GGAO12M
@@ -41,6 +41,7 @@ GLTS,GS,Greenland,72.579967,-38.449163,3229,summit of the Greenland ice sheet,,,
 GOR,GO,Switzerland,45.983333,7.784793,3128,Gornergrat observation platform,,,,,
 HAN,HN,India,32.779767,78.963318,4496,Indian Astronomical Observatory near the Hanle River,,,,,
 HAY,HA,US,42.623943,-71.488769,114,Haystack Observatory,37,85,ALT-AZ,0,
+HESS,HE,Namibia,-23.27154,16.5002,1900,HESS site  considered for the Africa Millimeter Telescope,15,25,ALT-AZ,0,AMT
 HIT,HT,Japan,36.69744,140.69211,120,Hitachi dish of the EAVN,32,1600,ALT-AZ,0,HIT32
 HOB,HB,Australia,-42.80556702,147.4381427,41,Hobart VGOS dish in Tasmania,12,100,ALT-AZ,0,HOBART12
 IRK,IR,Japan,31.74789,130.43989,574,Iriki dish of VERA,20,500,ALT-AZ,0,
