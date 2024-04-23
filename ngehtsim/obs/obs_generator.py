@@ -913,6 +913,10 @@ class obs_generator(object):
             else:
                 self.SEFD1 = SEFD1[mask]
                 self.SEFD2 = SEFD2[mask]
+            self.station_gains1R = self.station_gains1R[mask]
+            self.station_gains2R = self.station_gains2R[mask]
+            self.station_gains1L = self.station_gains1L[mask]
+            self.station_gains2L = self.station_gains2L[mask]
 
         # return observation object
         return obs
