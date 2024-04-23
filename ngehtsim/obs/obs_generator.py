@@ -512,7 +512,8 @@ class obs_generator(object):
 
     # generate a raw observation
     def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                flagwind=True, flagday=False, addFR=False, el_min=const.el_min, el_max=const.el_max, p=None):
+                flagwind=True, flagday=False, addFR=False, allow_mixed_basis=False,
+                el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
@@ -525,6 +526,7 @@ class obs_generator(object):
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
           addFR (bool): flag for whether or not to add feed rotations
+          allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
@@ -533,9 +535,11 @@ class obs_generator(object):
           (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation
         """
 
-        # warning for the feed rotations
+        # print some warnings
         if addFR:
             print('WARNING: adding feed rotations is currently known to break with multi-frequency data generation, and it is suspect at all times.')
+        if allow_mixed_basis:
+            print('WARNING: data generated in a non-circular polarization basis does not have properly-stored metadata info.')
 
         # generate an empty obsdata object
         if ((self.obs_empty is None) or (self.obs_empty.rf != self.freq)):
@@ -623,7 +627,7 @@ class obs_generator(object):
         # make sure we're in a circular basis
         obs = obs.switch_polrep(polrep_out='circ')
 
-        # extract elevation information
+        # extract relevant information
         t1 = obs.data['t1']
         t2 = obs.data['t2']
         sites_obs = np.unique(np.concatenate((t1, t2)))
@@ -716,6 +720,43 @@ class obs_generator(object):
             # indices for this site
             ind1 = (t1 == site)
             ind2 = (t2 == site)
+
+            # transform polarization basis if need be
+            if allow_mixed_basis:
+                if site in list(const.known_polbases.keys()):
+                    if (const.known_polbases[site] == 'linear'):
+
+                        # populate vectors of transform matrices
+                        tform_mat1 = np.zeros((ind1.sum(), 2, 2), dtype=complex)
+                        tform_mat2 = np.zeros((ind2.sum(), 2, 2), dtype=complex)
+                        tform_mat1[:] = const.circ_to_lin
+                        tform_mat2[:] = np.conj(const.circ_to_lin).T
+
+                        # populate vectors of coherency matrices
+                        coh_mat1 = np.zeros((ind1.sum(), 2, 2), dtype=complex)
+                        coh_mat1[:,0,0] = obs.data['rrvis'][ind1]
+                        coh_mat1[:,0,1] = obs.data['rlvis'][ind1]
+                        coh_mat1[:,1,0] = obs.data['lrvis'][ind1]
+                        coh_mat1[:,1,1] = obs.data['llvis'][ind1]
+                        coh_mat2 = np.zeros((ind2.sum(), 2, 2), dtype=complex)
+                        coh_mat2[:,0,0] = obs.data['rrvis'][ind2]
+                        coh_mat2[:,0,1] = obs.data['rlvis'][ind2]
+                        coh_mat2[:,1,0] = obs.data['lrvis'][ind2]
+                        coh_mat2[:,1,1] = obs.data['llvis'][ind2]
+
+                        # transform the basis
+                        coh_mat_tformed1 = np.matmul(tform_mat1,coh_mat1)
+                        coh_mat_tformed2 = np.matmul(coh_mat2,tform_mat2)
+
+                        # re-populate the data vector
+                        obs.data['rrvis'][ind1] = coh_mat_tformed1[:,0,0]
+                        obs.data['rlvis'][ind1] = coh_mat_tformed1[:,0,1]
+                        obs.data['lrvis'][ind1] = coh_mat_tformed1[:,1,0]
+                        obs.data['llvis'][ind1] = coh_mat_tformed1[:,1,1]
+                        obs.data['rrvis'][ind2] = coh_mat_tformed2[:,0,0]
+                        obs.data['rlvis'][ind2] = coh_mat_tformed2[:,0,1]
+                        obs.data['lrvis'][ind2] = coh_mat_tformed2[:,1,0]
+                        obs.data['llvis'][ind2] = coh_mat_tformed2[:,1,1]
 
             # get opacities at each timestamp
             if site != 'space':
@@ -924,7 +965,8 @@ class obs_generator(object):
 
     # generate observation
     def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                 addFR=False, el_min=const.el_min, el_max=const.el_max, flagwind=True, flagday=False, p=None):
+                 addFR=False, flagwind=True, flagday=False, allow_mixed_basis=False,
+                 el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate an observation that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
@@ -938,6 +980,7 @@ class obs_generator(object):
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
           addFR (bool): flag for whether or not to add feed rotations
+          allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
@@ -959,7 +1002,18 @@ class obs_generator(object):
                     print('No input model passed to make_obs; using the model provided in the settings.')
 
         # generate raw observation
-        obs = self.observe(input_model, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, addFR=addFR, el_min=el_min, el_max=el_max, p=p)
+        obs = self.observe(input_model,
+                           addnoise=addnoise,
+                           addgains=addgains,
+                           gainamp=gainamp,
+                           opacitycal=opacitycal,
+                           flagwind=flagwind,
+                           flagday=flagday,
+                           addFR=addFR,
+                           allow_mixed_basis=allow_mixed_basis,
+                           el_min=el_min,
+                           el_max=el_max,
+                           p=p)
 
         # apply naive SNR thresholding
         if (snr_algo.lower() == 'naive'):
