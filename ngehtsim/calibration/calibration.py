@@ -7,7 +7,10 @@ import ngehtsim.obs.obs_generator as og
 import ngehtsim.const_def as const
 from astropy.time import Time
 import copy
-from eat.io.hops import read_alist
+try:
+    from eat.io.hops import read_alist
+except ImportError:
+    print('Warning: eat not installed! Cannot use calibration functionality.')
 import pandas as pd
 
 ###################################################
