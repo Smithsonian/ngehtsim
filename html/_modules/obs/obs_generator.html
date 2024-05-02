@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>obs.obs_generator &mdash; ngehtsim v1.1.0 documentation</title>
+  <title>obs.obs_generator &mdash; ngehtsim v1.1.2 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
             <a href="../../docs/source/index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                v1.1.0
+                v1.1.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -584,7 +584,8 @@
 
     <span class="c1"># generate a raw observation</span>
 <div class="viewcode-block" id="obs_generator.observe"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.observe">[docs]</a>    <span class="k">def</span> <span class="nf">observe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_model</span><span class="p">,</span> <span class="n">addnoise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">addgains</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">gainamp</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span> <span class="n">opacitycal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">flagwind</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flagday</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">addFR</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">el_min</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">el_min</span><span class="p">,</span> <span class="n">el_max</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">el_max</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                <span class="n">flagwind</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flagday</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">addFR</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">allow_mixed_basis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">el_min</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">el_min</span><span class="p">,</span> <span class="n">el_max</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">el_max</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.</span>
 
@@ -597,6 +598,7 @@
 <span class="sd">          flagwind (bool): flag for whether to derate sites with high wind</span>
 <span class="sd">          flagday (bool): flag for whether to flag sites during the local daytime</span>
 <span class="sd">          addFR (bool): flag for whether or not to add feed rotations</span>
+<span class="sd">          allow_mixed_basis (bool): flag for whether to apply polarization basis conversions</span>
 <span class="sd">          el_min (float): minimum elevation that a site can observe at, in degrees</span>
 <span class="sd">          el_max (float): maximum elevation that a site can observe at, in degrees</span>
 <span class="sd">          p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object</span>
@@ -605,9 +607,11 @@
 <span class="sd">          (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="c1"># warning for the feed rotations</span>
+        <span class="c1"># print some warnings</span>
         <span class="k">if</span> <span class="n">addFR</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING: adding feed rotations is currently known to break with multi-frequency data generation, and it is suspect at all times.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">allow_mixed_basis</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;WARNING: data generated in a non-circular polarization basis does not have properly-stored metadata info.&#39;</span><span class="p">)</span>
 
         <span class="c1"># generate an empty obsdata object</span>
         <span class="k">if</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_empty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_empty</span><span class="o">.</span><span class="n">rf</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span><span class="p">)):</span>
@@ -695,7 +699,7 @@
         <span class="c1"># make sure we&#39;re in a circular basis</span>
         <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">switch_polrep</span><span class="p">(</span><span class="n">polrep_out</span><span class="o">=</span><span class="s1">&#39;circ&#39;</span><span class="p">)</span>
 
-        <span class="c1"># extract elevation information</span>
+        <span class="c1"># extract relevant information</span>
         <span class="n">t1</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t1&#39;</span><span class="p">]</span>
         <span class="n">t2</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t2&#39;</span><span class="p">]</span>
         <span class="n">sites_obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)))</span>
@@ -759,23 +763,24 @@
 
             <span class="c1"># flag the daytime observations, if desired</span>
             <span class="k">if</span> <span class="n">flagday</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">site</span> <span class="o">!=</span> <span class="s1">&#39;space&#39;</span><span class="p">:</span>
+                    
+                    <span class="c1"># get location of this site</span>
+                    <span class="n">lon</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_longitudes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+                    <span class="n">lat</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_latitudes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+                    <span class="n">elev</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_elevations</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
+                    <span class="n">location</span> <span class="o">=</span> <span class="n">EarthLocation</span><span class="o">.</span><span class="n">from_geodetic</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span><span class="n">lat</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="n">elev</span><span class="p">)</span>
 
-                <span class="c1"># get location of this site</span>
-                <span class="n">lon</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_longitudes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
-                <span class="n">lat</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_latitudes</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
-                <span class="n">elev</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">known_elevations</span><span class="p">[</span><span class="n">site</span><span class="p">]</span>
-                <span class="n">location</span> <span class="o">=</span> <span class="n">EarthLocation</span><span class="o">.</span><span class="n">from_geodetic</span><span class="p">(</span><span class="n">lon</span><span class="p">,</span><span class="n">lat</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="n">elev</span><span class="p">)</span>
+                    <span class="c1"># get the altitude of the Sun over time</span>
+                    <span class="n">jd</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">mjd</span> <span class="o">+</span> <span class="mf">2400000.5</span> <span class="o">+</span> <span class="p">(</span><span class="n">times</span><span class="o">/</span><span class="mf">24.0</span><span class="p">)</span>
+                    <span class="n">timehere</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="n">jd</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;jd&#39;</span><span class="p">)</span>
+                    <span class="n">altazframe</span> <span class="o">=</span> <span class="n">AltAz</span><span class="p">(</span><span class="n">obstime</span><span class="o">=</span><span class="n">timehere</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">)</span>
+                    <span class="n">sun_altaz</span> <span class="o">=</span> <span class="n">get_sun</span><span class="p">(</span><span class="n">timehere</span><span class="p">)</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="n">altazframe</span><span class="p">)</span>
+                    <span class="n">alt</span> <span class="o">=</span> <span class="n">sun_altaz</span><span class="o">.</span><span class="n">alt</span><span class="o">.</span><span class="n">value</span>
 
-                <span class="c1"># get the altitude of the Sun over time</span>
-                <span class="n">jd</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">mjd</span> <span class="o">+</span> <span class="mf">2400000.5</span> <span class="o">+</span> <span class="p">(</span><span class="n">times</span><span class="o">/</span><span class="mf">24.0</span><span class="p">)</span>
-                <span class="n">timehere</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="n">jd</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;jd&#39;</span><span class="p">)</span>
-                <span class="n">altazframe</span> <span class="o">=</span> <span class="n">AltAz</span><span class="p">(</span><span class="n">obstime</span><span class="o">=</span><span class="n">timehere</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="n">location</span><span class="p">)</span>
-                <span class="n">sun_altaz</span> <span class="o">=</span> <span class="n">get_sun</span><span class="p">(</span><span class="n">timehere</span><span class="p">)</span><span class="o">.</span><span class="n">transform_to</span><span class="p">(</span><span class="n">altazframe</span><span class="p">)</span>
-                <span class="n">alt</span> <span class="o">=</span> <span class="n">sun_altaz</span><span class="o">.</span><span class="n">alt</span><span class="o">.</span><span class="n">value</span>
-
-                <span class="c1"># mark as to-be-flagged all times for which the Sun is above the horizon</span>
-                <span class="n">ind_daytime</span> <span class="o">=</span> <span class="p">(((</span><span class="n">t1</span> <span class="o">==</span> <span class="n">site</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">t2</span> <span class="o">==</span> <span class="n">site</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">sun_altaz</span><span class="o">.</span><span class="n">alt</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">))</span>
-                <span class="n">uptime_mask</span><span class="p">[</span><span class="n">ind_daytime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="c1"># mark as to-be-flagged all times for which the Sun is above the horizon</span>
+                    <span class="n">ind_daytime</span> <span class="o">=</span> <span class="p">(((</span><span class="n">t1</span> <span class="o">==</span> <span class="n">site</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">t2</span> <span class="o">==</span> <span class="n">site</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">sun_altaz</span><span class="o">.</span><span class="n">alt</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">))</span>
+                    <span class="n">uptime_mask</span><span class="p">[</span><span class="n">ind_daytime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
             <span class="c1"># flag the times that fall outside of the specified station uptime window</span>
             <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">station_uptimes</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
@@ -787,6 +792,43 @@
             <span class="c1"># indices for this site</span>
             <span class="n">ind1</span> <span class="o">=</span> <span class="p">(</span><span class="n">t1</span> <span class="o">==</span> <span class="n">site</span><span class="p">)</span>
             <span class="n">ind2</span> <span class="o">=</span> <span class="p">(</span><span class="n">t2</span> <span class="o">==</span> <span class="n">site</span><span class="p">)</span>
+
+            <span class="c1"># transform polarization basis if need be</span>
+            <span class="k">if</span> <span class="n">allow_mixed_basis</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_polbases</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">known_polbases</span><span class="p">[</span><span class="n">site</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;linear&#39;</span><span class="p">):</span>
+
+                        <span class="c1"># populate vectors of transform matrices</span>
+                        <span class="n">tform_mat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ind1</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+                        <span class="n">tform_mat2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ind2</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+                        <span class="n">tform_mat1</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">circ_to_lin</span>
+                        <span class="n">tform_mat2</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">circ_to_lin</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+
+                        <span class="c1"># populate vectors of coherency matrices</span>
+                        <span class="n">coh_mat1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ind1</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+                        <span class="n">coh_mat1</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rrvis&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">]</span>
+                        <span class="n">coh_mat1</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlvis&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">]</span>
+                        <span class="n">coh_mat1</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrvis&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">]</span>
+                        <span class="n">coh_mat1</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llvis&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">]</span>
+                        <span class="n">coh_mat2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">ind2</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
+                        <span class="n">coh_mat2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rrvis&#39;</span><span class="p">][</span><span class="n">ind2</span><span class="p">]</span>
+                        <span class="n">coh_mat2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlvis&#39;</span><span class="p">][</span><span class="n">ind2</span><span class="p">]</span>
+                        <span class="n">coh_mat2</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrvis&#39;</span><span class="p">][</span><span class="n">ind2</span><span class="p">]</span>
+                        <span class="n">coh_mat2</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llvis&#39;</span><span class="p">][</span><span class="n">ind2</span><span class="p">]</span>
+
+                        <span class="c1"># transform the basis</span>
+                        <span class="n">coh_mat_tformed1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tform_mat1</span><span class="p">,</span><span class="n">coh_mat1</span><span class="p">)</span>
+                        <span class="n">coh_mat_tformed2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">coh_mat2</span><span class="p">,</span><span class="n">tform_mat2</span><span class="p">)</span>
+
+                        <span class="c1"># re-populate the data vector</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rrvis&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">coh_mat_tformed1</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlvis&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">coh_mat_tformed1</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrvis&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">coh_mat_tformed1</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llvis&#39;</span><span class="p">][</span><span class="n">ind1</span><span class="p">]</span> <span class="o">=</span> <span class="n">coh_mat_tformed1</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rrvis&#39;</span><span class="p">][</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">coh_mat_tformed2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;rlvis&#39;</span><span class="p">][</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">coh_mat_tformed2</span><span class="p">[:,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;lrvis&#39;</span><span class="p">][</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">coh_mat_tformed2</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;llvis&#39;</span><span class="p">][</span><span class="n">ind2</span><span class="p">]</span> <span class="o">=</span> <span class="n">coh_mat_tformed2</span><span class="p">[:,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
 
             <span class="c1"># get opacities at each timestamp</span>
             <span class="k">if</span> <span class="n">site</span> <span class="o">!=</span> <span class="s1">&#39;space&#39;</span><span class="p">:</span>
@@ -984,13 +1026,19 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">SEFD1</span> <span class="o">=</span> <span class="n">SEFD1</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">SEFD2</span> <span class="o">=</span> <span class="n">SEFD2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">addgains</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">station_gains1R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">station_gains1R</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">station_gains2R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">station_gains2R</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">station_gains1L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">station_gains1L</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">station_gains2L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">station_gains2L</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
 
         <span class="c1"># return observation object</span>
         <span class="k">return</span> <span class="n">obs</span></div>
 
     <span class="c1"># generate observation</span>
 <div class="viewcode-block" id="obs_generator.make_obs"><a class="viewcode-back" href="../../docs/source/obsgen.html#obs.obs_generator.obs_generator.make_obs">[docs]</a>    <span class="k">def</span> <span class="nf">make_obs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">addnoise</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">addgains</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">gainamp</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span> <span class="n">opacitycal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">addFR</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">el_min</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">el_min</span><span class="p">,</span> <span class="n">el_max</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">el_max</span><span class="p">,</span> <span class="n">flagwind</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flagday</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+                 <span class="n">addFR</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flagwind</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">flagday</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">allow_mixed_basis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">el_min</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">el_min</span><span class="p">,</span> <span class="n">el_max</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">el_max</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generate an observation that folds in weather-based opacity effects</span>
 <span class="sd">        and applies a specified SNR thresholding scheme to mimic fringe-finding.</span>
@@ -1004,6 +1052,7 @@
 <span class="sd">          flagwind (bool): flag for whether to derate sites with high wind</span>
 <span class="sd">          flagday (bool): flag for whether to flag sites during the local daytime</span>
 <span class="sd">          addFR (bool): flag for whether or not to add feed rotations</span>
+<span class="sd">          allow_mixed_basis (bool): flag for whether to apply polarization basis conversions</span>
 <span class="sd">          el_min (float): minimum elevation that a site can observe at, in degrees</span>
 <span class="sd">          el_max (float): maximum elevation that a site can observe at, in degrees</span>
 <span class="sd">          p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object</span>
@@ -1025,7 +1074,18 @@
                     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No input model passed to make_obs; using the model provided in the settings.&#39;</span><span class="p">)</span>
 
         <span class="c1"># generate raw observation</span>
-        <span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">input_model</span><span class="p">,</span> <span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span> <span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span> <span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span> <span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span> <span class="n">flagwind</span><span class="o">=</span><span class="n">flagwind</span><span class="p">,</span> <span class="n">flagday</span><span class="o">=</span><span class="n">flagday</span><span class="p">,</span> <span class="n">addFR</span><span class="o">=</span><span class="n">addFR</span><span class="p">,</span> <span class="n">el_min</span><span class="o">=</span><span class="n">el_min</span><span class="p">,</span> <span class="n">el_max</span><span class="o">=</span><span class="n">el_max</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">observe</span><span class="p">(</span><span class="n">input_model</span><span class="p">,</span>
+                           <span class="n">addnoise</span><span class="o">=</span><span class="n">addnoise</span><span class="p">,</span>
+                           <span class="n">addgains</span><span class="o">=</span><span class="n">addgains</span><span class="p">,</span>
+                           <span class="n">gainamp</span><span class="o">=</span><span class="n">gainamp</span><span class="p">,</span>
+                           <span class="n">opacitycal</span><span class="o">=</span><span class="n">opacitycal</span><span class="p">,</span>
+                           <span class="n">flagwind</span><span class="o">=</span><span class="n">flagwind</span><span class="p">,</span>
+                           <span class="n">flagday</span><span class="o">=</span><span class="n">flagday</span><span class="p">,</span>
+                           <span class="n">addFR</span><span class="o">=</span><span class="n">addFR</span><span class="p">,</span>
+                           <span class="n">allow_mixed_basis</span><span class="o">=</span><span class="n">allow_mixed_basis</span><span class="p">,</span>
+                           <span class="n">el_min</span><span class="o">=</span><span class="n">el_min</span><span class="p">,</span>
+                           <span class="n">el_max</span><span class="o">=</span><span class="n">el_max</span><span class="p">,</span>
+                           <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
 
         <span class="c1"># apply naive SNR thresholding</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">snr_algo</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;naive&#39;</span><span class="p">):</span>
