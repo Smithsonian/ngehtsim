@@ -32,6 +32,26 @@ known_station_dict = {'A': 'ALMA',
 ###################################################
 # function definitions
 
+def argunique(array):
+    """
+    Return the indices associated with the unique elements of an array.
+    Analogous in spirit to functions like argmin and argsort.
+
+    Args:
+    array (numpy.array): The array for which to return the unique-element arguments
+
+    Returns:
+    (numpy.array): An array of arguments for each unique element
+    
+
+    """
+    arr_unique = np.unique(array)
+    ind_unique = np.zeros(len(arr_unique),dtype=int)
+    for i in range(len(arr_unique)):
+        ind_unique[i] = np.min(np.nonzero(array == arr_unique[i]))
+    return ind_unique
+
+
 def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
                RA=None,DEC=None,station_codes={},**kwargs):
     """
@@ -53,7 +73,7 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
 
     ############################################
     # check inputs
-
+    
     # make sure source is known or else RA+DEC are supplied
     if sourcename in const.known_sources:
         if (RA is None) | (DEC is None):
@@ -87,7 +107,7 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
     elev2_orig = np.array(df.rem_elev)
     u_orig = np.array(df.u)
     v_orig = np.array(df.v)
-    freq_orig = np.array(df.ref_freq)
+    freq_orig = np.array(df.ref_freq, dtype=float)
 
     # debias SNR if desired
     if debias:
@@ -115,6 +135,7 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
 
     ind = (source_orig == sourcename)
     datetime = datetime_orig[ind]
+    datetime.index = np.arange(len(datetime))
     timetag = timetag_orig[ind]
     t_hr = t_orig[ind]
     t = t_hr + (day_orig[ind]*24.0)
@@ -135,6 +156,15 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
     # construct complex visibilities
     vis = amp*np.exp((1j)*phase)
 
+    # time info
+    days = np.empty(len(datetime),dtype=int)
+    months = np.empty(len(datetime),dtype=int)
+    years = np.empty(len(datetime),dtype=int)
+    for i in range(len(datetime)):
+        days[i] = datetime[i].day
+        months[i] = datetime[i].month
+        years[i] = datetime[i].year
+
     ############################################
     # remove autocorrelations
 
@@ -145,6 +175,10 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
             if (bl[i][0] == bl[i][1]):
                 ind[i] = False
         datetime = datetime[ind]
+        datetime.index = np.arange(len(datetime))
+        days = days[ind]
+        months = months[ind]
+        years = years[ind]
         timetag = timetag[ind]
         t = t[ind]
         t_hr = t_hr[ind]
@@ -173,7 +207,10 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
     mod = mod.add_point(1.0)
 
     # loop through scans
-    t_uniq = np.sort(np.unique(t))
+    t_uniq = np.unique(t)
+    t_uniq_arg = argunique(t)
+    datetime_uniq = datetime[t_uniq_arg]
+    datetime_uniq.index = np.arange(len(datetime_uniq))
     vis_corrected = np.zeros_like(vis)
     amp_corrected = np.zeros_like(amp)
     amp_err_corrected = np.zeros_like(amp_err)
@@ -210,14 +247,14 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
                     'DEC': DEC,
                     'frequency': freq_here,
                     'bandwidth': bandwidth,
-                    'day': str(datetime[itime].day),
-                    'month': months[datetime[itime].month-1],
-                    'year': str(datetime[itime].year),
+                    'day': str(datetime_uniq[itime].day),
+                    'month': months[datetime_uniq[itime].month-1],
+                    'year': str(datetime_uniq[itime].year),
                     't_start': there,
                     'dt': (dt/3600.0),
                     't_int': dt,
                     't_rest': dt,
-                    'fringe_finder': ['naive',0.0],
+                    'fringe_finder': ['naive', 0.0],
                     'sites': sites,
                     'weather': 'exact'}
 
