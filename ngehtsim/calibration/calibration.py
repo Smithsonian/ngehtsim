@@ -53,7 +53,7 @@ def argunique(array):
 
 
 def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
-               RA=None,DEC=None,station_codes={},**kwargs):
+               RA=None,DEC=None,SNR_cut=0.0,station_codes={},**kwargs):
     """
     Read an alist data file and carry out a priori flux density calibration.
 
@@ -65,6 +65,7 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
       remove_autocorr (bool): Flag for whether to remove autocorrelations during calibration
       RA (float): Right ascension of the source, in decimal hours
       DEC (float): Declination of the source, in decimal degrees
+      SNR_cut (float): SNR cut to apply
       station_codes (dict): Dictionary containing conversions between single- and multi-letter station codes
 
     Returns:
@@ -174,6 +175,32 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
         for i in range(len(timetag)):
             if (bl[i][0] == bl[i][1]):
                 ind[i] = False
+        datetime = datetime[ind]
+        datetime.index = np.arange(len(datetime))
+        days = days[ind]
+        months = months[ind]
+        years = years[ind]
+        timetag = timetag[ind]
+        t = t[ind]
+        t_hr = t_hr[ind]
+        day = day[ind]
+        bl = bl[ind]
+        pl = pl[ind]
+        u = u[ind]
+        v = v[ind]
+        freq = freq[ind]
+        amp = amp[ind]
+        phase = phase[ind]
+        snr = snr[ind]
+        elev1 = elev1[ind]
+        elev2 = elev2[ind]
+        amp_err = amp_err[ind]
+        tint = tint[ind]
+        vis = vis[ind]
+
+    if SNR_cut > 0.0:
+
+        ind = (snr >= SNR_cut)
         datetime = datetime[ind]
         datetime.index = np.arange(len(datetime))
         days = days[ind]
@@ -314,7 +341,7 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
 
 
 def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocorr=True,
-               RA=None,DEC=None,station_codes={},**kwargs):
+               RA=None,DEC=None,SNR_cut=0.0,station_codes={},**kwargs):
     """
     Write a "dlist" data file from an "alist" file.
 
@@ -327,6 +354,7 @@ def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocor
       remove_autocorr (bool): Flag for whether to remove autocorrelations during calibration
       RA (float): Right ascension of the source, in decimal hours
       DEC (float): Declination of the source, in decimal degrees
+      SNR_cut (float): SNR cut to apply
       station_codes (dict): Dictionary containing conversions between single- and multi-letter station codes
 
     Returns:
