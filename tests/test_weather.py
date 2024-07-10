@@ -5,7 +5,7 @@ import ngehtsim.obs.obs_generator as og
 import os
 
 #######################################################
-# extract weather info for a siteon some date
+# extract weather info for a siteon some date 
 
 site = 'ALMA'
 day = 11
