@@ -6,11 +6,15 @@ import ehtim as eh
 from collections import defaultdict
 from astropy.time import Time
 from astropy.coordinates import EarthLocation, AltAz, get_sun
-import ngEHTforecast.fisher as fp
 import yaml
 import time
 import os
 import copy
+
+try:
+    import ngEHTforecast.fisher as fp
+except ImportError:
+    print('Warning: ngEHTforecast not installed! Cannot use FisherForecast functionality.')
 
 import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
