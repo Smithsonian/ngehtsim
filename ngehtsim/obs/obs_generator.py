@@ -556,7 +556,7 @@ class obs_generator(object):
                                               self.settings['t_start'],
                                               self.settings['t_start'] + self.settings['dt'],
                                               mjd=self.mjd,
-                                              polrep='stokes',
+                                              polrep='circ',
                                               tau=0.0,
                                               timetype='UTC',
                                               elevmin=-90,
@@ -613,9 +613,11 @@ class obs_generator(object):
             obs.source = self.settings['source']
             if (input_model.stokes == 'I'):
                 Ivis = input_model.visibilities(obs, p, verbosity=self.verbosity)
+                obs = obs.switch_polrep(polrep_out='stokes')
                 obs.data['vis'] = Ivis
+                obs = obs.switch_polrep(polrep_out='circ')
             else:
-                obs.switch_polrep(polrep_out='circ')
+                obs = obs.switch_polrep(polrep_out='circ')
                 RRvis, LLvis, RLvis, LRvis = input_model.visibilities(obs, p, verbosity=self.verbosity)
                 obs.data['rrvis'] = RRvis
                 obs.data['llvis'] = LLvis
@@ -627,10 +629,7 @@ class obs_generator(object):
             dumdatatable['v'] = 0.0
             dumobs.data = dumdatatable
             F0 = np.abs(input_model.visibilities(dumobs, p))
-
-        # make sure we're in a circular basis
-        obs = obs.switch_polrep(polrep_out='circ')
-
+        
         # extract relevant information
         t1 = obs.data['t1']
         t2 = obs.data['t2']
@@ -936,9 +935,6 @@ class obs_generator(object):
         obs.data = data_copy[mask]
         if self.verbosity > 0:
             print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points because of wind.')
-
-        # restore Stokes polrep
-        obs = obs.switch_polrep(polrep_out='stokes')
 
         # store additional info if requested
         if self.weight > 0:
