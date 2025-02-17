@@ -113,7 +113,7 @@ def calc_pss(obs):
         return np.inf
 
     # make sure polrep is stokes
-    if obs.polrep is not 'stokes':
+    if obs.polrep != 'stokes':
         obs = obs.switch_polrep(polrep_out='stokes')
 
     pss_out = 1.0/np.sqrt(np.sum(1.0/obs.data['sigma']**2.0))
@@ -141,7 +141,7 @@ def beam_shape(obs, weighting='natural', robust=0.0):
         return np.inf, np.inf, np.inf
 
     # make sure polrep is stokes
-    if obs.polrep is not 'stokes':
+    if obs.polrep != 'stokes':
         obs = obs.switch_polrep(polrep_out='stokes')
 
     # (u,v) coordinates
@@ -384,7 +384,7 @@ def calc_pss_continuous(obs, start_time=0.0, end_time=24.0, snapshot_interval=60
     """
 
     # make sure polrep is stokes
-    if obs.polrep is not 'stokes':
+    if obs.polrep != 'stokes':
         obs = obs.switch_polrep(polrep_out='stokes')
 
     # observation info

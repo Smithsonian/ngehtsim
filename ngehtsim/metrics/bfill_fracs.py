@@ -57,7 +57,7 @@ def grid_obs(obs, N, psize, stokes='I'):
     """
 
     # make sure polrep is stokes
-    if obs.polrep is not 'stokes':
+    if obs.polrep != 'stokes':
         obs = obs.switch_polrep(polrep_out='stokes')
 
     uvals = np.concatenate((obs.data['u'], -obs.data['u']))
