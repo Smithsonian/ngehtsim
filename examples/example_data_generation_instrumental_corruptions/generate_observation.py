@@ -16,7 +16,7 @@ import ngehtsim.metrics as cm
 yamlfile = './settings.yaml'
 
 # initialize the observation generator
-obsgen = og.obs_generator(settings_file=yamlfile)
+obsgen = og.obs_generator(settings_file=yamlfile,weight=2)
 
 #######################################################
 # generate observations with varying corruptions
@@ -28,23 +28,23 @@ mod = mod.add_circ_gauss(0.5, 30.*eh.RADPERUAS, x0=-20.0*eh.RADPERUAS, y0=20.0*e
 
 # generate an observation with no noise
 obs_nonoise = obsgen.make_obs(input_model=mod,
-                              addnoise=False,addgains=False,addFR=False,addleakage=False)
+                              addnoise=False,addgains=False,addleakage=False)
 
 # generate an observation with only thermal noise
 obs_thnoise = obsgen.make_obs(input_model=mod,
-                              addnoise=True,addgains=False,addFR=False,addleakage=False)
+                              addnoise=True,addgains=False,addleakage=False)
 
 # generate an observation with thermal noise and station gains
 obs_thgains = obsgen.make_obs(input_model=mod,
-                              addnoise=True,addgains=True,addFR=False,addleakage=False)
+                              addnoise=True,addgains=True,addleakage=False)
 
 # generate an observation with thermal noise and leakage
 obs_thleak = obsgen.make_obs(input_model=mod,
-                              addnoise=True,addgains=False,addFR=True,addleakage=True)
+                              addnoise=True,addgains=False,addleakage=True)
 
 # generate an observation with thermal noise, station gains, and leakage
 obs_full = obsgen.make_obs(input_model=mod,
-                           addnoise=True,addgains=True,addFR=True,addleakage=True)
+                           addnoise=True,addgains=True,addleakage=True)
 
 # save uvfits files
 obs_nonoise.save_uvfits('./datafile_nonoise.uvfits')
