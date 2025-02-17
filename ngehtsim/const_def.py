@@ -365,17 +365,17 @@ known_sources = {'M87': {'RA': 12.51373,
 ###################################################
 # pull antenna properties from table
 
-known_stations, tlcs, diam_arr, surf_arr, polbasis_arr, mnts_arr, fa_arr, altnames = np.loadtxt(path_to_tsm,
-                                                                                     delimiter=',',
-                                                                                     skiprows=1,
-                                                                                     usecols=(0, 1, 7, 8, 10, 11, 12, 13),
-                                                                                     dtype=str,
-                                                                                     unpack=True)
-lat_arr, lon_arr, elev_arr, solar_avoidance_angle_arr = np.loadtxt(path_to_tsm,
-                                                                   delimiter=',',
-                                                                   skiprows=1,
-                                                                   usecols=(3, 4, 5, 9),
-                                                                   unpack=True)
+known_stations, tlcs, diam_arr, surf_arr, solar_avoidance_angle_arr, polbasis_arr, mnts_arr, fa_arr, altnames = np.loadtxt(path_to_tsm,
+                                                                                                                delimiter=',',
+                                                                                                                skiprows=1,
+                                                                                                                usecols=(0, 1, 7, 8, 9, 10, 11, 12, 13),
+                                                                                                                dtype=str,
+                                                                                                                unpack=True)
+lat_arr, lon_arr, elev_arr = np.loadtxt(path_to_tsm,
+                                        delimiter=',',
+                                        skiprows=1,
+                                        usecols=(3, 4, 5),
+                                        unpack=True)
 
 known_diameters = {}
 for i in range(len(known_stations)):
@@ -405,7 +405,7 @@ for i in range(len(known_stations)):
 known_solar_avoidance_angles = {}
 for i in range(len(known_stations)):
     if (solar_avoidance_angle_arr[i] != ''):
-        known_solar_avoidance_angles[known_stations[i]] = solar_avoidance_angle_arr[i]
+        known_solar_avoidance_angles[known_stations[i]] = float(solar_avoidance_angle_arr[i])
 
 known_polbases = {}
 for i in range(len(known_stations)):

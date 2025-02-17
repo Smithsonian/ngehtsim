@@ -5,7 +5,8 @@ import numpy as np
 import ehtim as eh
 from collections import defaultdict
 from astropy.time import Time
-from astropy.coordinates import EarthLocation, AltAz, get_sun
+from astropy import units as astrounits
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun
 import yaml
 import time
 import os
@@ -144,9 +145,9 @@ class obs_generator(object):
         self.set_seed()
         self.get_sites()
         self.translate_sites()
-        self.set_coords()
         self.mjd = determine_mjd(self.settings['day'], self.settings['month'], self.settings['year'])
         self.arr = make_array(self.sites, ephem=self.ephem, verbosity=self.verbosity)
+        self.set_coords()
         self.set_receivers()
         self.set_bands()
         self.set_bandwidths()
@@ -301,6 +302,12 @@ class obs_generator(object):
             self.RA = self.settings['RA']
         if self.settings['DEC'] is not None:
             self.DEC = self.settings['DEC']
+
+        # determine solar angle
+        source_location = SkyCoord(ra=self.RA*15.0*astrounits.degree, dec=self.DEC*astrounits.degree, frame='icrs')
+        jd = self.mjd + 2400000.5
+        sun_location = get_sun(Time(jd, format='jd'))
+        self.solar_angle = source_location.separation(sun_location).value
 
     # create a receiver suite dictionary
     def set_receivers(self):
@@ -476,12 +483,14 @@ class obs_generator(object):
         D_dict = {}
         eta_dict = {}
         wind_loading_dict = {}
+        solar_avoidance_dict = {}
         for site in self.sites:
 
-            # start with the values for a new site
+            # start with the default values for a new site
             D_dict[site] = self.settings['D_new']
             rms_here = const.surf_rms
             ap_eff_here = const.ap_eff
+            solar_avoidance_dict[site] = const.sol_avoid
 
             # if the site is known, replace those values with the known ones or start with defaults
             if site in list(const.known_diameters.keys()):
@@ -491,6 +500,8 @@ class obs_generator(object):
             wind_loading_dict[site] = {'v0': const.windspeed_v0,
                                        'w': const.windspeed_w,
                                        'shutdown': const.windspeed_shutdown}
+            if site in list(const.known_solar_avoidance_angles.keys()):
+                solar_avoidance_dict[site] = const.known_solar_avoidance_angles[site]
 
             # if the user has provided overrides, use those instead
             if site in list(self.D_overrides.keys()):
@@ -510,6 +521,7 @@ class obs_generator(object):
         self.D_dict = D_dict
         self.eta_dict = eta_dict
         self.wind_loading_dict = wind_loading_dict
+        self.solar_avoidance_dict = solar_avoidance_dict
 
     # segment the observation into timestamps
     def get_obs_times(self):
@@ -528,7 +540,8 @@ class obs_generator(object):
 
     # generate a raw observation
     def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
-                opacitycal=True, flagwind=True, flagday=False, addFR=True, addleakage=False,
+                opacitycal=True, addFR=True, addleakage=False,
+                flagwind=True, flagday=False, flagsun=True,
                 allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
@@ -540,10 +553,11 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           leakamp (float): standard deviation of leakage real and imaginary parts
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
-          flagwind (bool): flag for whether to derate sites with high wind
-          flagday (bool): flag for whether to flag sites during the local daytime
           addFR (bool): flag for whether or not to add feed rotations
           addleakage (bool): flag for whether or not to add polarization leakage corruptions
+          flagwind (bool): flag for whether to derate sites with high wind
+          flagday (bool): flag for whether to flag sites during the local daytime
+          flagsun (bool): flag for whether to impose a minimum solar avoidance angle
           allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
@@ -730,6 +744,13 @@ class obs_generator(object):
                     # mark as to-be-flagged all times for which the Sun is above the horizon
                     ind_daytime = (((t1 == site) | (t2 == site)) & (sun_altaz.alt.value > 0.0))
                     uptime_mask[ind_daytime] = False
+
+            # impose solar avoidance, if desired
+            if flagsun:
+                if self.solar_angle < self.solar_avoidance_dict[site]:
+                    flagsites.append(site)
+                    if self.verbosity > 0:
+                        print(site + ' cannot observe because the source is too close to the Sun.')
 
             # flag the times that fall outside of the specified station uptime window
             if site in list(self.station_uptimes.keys()):
@@ -1020,7 +1041,8 @@ class obs_generator(object):
 
     # generate observation
     def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
-                 opacitycal=True, flagwind=True, flagday=False, addFR=True, addleakage=False,
+                 opacitycal=True, addFR=True, addleakage=False,
+                 flagwind=True, flagday=False, flagsun=True,
                  allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate an observation that folds in weather-based opacity effects
@@ -1033,10 +1055,11 @@ class obs_generator(object):
           gainamp (float): standard deviation of amplitude log-gains
           leakamp (float): standard deviation of leakage real and imaginary parts
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
-          flagwind (bool): flag for whether to derate sites with high wind
-          flagday (bool): flag for whether to flag sites during the local daytime
           addFR (bool): flag for whether or not to add feed rotations
           addleakage (bool): flag for whether or not to add polarization leakage corruptions
+          flagwind (bool): flag for whether to derate sites with high wind
+          flagday (bool): flag for whether to flag sites during the local daytime
+          flagsun (bool): flag for whether to impose a minimum solar avoidance angle
           allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
@@ -1067,6 +1090,7 @@ class obs_generator(object):
                            opacitycal=opacitycal,
                            flagwind=flagwind,
                            flagday=flagday,
+                           flagsun=flagsun,
                            addFR=addFR,
                            addleakage=addleakage,
                            allow_mixed_basis=allow_mixed_basis,
@@ -1096,7 +1120,7 @@ class obs_generator(object):
             freq_ref = snr_args[2]
             model_path_ref = snr_args[3]
 
-            mask = FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p)
+            mask = FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, flagsun=flagsun, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p)
 
         # unrecognized SNR thresholding scheme
         else:
@@ -1232,7 +1256,8 @@ class obs_generator(object):
 
     # generate multifrequency observation, assuming that FPT will be used wherever possible
     def make_obs_mf(self, freqs, input_models, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
-                    opacitycal=True, flagwind=True, flagday=False, addFR=True, addleakage=False,
+                    opacitycal=True, addFR=True, addleakage=False,
+                    flagwind=True, flagday=False, flagsun=True,
                     el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a multi-frequency observation
@@ -1247,10 +1272,11 @@ class obs_generator(object):
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           addFR (bool): flag for whether or not to add feed rotations
           addleakage (bool): flag for whether or not to add polarization leakage corruptions
-          el_min (float): minimum elevation that a site can observe at, in degrees
-          el_max (float): maximum elevation that a site can observe at, in degrees
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
+          flagsun (bool): flag for whether to impose a minimum solar avoidance angle
+          el_min (float): minimum elevation that a site can observe at, in degrees
+          el_max (float): maximum elevation that a site can observe at, in degrees
           p (list): list of lists of parameters for input ngEHTforecast.fisher.fisher_forecast.FisherForecast objects; one for each frequency
 
         Returns:
@@ -1345,7 +1371,7 @@ class obs_generator(object):
                     obsgen_here.im = model_target
 
                 # generate observation at target frequency
-                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, flagwind=flagwind, flagday=flagday, p=p_target)
+                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, flagwind=flagwind, flagday=flagday, flagsun=flagsun, p=p_target)
 
                 # add any new detections to the running datatable
                 if count == 0:
