@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: covdata-${{ matrix.runs-on }}
-          path: .coverage.*
+          path: .coverage*
       - name: Download coverage data
         uses: actions/download-artifact@v4
         with:
