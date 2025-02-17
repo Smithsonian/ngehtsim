@@ -516,7 +516,7 @@ class obs_generator(object):
 
     # generate a raw observation
     def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
-                opacitycal=True, flagwind=True, flagday=False, addFR=False, addleakage=False,
+                opacitycal=True, flagwind=True, flagday=False, addFR=True, addleakage=False,
                 allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
@@ -1004,7 +1004,7 @@ class obs_generator(object):
 
     # generate observation
     def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
-                 opacitycal=True, flagwind=True, flagday=False, addFR=False, addleakage=False,
+                 opacitycal=True, flagwind=True, flagday=False, addFR=True, addleakage=False,
                  allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate an observation that folds in weather-based opacity effects
@@ -1216,7 +1216,7 @@ class obs_generator(object):
 
     # generate multifrequency observation, assuming that FPT will be used wherever possible
     def make_obs_mf(self, freqs, input_models, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
-                    opacitycal=True, flagwind=True, flagday=False, addFR=False, addleakage=False,
+                    opacitycal=True, flagwind=True, flagday=False, addFR=True, addleakage=False,
                     el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a multi-frequency observation
