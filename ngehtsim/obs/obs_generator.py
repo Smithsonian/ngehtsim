@@ -515,9 +515,9 @@ class obs_generator(object):
     # functions for generating observations
 
     # generate a raw observation
-    def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                flagwind=True, flagday=False, addFR=False, allow_mixed_basis=False,
-                el_min=const.el_min, el_max=const.el_max, p=None):
+    def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
+                opacitycal=True, flagwind=True, flagday=False, addFR=False, addleakage=False,
+                allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
@@ -526,10 +526,12 @@ class obs_generator(object):
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
+          leakamp (float): standard deviation of leakage real and imaginary parts
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
           addFR (bool): flag for whether or not to add feed rotations
+          addleakage (bool): flag for whether or not to add polarization leakage corruptions
           allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
@@ -629,7 +631,7 @@ class obs_generator(object):
             dumdatatable['v'] = 0.0
             dumobs.data = dumdatatable
             F0 = np.abs(input_model.visibilities(dumobs, p))
-        
+
         # extract relevant information
         t1 = obs.data['t1']
         t2 = obs.data['t2']
@@ -670,6 +672,12 @@ class obs_generator(object):
             gainamp2L = np.zeros_like(el2)
             gainphase1L = np.zeros_like(el1)
             gainphase2L = np.zeros_like(el2)
+
+        if addleakage:
+            leak1R = np.zeros_like(el1,dtype=complex)
+            leak2R = np.zeros_like(el2,dtype=complex)
+            leak1L = np.zeros_like(el1,dtype=complex)
+            leak2L = np.zeros_like(el2,dtype=complex)
 
         # loop through the sites in the array
         flagsites = list()
@@ -844,6 +852,15 @@ class obs_generator(object):
                     gainphase1L[ind1here] = gainphasehere
                     gainphase2L[ind2here] = gainphasehere
 
+            # generate leakages
+            if addleakage:
+                leakRhere = (leakamp*self.rng.normal(0.0, 1.0)) + ((1.0j)*leakamp*self.rng.normal(0.0, 1.0))
+                leakLhere = (leakamp*self.rng.normal(0.0, 1.0)) + ((1.0j)*leakamp*self.rng.normal(0.0, 1.0))
+                leak1R[ind1] = leakRhere
+                leak2R[ind2] = leakRhere
+                leak1L[ind1] = leakLhere
+                leak2L[ind2] = leakLhere
+
         # store opacities as part of the observation
         obs.data['tau1'] = tau1
         obs.data['tau2'] = tau2
@@ -866,6 +883,22 @@ class obs_generator(object):
             obs.data['rlvis'] *= np.exp(-(1.0j)*fa_1)*np.exp(-(1.0j)*fa_2)
             obs.data['lrvis'] *= np.exp((1.0j)*fa_1)*np.exp((1.0j)*fa_2)
             obs.data['llvis'] *= np.exp((1.0j)*fa_1)*np.exp(-(1.0j)*fa_2)
+
+        # store and apply leakages
+        if addleakage:
+            if self.weight > 0:
+                self.station_leakage1R = leak1R
+                self.station_leakage2R = leak2R
+                self.station_leakage1L = leak1L
+                self.station_leakage2L = leak2L
+            RR = obs.data['rrvis']
+            LL = obs.data['llvis']
+            RL = obs.data['rlvis']
+            LR = obs.data['lrvis']
+            obs.data['rrvis'] = RR + (leak1R*LR) + (np.conj(leak2R)*RL) + (leak1R*np.conj(leak2R)*LL)
+            obs.data['llvis'] = LL + (leak1L*RL) + (np.conj(leak2L)*LR) + (leak1L*np.conj(leak2L)*RR)
+            obs.data['rlvis'] = RL + (leak1R*LL) + (np.conj(leak2L)*RR) + (leak1R*np.conj(leak2L)*LR)
+            obs.data['lrvis'] = LR + (leak1L*RR) + (np.conj(leak2R)*LL) + (leak1L*np.conj(leak2R)*RL)
 
         # store and apply gains
         if addgains:
@@ -962,14 +995,19 @@ class obs_generator(object):
             if addFR:
                 self.fa_1 = self.fa_1[mask]
                 self.fa_2 = self.fa_2[mask]
+            if addleakage:
+                self.station_leakage1R = self.station_leakage1R[mask]
+                self.station_leakage2R = self.station_leakage2R[mask]
+                self.station_leakage1L = self.station_leakage1L[mask]
+                self.station_leakage2L = self.station_leakage2L[mask]
 
         # return observation object
         return obs
 
     # generate observation
-    def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                 addFR=False, flagwind=True, flagday=False, allow_mixed_basis=False,
-                 el_min=const.el_min, el_max=const.el_max, p=None):
+    def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
+                 opacitycal=True, flagwind=True, flagday=False, addFR=False, addleakage=False,
+                 allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate an observation that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
@@ -979,10 +1017,12 @@ class obs_generator(object):
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
+          leakamp (float): standard deviation of leakage real and imaginary parts
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
           addFR (bool): flag for whether or not to add feed rotations
+          addleakage (bool): flag for whether or not to add polarization leakage corruptions
           allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
@@ -1009,10 +1049,12 @@ class obs_generator(object):
                            addnoise=addnoise,
                            addgains=addgains,
                            gainamp=gainamp,
+                           leakamp=leakamp,
                            opacitycal=opacitycal,
                            flagwind=flagwind,
                            flagday=flagday,
                            addFR=addFR,
+                           addleakage=addleakage,
                            allow_mixed_basis=allow_mixed_basis,
                            el_min=el_min,
                            el_max=el_max,
@@ -1040,7 +1082,7 @@ class obs_generator(object):
             freq_ref = snr_args[2]
             model_path_ref = snr_args[3]
 
-            mask = FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, addFR=addFR, el_min=el_min, el_max=el_max, p=p)
+            mask = FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p)
 
         # unrecognized SNR thresholding scheme
         else:
@@ -1074,6 +1116,11 @@ class obs_generator(object):
             if addFR:
                 self.fa_1 = self.fa_1[mask]
                 self.fa_2 = self.fa_2[mask]
+            if addleakage:
+                self.station_leakage1R = self.station_leakage1R[mask]
+                self.station_leakage2R = self.station_leakage2R[mask]
+                self.station_leakage1L = self.station_leakage1L[mask]
+                self.station_leakage2L = self.station_leakage2L[mask]
 
         # remove sites that can't observe at the requested frequency
         sites_to_remove = list()
@@ -1116,6 +1163,11 @@ class obs_generator(object):
                     if addFR:
                         self.fa_1 = self.fa_1[mask]
                         self.fa_2 = self.fa_2[mask]
+                    if addleakage:
+                        self.station_leakage1R = self.station_leakage1R[mask]
+                        self.station_leakage2R = self.station_leakage2R[mask]
+                        self.station_leakage1L = self.station_leakage1L[mask]
+                        self.station_leakage2L = self.station_leakage2L[mask]
 
         # drop any sites that are randomly deemed to be technically unready
         sites_to_remove = get_unready_sites(obs.tarr['site'], self.settings['tech_readiness'], rng=self.rng)
@@ -1155,13 +1207,19 @@ class obs_generator(object):
                     if addFR:
                         self.fa_1 = self.fa_1[mask]
                         self.fa_2 = self.fa_2[mask]
+                    if addleakage:
+                        self.station_leakage1R = self.station_leakage1R[mask]
+                        self.station_leakage2R = self.station_leakage2R[mask]
+                        self.station_leakage1L = self.station_leakage1L[mask]
+                        self.station_leakage2L = self.station_leakage2L[mask]
 
         # return observation object
         return obs
 
     # generate multifrequency observation, assuming that FPT will be used wherever possible
-    def make_obs_mf(self, freqs, input_models, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                    addFR=False, el_min=const.el_min, el_max=const.el_max, flagwind=True, flagday=False, p=None):
+    def make_obs_mf(self, freqs, input_models, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
+                    opacitycal=True, flagwind=True, flagday=False, addFR=False, addleakage=False,
+                    el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a multi-frequency observation
 
@@ -1171,8 +1229,10 @@ class obs_generator(object):
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
+          leakamp (float): standard deviation of leakage real and imaginary parts
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           addFR (bool): flag for whether or not to add feed rotations
+          addleakage (bool): flag for whether or not to add polarization leakage corruptions
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
           flagwind (bool): flag for whether to derate sites with high wind
@@ -1270,7 +1330,7 @@ class obs_generator(object):
                     obsgen_here.im = model_target
 
                 # generate observation at target frequency
-                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, addFR=addFR, el_min=el_min, el_max=el_max, flagwind=flagwind, flagday=flagday, p=p_target)
+                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, flagwind=flagwind, flagday=flagday, p=p_target)
 
                 # add any new detections to the running datatable
                 if count == 0:
