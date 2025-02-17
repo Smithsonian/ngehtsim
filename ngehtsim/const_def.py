@@ -84,6 +84,9 @@ pol_basis = 'circular'
 circ_to_lin = np.array([[1.0,1.0],[-1.0j,1.0j]])/np.sqrt(2.0)
 lin_to_circ = np.array([[1.0,1.0j],[1.0,-1.0j]])/np.sqrt(2.0)
 
+# default solar avoidance angle, if not otherwise known, in degrees
+sol_avoid = 30.0
+
 ###################################################
 # physical constants
 
@@ -365,14 +368,14 @@ known_sources = {'M87': {'RA': 12.51373,
 known_stations, tlcs, diam_arr, surf_arr, polbasis_arr, mnts_arr, fa_arr, altnames = np.loadtxt(path_to_tsm,
                                                                                      delimiter=',',
                                                                                      skiprows=1,
-                                                                                     usecols=(0, 1, 7, 8, 9, 10, 11, 12),
+                                                                                     usecols=(0, 1, 7, 8, 10, 11, 12, 13),
                                                                                      dtype=str,
                                                                                      unpack=True)
-lat_arr, lon_arr, elev_arr = np.loadtxt(path_to_tsm,
-                                        delimiter=',',
-                                        skiprows=1,
-                                        usecols=(3, 4, 5),
-                                        unpack=True)
+lat_arr, lon_arr, elev_arr, solar_avoidance_angle_arr = np.loadtxt(path_to_tsm,
+                                                                   delimiter=',',
+                                                                   skiprows=1,
+                                                                   usecols=(3, 4, 5, 9),
+                                                                   unpack=True)
 
 known_diameters = {}
 for i in range(len(known_stations)):
@@ -398,6 +401,11 @@ known_elevations = {}
 for i in range(len(known_stations)):
     if (elev_arr[i] != ''):
         known_elevations[known_stations[i]] = elev_arr[i]
+
+known_solar_avoidance_angles = {}
+for i in range(len(known_stations)):
+    if (solar_avoidance_angle_arr[i] != ''):
+        known_solar_avoidance_angles[known_stations[i]] = solar_avoidance_angle_arr[i]
 
 known_polbases = {}
 for i in range(len(known_stations)):
