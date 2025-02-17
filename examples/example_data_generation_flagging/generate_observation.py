@@ -37,23 +37,28 @@ obs_flagged.save_uvfits('./example_datafile_flagged.uvfits')
 # generate an observation with flagging
 
 station_uptimes = {'ALMA': [0.0,24.0],
-				   'APEX': [0.0,24.0],
-				   'GLT': [4.0,5.0],
-				   'IRAM': [0.0,24.0],
-				   'JCMT': [0.0,24.0],
-				   'KP': [0.0,24.0],
-				   'LMT': [0.0,24.0],
-				   'NOEMA': [0.0,24.0],
-				   'SMA': [0.0,24.0],
-				   'SMT': [0.0,24.0],
-				   'SPT': [0.0,24.0]}
+                   'APEX': [0.0,24.0],
+                   'GLT': [4.0,5.0],
+                   'IRAM': [0.0,24.0],
+                   'JCMT': [0.0,24.0],
+                   'KP': [0.0,24.0],
+                   'LMT': [0.0,24.0],
+                   'NOEMA': [0.0,24.0],
+                   'SMA': [0.0,24.0],
+                   'SMT': [0.0,24.0],
+                   'SPT': [0.0,24.0]}
+
+# some sites have different wind tolerances
+wind_loading_overrides = {'LMT': {'v0': 5.0, 'w': 1.0, 'shutdown': 10.0},
+                          'IRAM': {'v0': 10.0, 'w': 2.0, 'shutdown': 15.0}}
 
 # initialize the observation generator
 obsgen_flagged2 = og.obs_generator(settings_file=yamlfile,
-								   station_uptimes=station_uptimes)
+                                   station_uptimes=station_uptimes,
+                                   wind_loading_overrides=wind_loading_overrides)
 
 # generate the observation
-obs_flagged2 = obsgen_flagged2.make_obs(flagday=True)
+obs_flagged2 = obsgen_flagged2.make_obs(flagday=True,flagwind=True)
 
 # save it as a uvfits file
 obs_flagged2.save_uvfits('./example_datafile_flagged2.uvfits')
