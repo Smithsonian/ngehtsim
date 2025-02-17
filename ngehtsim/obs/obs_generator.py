@@ -542,8 +542,6 @@ class obs_generator(object):
         """
 
         # print some warnings
-        if addFR:
-            print('WARNING: adding feed rotations is currently known to break with multi-frequency data generation, and it is suspect at all times.')
         if allow_mixed_basis:
             print('WARNING: data generated in a non-circular polarization basis does not have properly-stored metadata info.')
 
