@@ -302,3 +302,14 @@ for site in sites:
     # save the figure
     plt.savefig(plotdir+'/'+site+'.png', dpi=300, bbox_inches='tight')
     plt.close()
+
+#######################################################
+# run spectrum functions
+
+site = 'ALMA'
+day = 15
+month = 'Apr'
+year = 2024
+
+tau = nw.opacity_spectrum(site,form='exact', day=day, month=month, year=year)
+Tb = nw.brightness_temperature_spectrum(site,form='exact', day=day, month=month, year=year)
