@@ -112,6 +112,10 @@ def calc_pss(obs):
     if (len(obs.data) == 0):
         return np.inf
 
+    # make sure polrep is stokes
+    if obs.polrep is not 'stokes':
+        obs = obs.switch_polrep(polrep_out='stokes')
+
     pss_out = 1.0/np.sqrt(np.sum(1.0/obs.data['sigma']**2.0))
 
     return pss_out
@@ -135,6 +139,10 @@ def beam_shape(obs, weighting='natural', robust=0.0):
     # deal with empty observation
     if (len(obs.data) == 0):
         return np.inf, np.inf, np.inf
+
+    # make sure polrep is stokes
+    if obs.polrep is not 'stokes':
+        obs = obs.switch_polrep(polrep_out='stokes')
 
     # (u,v) coordinates
     u = obs.data['u']
@@ -374,6 +382,10 @@ def calc_pss_continuous(obs, start_time=0.0, end_time=24.0, snapshot_interval=60
       (numpy.ndarray), (numpy.ndarray): the segmentation times and PSS values for each snapshot in this observation
 
     """
+
+    # make sure polrep is stokes
+    if obs.polrep is not 'stokes':
+        obs = obs.switch_polrep(polrep_out='stokes')
 
     # observation info
     times_obs = obs.data['time']

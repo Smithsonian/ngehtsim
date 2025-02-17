@@ -56,6 +56,10 @@ def grid_obs(obs, N, psize, stokes='I'):
     @N: integer, assumed to be odd
     """
 
+    # make sure polrep is stokes
+    if obs.polrep is not 'stokes':
+        obs = obs.switch_polrep(polrep_out='stokes')
+
     uvals = np.concatenate((obs.data['u'], -obs.data['u']))
     vvals = np.concatenate((obs.data['v'], -obs.data['v']))
     sigmas = np.concatenate((obs.data['sigma'], obs.data['sigma']))
