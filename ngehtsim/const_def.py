@@ -48,8 +48,9 @@ el_min = 10.0
 el_max = 80.0
 
 # windspeed limitations
-windspeed_degradation = 15.0
 windspeed_shutdown = 25.0
+windspeed_v0 = 20.0
+windspeed_w = 10.0
 
 # minimum and maximum years from which to query weather data
 year_min = 2012

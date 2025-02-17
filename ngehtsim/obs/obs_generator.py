@@ -43,6 +43,7 @@ class obs_generator(object):
       lo_freq_overrides (dict): A dictionary of station names and receiver lowest frequency values to override defaults
       hi_freq_overrides (dict): A dictionary of station names and receiver lowest frequency values to override defaults
       ap_eff_overrides (dict): A dictionary of station names and aperture efficiency values to override defaults
+      wind_loading_overrides (dict): A dictionary of station names and wind-loading v0, w values (in m/s) to override defaults
       custom_receivers (dict): A dictionary of custom receiver names and properties
       station_uptimes (dict): A dictionary of station names and associated uptime ranges, in UT
       array (str): Provide the name of a known array to load the corresponding sites and configuration
@@ -53,7 +54,8 @@ class obs_generator(object):
     def __init__(self, settings={}, settings_file=None, verbosity=0, weight=0, D_overrides={},
                  surf_rms_overrides={}, receiver_configuration_overrides={}, bandwidth_overrides={},
                  T_R_overrides={}, sideband_ratio_overrides={}, lo_freq_overrides={}, hi_freq_overrides={},
-                 ap_eff_overrides={}, custom_receivers={}, station_uptimes={}, array=None, ephem='ephemeris/space'):
+                 ap_eff_overrides={}, wind_loading_overrides={}, custom_receivers={}, station_uptimes={},
+                 array=None, ephem='ephemeris/space'):
 
         #############################
         # parse inputs
@@ -70,6 +72,7 @@ class obs_generator(object):
         self.lo_freq_overrides = copy.deepcopy(lo_freq_overrides)
         self.hi_freq_overrides = copy.deepcopy(hi_freq_overrides)
         self.ap_eff_overrides = copy.deepcopy(ap_eff_overrides)
+        self.wind_loading_overrides = copy.deepcopy(wind_loading_overrides)
         self.custom_receivers = copy.deepcopy(custom_receivers)
         self.station_uptimes = copy.deepcopy(station_uptimes)
         self.array = array
@@ -472,6 +475,7 @@ class obs_generator(object):
 
         D_dict = {}
         eta_dict = {}
+        wind_loading_dict = {}
         for site in self.sites:
 
             # start with the values for a new site
@@ -479,11 +483,14 @@ class obs_generator(object):
             rms_here = const.surf_rms
             ap_eff_here = const.ap_eff
 
-            # if the site is known, replace those values with the known ones
+            # if the site is known, replace those values with the known ones or start with defaults
             if site in list(const.known_diameters.keys()):
                 D_dict[site] = const.known_diameters[site]
             if site in list(const.known_surf_rms.keys()):
                 rms_here = const.known_surf_rms[site]
+            wind_loading_dict[site] = {'v0': const.windspeed_v0,
+                                       'w': const.windspeed_w,
+                                       'shutdown': const.windspeed_shutdown}
 
             # if the user has provided overrides, use those instead
             if site in list(self.D_overrides.keys()):
@@ -493,11 +500,16 @@ class obs_generator(object):
             if site in list(self.ap_eff_overrides.keys()):
                 if self.bands[site] in list(self.ap_eff_overrides[site].keys()):
                     ap_eff_here = self.ap_eff_overrides[site][self.bands[site]]
+            if site in list(self.wind_loading_overrides.keys()):
+                wind_loading_dict[site] = {'v0': self.wind_loading_overrides[site]['v0'],
+                                           'w': self.wind_loading_overrides[site]['w'],
+                                           'shutdown': self.wind_loading_overrides[site]['shutdown']}
 
             eta_dict[site] = eta_dish(self.freq, rms_here, const.focus_offset, ap_eff_here)
 
         self.D_dict = D_dict
         self.eta_dict = eta_dict
+        self.wind_loading_dict = wind_loading_dict
 
     # segment the observation into timestamps
     def get_obs_times(self):
@@ -692,7 +704,7 @@ class obs_generator(object):
             Aeff = (np.pi/4.0)*self.eta_dict[site]*((self.D_dict[site])**2)
 
             # if the windspeed exceeds the shutdown threshold, mark the site as to be flagged
-            if (ws > const.windspeed_shutdown):
+            if (ws > self.wind_loading_dict[site]['shutdown']):
                 if flagwind:
                     flagsites.append(site)
                     if self.verbosity > 0:
@@ -806,7 +818,9 @@ class obs_generator(object):
 
             # modify SEFDs to account for wind
             if flagwind:
-                SEFD_factor = windspeed_SEFD_modification(ws)
+                SEFD_factor = windspeed_SEFD_modification(ws,
+                                                          self.wind_loading_dict[site]['v0'],
+                                                          self.wind_loading_dict[site]['w'])
                 SEFD1[ind1] *= SEFD_factor
                 SEFD2[ind2] *= SEFD_factor
 
@@ -1319,6 +1333,7 @@ class obs_generator(object):
                                             lo_freq_overrides=copy.deepcopy(self.lo_freq_overrides),
                                             hi_freq_overrides=copy.deepcopy(self.hi_freq_overrides),
                                             ap_eff_overrides=copy.deepcopy(self.ap_eff_overrides),
+                                            wind_loading_overrides=copy.deepcopy(self.wind_loading_overrides),
                                             custom_receivers=copy.deepcopy(self.custom_receivers),
                                             station_uptimes=copy.deepcopy(self.station_uptimes),
                                             array=self.array,
@@ -1740,24 +1755,22 @@ def get_unready_sites(sites, tech_readiness, rng=np.random.default_rng()):
     return sites_to_drop
 
 
-def windspeed_SEFD_modification(windspeed, windspeed_degradation=const.windspeed_degradation,
-                                windspeed_shutdown=const.windspeed_shutdown):
+def windspeed_SEFD_modification(windspeed, windspeed_v0=const.windspeed_v0,
+                                windspeed_w=const.windspeed_w):
     """
     Function to convert a windspeed to an effective SEFD scaling factor.
 
     Args:
       windspeed (float): windspeed value, in m/s
-      windspeed_degradation (float): windspeed value at which to start substantially degrading performance
-      windspeed_shutdown (float): windspeed value at which a site must be shut down
-
+      windspeed_v0 (float): central point of the logistic function
+      windspeed_w (float): parameter describing the width of the logistic function; larger is more permissive
+      
     Returns:
       (float): factor by which to scale the SEFD
     """
 
-    centerpoint = 0.5*(windspeed_degradation + windspeed_shutdown)
-    rate = (windspeed_shutdown - windspeed_degradation) / 10.0
-    scale_factor = 1.0 - (1.0 / (1.0 + np.exp(-5.0*((windspeed / (2.0*(windspeed_shutdown - windspeed_degradation))) - 1.0))))
-    
+    scale_factor = 1.0 - (1.0 / (1.0 + np.exp(-(3.0/windspeed_w)*(windspeed - windspeed_v0))))
+        
     return 1.0/scale_factor
 
 
@@ -1885,6 +1898,7 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
     new_lo_freq_overrides = copy.deepcopy(obsgen.lo_freq_overrides)
     new_hi_freq_overrides = copy.deepcopy(obsgen.hi_freq_overrides)
     new_ap_eff_overrides = copy.deepcopy(obsgen.ap_eff_overrides)
+    new_wind_loading_overrides = copy.deepcopy(obsgen.wind_loading_overrides)
     new_custom_receivers = copy.deepcopy(obsgen.custom_receivers)
     new_station_uptimes = copy.deepcopy(obsgen.station_uptimes)
 
@@ -1899,6 +1913,7 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
                                lo_freq_overrides=new_lo_freq_overrides,
                                hi_freq_overrides=new_hi_freq_overrides,
                                ap_eff_overrides=new_ap_eff_overrides,
+                               wind_loading_overrides=new_wind_loading_overrides,
                                custom_receivers=new_custom_receivers,
                                station_uptimes=new_station_uptimes,
                                ephem=ephem)
