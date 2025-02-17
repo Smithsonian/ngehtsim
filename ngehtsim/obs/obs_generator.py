@@ -888,6 +888,8 @@ class obs_generator(object):
         if addFR:
             fa_1 = (f_par1*par1) + (f_el1*el1) + ((np.pi/180.0)*phi_off1)
             fa_2 = (f_par2*par2) + (f_el2*el2) + ((np.pi/180.0)*phi_off2)
+            fa_1[(t1 == 'space')] = 0.0
+            fa_2[(t2 == 'space')] = 0.0
             if self.weight > 0:
                 self.fa_1 = fa_1
                 self.fa_2 = fa_2
