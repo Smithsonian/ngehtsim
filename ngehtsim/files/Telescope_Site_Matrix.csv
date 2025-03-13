@@ -44,6 +44,7 @@ HAY,HA,US,42.623943,-71.488769,114,Haystack Observatory,37,85,,circular,ALT-AZ,0
 HESS,HE,Namibia,-23.27154,16.5002,1900,HESS site  considered for the Africa Millimeter Telescope,15,25,,circular,ALT-AZ,0,AMT
 HIT,HT,Japan,36.69744,140.69211,120,Hitachi dish of the EAVN,32,1600,,circular,ALT-AZ,0,HIT32
 HOB,HB,Australia,-42.80556702,147.4381427,41,Hobart VGOS dish in Tasmania,12,100,,linear,ALT-AZ,0,HOBART12
+HOR,HR,Tanzania,-3.139078,37.438599,3726,The Horombo Hut site on Kilimanjaro,,,,,,,
 IRK,IR,Japan,31.74789,130.43989,574,Iriki dish of VERA,20,500,,circular,ALT-AZ,0,
 ISG,IS,Japan,24.412167,124.171,65,Ishigakijima dish of VERA,20,500,,circular,ALT-AZ,0,
 ISH,IH,Japan,36.20918915,140.2189587,164,Ishioka VGOS dish,13.2,100,,linear,ALT-AZ,0,ISHIOKA
