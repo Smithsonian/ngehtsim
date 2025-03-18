@@ -854,7 +854,7 @@ class obs_generator(object):
             sefdl_arr[sefdind] = sefdhere
             self.arr.tarr['sefdr'] = sefdr_arr
             self.arr.tarr['sefdl'] = sefdl_arr
-            
+
             # determine bandwidth
             if band in list(self.bandwidth_setup[site].keys()):
                 valhere = self.bandwidth_setup[site][band]*(1.0e9)
@@ -905,13 +905,14 @@ class obs_generator(object):
                 leak2L[ind2] = leakLhere
 
                 # update tarr
-                tarrind = (self.arr.tarr['site'] == site)
-                dr_arr = np.copy(self.arr.tarr['dr'])
-                dl_arr = np.copy(self.arr.tarr['dl'])
-                dr_arr[tarrind] = leakRhere
-                dl_arr[tarrind] = leakLhere
-                self.arr.tarr['dr'] = dr_arr
-                self.arr.tarr['dl'] = dl_arr
+                if site != 'space':
+                    tarrind = (self.arr.tarr['site'] == site)
+                    dr_arr = np.copy(self.arr.tarr['dr'])
+                    dl_arr = np.copy(self.arr.tarr['dl'])
+                    dr_arr[tarrind] = leakRhere
+                    dl_arr[tarrind] = leakLhere
+                    self.arr.tarr['dr'] = dr_arr
+                    self.arr.tarr['dl'] = dl_arr
 
         # store opacities as part of the observation
         obs.data['tau1'] = tau1
