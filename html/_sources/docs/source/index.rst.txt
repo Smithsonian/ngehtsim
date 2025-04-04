@@ -28,3 +28,12 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Referencing
+====================================
+
+The ngehtsim codebase has been described and demonstrated in `Pesce et al. (2024)`_.  Those looking to use ngehtsim in their own work should please cite:
+
+Pesce, D. W. et al. (2024) *Atmospheric Limitations for High-frequency Ground-based Very Long Baseline Interferometry*, ApJ, 968, 69, DOI: `10.3847/1538-4357/ad3961 <https://iopscience.iop.org/article/10.3847/1538-4357/ad3961>`_
+
+.._Pesce et al. (2024): https://iopscience.iop.org/article/10.3847/1538-4357/ad3961
