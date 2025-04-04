@@ -1946,24 +1946,23 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
     fringegroups_index = fringegroups(obsgen_ref, obs_ref_pass, snr_ref, tint_ref)
     master_index[wheremask_ref] |= fringegroups_index
 
-    # compare target SNR and (scaled) reference SNR, using the larger of the two
+    # compare target SNR and (scaled) reference SNR, using the larger of the two for dual-band baselines
     pseudo_I_amp = 0.5*(np.abs(obs.data['rrvis']) + np.abs(obs.data['llvis']))
     pseudo_I_sig = obs.data['rrsigma'] / np.sqrt(2.0)
     snr_data = pseudo_I_amp / pseudo_I_sig
     pseudo_I_amp_ref = 0.5*(np.abs(obs_ref.data['rrvis']) + np.abs(obs_ref.data['llvis']))
     pseudo_I_sig_ref = obs_ref.data['rrsigma'] / np.sqrt(2.0)
     snr_data_ref = (pseudo_I_amp_ref / pseudo_I_sig_ref)*freq_rat
-    ind_snr = snr_data > snr_data_ref
+    ind_snr_boost = (snr_data_ref > snr_data) & mask_ref & mask_tar
 
     # get any additional detections from fringe-fitting at the target frequency
     obs_pass = obs.copy()
     data_copy = obs.data.copy()
-    data_copy[ind_snr] = obs.data[ind_snr]
-    data_copy[~ind_snr] = obs_ref.data[~ind_snr]
-    data_copy['rrsigma'][~ind_snr] /= freq_rat
-    data_copy['llsigma'][~ind_snr] /= freq_rat
-    data_copy['rlsigma'][~ind_snr] /= freq_rat
-    data_copy['lrsigma'][~ind_snr] /= freq_rat
+    data_copy[ind_snr_boost] = obs_ref.data[ind_snr_boost]
+    data_copy['rrsigma'][ind_snr_boost] /= freq_rat
+    data_copy['llsigma'][ind_snr_boost] /= freq_rat
+    data_copy['rlsigma'][ind_snr_boost] /= freq_rat
+    data_copy['lrsigma'][ind_snr_boost] /= freq_rat
     obs_pass.data = data_copy[wheremask_tar]
     snr_fringegroups = snr_ref * freq_rat
     fringegroups_index = fringegroups(obsgen, obs_pass, snr_fringegroups, tint_ref)
