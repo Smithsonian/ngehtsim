@@ -133,8 +133,8 @@ ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
 
 rho1 = np.sqrt(u1**2.0 + v1**2.0)
 rho2 = np.sqrt(u2**2.0 + v2**2.0)
-amp1 = np.abs(obs_fpt.data['vis'])
-amp2 = np.abs(obs.data['vis'])
+amp1 = np.abs(obs_fpt.data['rrvis'])
+amp2 = np.abs(obs.data['rrvis'])
 
 ax.plot(rho1/(1.0e9), amp1, 'bo', markersize=5, markeredgewidth=0, label='with FPT')
 ax.plot(rho2/(1.0e9), amp2, 'ro', markersize=2, markeredgewidth=0, label='without FPT')
