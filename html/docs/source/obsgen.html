@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Observation utilities &mdash; ngehtsim v1.1.2 documentation</title>
+  <title>Observation utilities &mdash; ngehtsim v1.1.3+37.g42021402a documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -32,7 +32,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                v1.1.2
+                v1.1.3+37.g42021402a
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -98,18 +98,18 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>obsgen</strong> (<em>ngehtsim.obs.obs_generator.obs_generator</em>) – ngehtsim obs_generator object containing information about the observation</p></li>
-<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.6)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object containing the input observation</p></li>
-<li><p><strong>snr_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – strong baseline SNR threshold</p></li>
-<li><p><strong>tint_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – strong baseline coherence time, in seconds</p></li>
-<li><p><strong>freq_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – FPT reference frequency, in GHz</p></li>
-<li><p><strong>model_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – path to FPT reference model, or the reference model itself</p></li>
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.10)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object containing the input observation</p></li>
+<li><p><strong>snr_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – strong baseline SNR threshold</p></li>
+<li><p><strong>tint_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – strong baseline coherence time, in seconds</p></li>
+<li><p><strong>freq_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – FPT reference frequency, in GHz</p></li>
+<li><p><strong>model_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – path to FPT reference model, or the reference model itself</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>An array of kept data indices</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)">numpy.ndarray</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)">numpy.ndarray</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -121,16 +121,16 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>day</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – Numerical cay of the month; e.g. ‘15’ or ‘22’</p></li>
-<li><p><strong>month</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – Three-letter abbreviation for month of the year; e.g., ‘Feb’ or ‘Sep’</p></li>
-<li><p><strong>year</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – Calendar year; e.g., ‘2025’</p></li>
+<li><p><strong>day</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Numerical cay of the month; e.g. ‘15’ or ‘22’</p></li>
+<li><p><strong>month</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Three-letter abbreviation for month of the year; e.g., ‘Feb’ or ‘Sep’</p></li>
+<li><p><strong>year</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Calendar year; e.g., ‘2025’</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>MJD corresponding to the input date</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -142,17 +142,17 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – observing frequency, in Hz</p></li>
-<li><p><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – surface RMS, in microns</p></li>
-<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – focus offset, in equivalent microns of surface RMS</p></li>
-<li><p><strong>ap_eff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – nominal aperture efficiency</p></li>
+<li><p><strong>freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – observing frequency, in Hz</p></li>
+<li><p><strong>sigma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – surface RMS, in microns</p></li>
+<li><p><strong>offset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – focus offset, in equivalent microns of surface RMS</p></li>
+<li><p><strong>ap_eff</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – nominal aperture efficiency</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>overall aperture efficiency</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -165,15 +165,15 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>obsgen</strong> (<em>ngehtsim.obs.obs_generator.obs_generator</em>) – ngehtsim obs_generator object containing information about the observation</p></li>
-<li><p><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – name of .antennas file to save</p></li>
-<li><p><strong>t_coh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – default coherence time, in seconds</p></li>
-<li><p><strong>RMS_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – default RMS pointing uncertainty, in arcseconds</p></li>
-<li><p><strong>PB_model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – primary beam model to use; only option right now is ‘gaussian’</p></li>
-<li><p><strong>use_two_letter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – convert all station names to two-letter codes</p></li>
-<li><p><strong>gain_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.12)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) – Value of the mean gain offset for each station.
+<li><p><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – name of .antennas file to save</p></li>
+<li><p><strong>t_coh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – default coherence time, in seconds</p></li>
+<li><p><strong>RMS_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – default RMS pointing uncertainty, in arcseconds</p></li>
+<li><p><strong>PB_model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – primary beam model to use; only option right now is ‘gaussian’</p></li>
+<li><p><strong>use_two_letter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – convert all station names to two-letter codes</p></li>
+<li><p><strong>gain_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Value of the mean gain offset for each station.
 If float or complex, will apply to all stations;
 if a dict, should be indexed by station name</p></li>
-<li><p><strong>leak_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.12)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) – Value of the mean leakage offset for each station.
+<li><p><strong>leak_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Value of the mean leakage offset for each station.
 If float or complex, will apply to all stations;
 if a dict, should be indexed by station name</p></li>
 </ul>
@@ -192,10 +192,10 @@ if a dict, should be indexed by station name</p></li>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>obsgen</strong> (<em>ngehtsim.obs.obs_generator.obs_generator</em>) – ngehtsim obs_generator object containing information about the observation</p></li>
-<li><p><strong>input_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) – dictionary of input arguments</p></li>
-<li><p><strong>input_comments</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) – dictionary of comments associated with input arguments</p></li>
-<li><p><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – name of master_input.txt file to save</p></li>
-<li><p><strong>use_two_letter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – convert all station names to two-letter codes</p></li>
+<li><p><strong>input_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – dictionary of input arguments</p></li>
+<li><p><strong>input_comments</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – dictionary of comments associated with input arguments</p></li>
+<li><p><strong>output_filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – name of master_input.txt file to save</p></li>
+<li><p><strong>use_two_letter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – convert all station names to two-letter codes</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -213,16 +213,16 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>obsgen</strong> (<em>ngehtsim.obs.obs_generator.obs_generator</em>) – ngehtsim obs_generator object containing information about the observation</p></li>
-<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.6)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object containing the input observation</p></li>
-<li><p><strong>snr_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – strong baseline SNR threshold</p></li>
-<li><p><strong>tint_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – strong baseline coherence time, in seconds</p></li>
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.10)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object containing the input observation</p></li>
+<li><p><strong>snr_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – strong baseline SNR threshold</p></li>
+<li><p><strong>tint_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – strong baseline coherence time, in seconds</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>An array of kept data indices</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)">numpy.ndarray</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)">numpy.ndarray</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -236,7 +236,7 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 <dd class="field-odd"><p>a list of station names</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)">list</a>)</p>
+<dd class="field-even"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -250,29 +250,29 @@ This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibra
 <dd class="field-odd"><p>a list of station names</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)">list</a>)</p>
+<dd class="field-even"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>)</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_generator.get_unready_sites">
-<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">get_unready_sites</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sites</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tech_readiness</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng=Generator(PCG64)</span> <span class="pre">at</span> <span class="pre">0x1032AE820</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#get_unready_sites"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.get_unready_sites" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">get_unready_sites</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sites</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tech_readiness</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rng=Generator(PCG64)</span> <span class="pre">at</span> <span class="pre">0x16DB4A2E0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#get_unready_sites"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.get_unready_sites" title="Permalink to this definition"></a></dt>
 <dd><p>Function to determine which sites will randomly fail technical readiness.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>sites</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – list of sites participating in the observation</p></li>
-<li><p><strong>tech_readiness</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – probability of any individual site being technically ready to observe;
+<li><p><strong>sites</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>) – list of sites participating in the observation</p></li>
+<li><p><strong>tech_readiness</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – probability of any individual site being technically ready to observe;
 takes on a value between 0 and 1</p></li>
-<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v1.26)"><em>numpy.random.Generator</em></a>) – a numpy random number generator</p></li>
+<li><p><strong>rng</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator" title="(in NumPy v2.2)"><em>numpy.random.Generator</em></a>) – a numpy random number generator</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>sites to drop</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)">list</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -284,16 +284,16 @@ takes on a value between 0 and 1</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>infile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – The input path and filename</p></li>
-<li><p><strong>freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – Observing frequency, in Hz</p></li>
-<li><p><strong>verbosity</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – Set to &gt;0 for more verbose output</p></li>
+<li><p><strong>infile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – The input path and filename</p></li>
+<li><p><strong>freq</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Observing frequency, in Hz</p></li>
+<li><p><strong>verbosity</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Set to &gt;0 for more verbose output</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>An ehtim image or movie object; returns None if infile is None</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/image.html#ehtim.image.Image" title="(in ehtim v1.2.6)">ehtim.image.Image</a>, <a class="reference external" href="https://achael.github.io/eht-imaging/movie.html#ehtim.movie.Movie" title="(in ehtim v1.2.6)">ehtim.movie.Movie</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/image.html#ehtim.image.Image" title="(in ehtim v1.2.10)">ehtim.image.Image</a>, <a class="reference external" href="https://achael.github.io/eht-imaging/movie.html#ehtim.movie.Movie" title="(in ehtim v1.2.10)">ehtim.movie.Movie</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -305,23 +305,23 @@ takes on a value between 0 and 1</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>sitelist</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – A list of site names</p></li>
-<li><p><strong>ephem</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – path to the ephemeris for a space station</p></li>
-<li><p><strong>verbosity</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – Set to &gt;0 for more verbose output</p></li>
+<li><p><strong>sitelist</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>) – A list of site names</p></li>
+<li><p><strong>ephem</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – path to the ephemeris for a space station</p></li>
+<li><p><strong>verbosity</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – Set to &gt;0 for more verbose output</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>An ehtim array object</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/array.html#ehtim.array.Array" title="(in ehtim v1.2.6)">ehtim.array.Array</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/array.html#ehtim.array.Array" title="(in ehtim v1.2.10)">ehtim.array.Array</a>)</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">obs_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surf_rms_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver_configuration_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bandwidth_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_R_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sideband_ratio_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lo_freq_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hi_freq_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ap_eff_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_receivers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station_uptimes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ephem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ephemeris/space'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">obs_generator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbosity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surf_rms_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">receiver_configuration_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bandwidth_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_R_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sideband_ratio_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lo_freq_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hi_freq_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ap_eff_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wind_loading_overrides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_receivers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">station_uptimes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">array</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ephem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ephemeris/space'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator" title="Permalink to this definition"></a></dt>
 <dd><p>Class that organizes information for generating synthetic observations.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator.settings">
@@ -329,7 +329,7 @@ takes on a value between 0 and 1</p></li>
 <dd><p>Dictionary of information about the observation generation setup</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -342,7 +342,7 @@ Note that any settings specified by the settings keyword argument will override
 the corresponding settings from the settings file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -353,7 +353,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>Set to &gt;0 for more verbose output</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -364,7 +364,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>Set to &gt;0 to store more information in the obs_generator object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -375,7 +375,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and diameters to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -386,7 +386,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and surface RMS values (in microns) to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -397,7 +397,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and available receivers to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -408,7 +408,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and bandwidth values to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -419,7 +419,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and receiver temperature values to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -430,7 +430,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and sideband ratio values to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -441,7 +441,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and receiver lowest frequency values to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -452,7 +452,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and receiver lowest frequency values to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -463,7 +463,18 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and aperture efficiency values to override defaults</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="obs.obs_generator.obs_generator.wind_loading_overrides">
+<span class="sig-name descname"><span class="pre">wind_loading_overrides</span></span><a class="headerlink" href="#obs.obs_generator.obs_generator.wind_loading_overrides" title="Permalink to this definition"></a></dt>
+<dd><p>A dictionary of station names and wind-loading v0, w values (in m/s) to override defaults</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -474,7 +485,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of custom receiver names and properties</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -485,7 +496,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>A dictionary of station names and associated uptime ranges, in UT</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -496,7 +507,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>Provide the name of a known array to load the corresponding sites and configuration</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -507,7 +518,7 @@ the corresponding settings from the settings file.</p>
 <dd><p>path to the ephemeris for a space station</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -519,20 +530,20 @@ the corresponding settings from the settings file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>symba_workdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – name of SYMBA working directory to use or create</p></li>
-<li><p><strong>output_filenames</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – names of .antennas and master_input.txt files to save</p></li>
-<li><p><strong>t_coh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – default coherence time, in seconds</p></li>
-<li><p><strong>RMS_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – default RMS pointing uncertainty, in arcseconds</p></li>
-<li><p><strong>PB_model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – primary beam model to use; only option right now is ‘gaussian’</p></li>
-<li><p><strong>use_two_letter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – convert all station names to two-letter codes</p></li>
-<li><p><strong>gain_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.12)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) – Value of the mean gain offset for each station.
+<li><p><strong>symba_workdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – name of SYMBA working directory to use or create</p></li>
+<li><p><strong>output_filenames</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>) – names of .antennas and master_input.txt files to save</p></li>
+<li><p><strong>t_coh</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – default coherence time, in seconds</p></li>
+<li><p><strong>RMS_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – default RMS pointing uncertainty, in arcseconds</p></li>
+<li><p><strong>PB_model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – primary beam model to use; only option right now is ‘gaussian’</p></li>
+<li><p><strong>use_two_letter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – convert all station names to two-letter codes</p></li>
+<li><p><strong>gain_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Value of the mean gain offset for each station.
 If float or complex, will apply to all stations;
 if a dict, should be indexed by station name</p></li>
-<li><p><strong>leak_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.12)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) – Value of the mean leakage offset for each station.
+<li><p><strong>leak_mean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Value of the mean leakage offset for each station.
 If float or complex, will apply to all stations;
 if a dict, should be indexed by station name</p></li>
-<li><p><strong>master_input_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) – dictionary of master input arguments</p></li>
-<li><p><strong>master_input_comments</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) – dictionary of comments associated with master input arguments</p></li>
+<li><p><strong>master_input_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – dictionary of master input arguments</p></li>
+<li><p><strong>master_input_comments</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – dictionary of comments associated with master input arguments</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -543,91 +554,100 @@ if a dict, should be indexed by station name</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator.make_obs">
-<span class="sig-name descname"><span class="pre">make_obs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addnoise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addgains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gainamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.04</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacitycal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addFR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagwind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagday</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_mixed_basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator.make_obs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator.make_obs" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">make_obs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addnoise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addgains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gainamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.04</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leakamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacitycal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addFR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addleakage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagwind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagday</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagsun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_mixed_basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator.make_obs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator.make_obs" title="Permalink to this definition"></a></dt>
 <dd><p>Generate an observation that folds in weather-based opacity effects
 and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_model</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/image.html#ehtim.image.Image" title="(in ehtim v1.2.6)"><em>ehtim.image.Image</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/movie.html#ehtim.movie.Movie" title="(in ehtim v1.2.6)"><em>ehtim.movie.Movie</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/model.html#ehtim.model.Model" title="(in ehtim v1.2.6)"><em>ehtim.model.Model</em></a><em>, </em><em>ngEHTforecast.fisher.fisher_forecast.FisherForecast</em>) – input source model</p></li>
-<li><p><strong>addnoise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to add thermal noise to the visibilities</p></li>
-<li><p><strong>addgains</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to add station gain corruptions</p></li>
-<li><p><strong>gainamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – standard deviation of amplitude log-gains</p></li>
-<li><p><strong>opacitycal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
-<li><p><strong>flagwind</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether to derate sites with high wind</p></li>
-<li><p><strong>flagday</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether to flag sites during the local daytime</p></li>
-<li><p><strong>addFR</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to add feed rotations</p></li>
-<li><p><strong>allow_mixed_basis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether to apply polarization basis conversions</p></li>
-<li><p><strong>el_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – minimum elevation that a site can observe at, in degrees</p></li>
-<li><p><strong>el_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – maximum elevation that a site can observe at, in degrees</p></li>
-<li><p><strong>p</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object</p></li>
+<li><p><strong>input_model</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/image.html#ehtim.image.Image" title="(in ehtim v1.2.10)"><em>ehtim.image.Image</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/movie.html#ehtim.movie.Movie" title="(in ehtim v1.2.10)"><em>ehtim.movie.Movie</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/model.html#ehtim.model.Model" title="(in ehtim v1.2.10)"><em>ehtim.model.Model</em></a><em>, </em><em>ngEHTforecast.fisher.fisher_forecast.FisherForecast</em>) – input source model</p></li>
+<li><p><strong>addnoise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add thermal noise to the visibilities</p></li>
+<li><p><strong>addgains</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add station gain corruptions</p></li>
+<li><p><strong>gainamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – standard deviation of amplitude log-gains</p></li>
+<li><p><strong>leakamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – standard deviation of leakage real and imaginary parts</p></li>
+<li><p><strong>opacitycal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
+<li><p><strong>addFR</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add feed rotations</p></li>
+<li><p><strong>addleakage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add polarization leakage corruptions</p></li>
+<li><p><strong>flagwind</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to derate sites with high wind</p></li>
+<li><p><strong>flagday</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to flag sites during the local daytime</p></li>
+<li><p><strong>flagsun</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to impose a minimum solar avoidance angle</p></li>
+<li><p><strong>allow_mixed_basis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to apply polarization basis conversions</p></li>
+<li><p><strong>el_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – minimum elevation that a site can observe at, in degrees</p></li>
+<li><p><strong>el_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – maximum elevation that a site can observe at, in degrees</p></li>
+<li><p><strong>p</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><em>numpy.ndarray</em></a>) – list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>eht-imaging Obsdata object containing the generated observation</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.6)">ehtim.obsdata.Obsdata</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.10)">ehtim.obsdata.Obsdata</a>)</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator.make_obs_mf">
-<span class="sig-name descname"><span class="pre">make_obs_mf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addnoise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addgains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gainamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.04</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacitycal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addFR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagwind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagday</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator.make_obs_mf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator.make_obs_mf" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">make_obs_mf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freqs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addnoise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addgains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gainamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.04</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leakamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacitycal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addFR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addleakage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagwind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagday</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagsun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator.make_obs_mf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator.make_obs_mf" title="Permalink to this definition"></a></dt>
 <dd><p>Generate a multi-frequency observation</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>freqs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – list of frequencies at which to carry out the observation, in GHz</p></li>
-<li><p><strong>input_models</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – list of input source models; one for each frequency</p></li>
-<li><p><strong>addnoise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to add thermal noise to the visibilities</p></li>
-<li><p><strong>addgains</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to add station gain corruptions</p></li>
-<li><p><strong>gainamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – standard deviation of amplitude log-gains</p></li>
-<li><p><strong>opacitycal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
-<li><p><strong>addFR</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to add feed rotations</p></li>
-<li><p><strong>el_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – minimum elevation that a site can observe at, in degrees</p></li>
-<li><p><strong>el_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – maximum elevation that a site can observe at, in degrees</p></li>
-<li><p><strong>flagwind</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether to derate sites with high wind</p></li>
-<li><p><strong>flagday</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether to flag sites during the local daytime</p></li>
-<li><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – list of lists of parameters for input ngEHTforecast.fisher.fisher_forecast.FisherForecast objects; one for each frequency</p></li>
+<li><p><strong>freqs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>) – list of frequencies at which to carry out the observation, in GHz</p></li>
+<li><p><strong>input_models</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>) – list of input source models; one for each frequency</p></li>
+<li><p><strong>addnoise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add thermal noise to the visibilities</p></li>
+<li><p><strong>addgains</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add station gain corruptions</p></li>
+<li><p><strong>gainamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – standard deviation of amplitude log-gains</p></li>
+<li><p><strong>leakamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – standard deviation of leakage real and imaginary parts</p></li>
+<li><p><strong>opacitycal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
+<li><p><strong>addFR</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add feed rotations</p></li>
+<li><p><strong>addleakage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add polarization leakage corruptions</p></li>
+<li><p><strong>flagwind</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to derate sites with high wind</p></li>
+<li><p><strong>flagday</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to flag sites during the local daytime</p></li>
+<li><p><strong>flagsun</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to impose a minimum solar avoidance angle</p></li>
+<li><p><strong>el_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – minimum elevation that a site can observe at, in degrees</p></li>
+<li><p><strong>el_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – maximum elevation that a site can observe at, in degrees</p></li>
+<li><p><strong>p</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>) – list of lists of parameters for input ngEHTforecast.fisher.fisher_forecast.FisherForecast objects; one for each frequency</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>list of ehtim.obsdata.Obsdata objects containing the generated observations; one for each frequency</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)">list</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>)</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="obs.obs_generator.obs_generator.observe">
-<span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addnoise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addgains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gainamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.04</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacitycal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagwind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagday</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addFR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_mixed_basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator.observe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator.observe" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addnoise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addgains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gainamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.04</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leakamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacitycal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addFR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addleakage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagwind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagday</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flagsun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_mixed_basis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">el_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#obs_generator.observe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.obs_generator.observe" title="Permalink to this definition"></a></dt>
 <dd><p>Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_model</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/image.html#ehtim.image.Image" title="(in ehtim v1.2.6)"><em>ehtim.image.Image</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/movie.html#ehtim.movie.Movie" title="(in ehtim v1.2.6)"><em>ehtim.movie.Movie</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/model.html#ehtim.model.Model" title="(in ehtim v1.2.6)"><em>ehtim.model.Model</em></a><em>, </em><em>ngEHTforecast.fisher.fisher_forecast.FisherForecast</em>) – input source model</p></li>
-<li><p><strong>addnoise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to add thermal noise to the visibilities</p></li>
-<li><p><strong>addgains</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to add station gain corruptions</p></li>
-<li><p><strong>gainamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – standard deviation of amplitude log-gains</p></li>
-<li><p><strong>opacitycal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
-<li><p><strong>flagwind</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether to derate sites with high wind</p></li>
-<li><p><strong>flagday</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether to flag sites during the local daytime</p></li>
-<li><p><strong>addFR</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether or not to add feed rotations</p></li>
-<li><p><strong>allow_mixed_basis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) – flag for whether to apply polarization basis conversions</p></li>
-<li><p><strong>el_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – minimum elevation that a site can observe at, in degrees</p></li>
-<li><p><strong>el_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – maximum elevation that a site can observe at, in degrees</p></li>
-<li><p><strong>p</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) – list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object</p></li>
+<li><p><strong>input_model</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/image.html#ehtim.image.Image" title="(in ehtim v1.2.10)"><em>ehtim.image.Image</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/movie.html#ehtim.movie.Movie" title="(in ehtim v1.2.10)"><em>ehtim.movie.Movie</em></a><em>, </em><a class="reference external" href="https://achael.github.io/eht-imaging/model.html#ehtim.model.Model" title="(in ehtim v1.2.10)"><em>ehtim.model.Model</em></a><em>, </em><em>ngEHTforecast.fisher.fisher_forecast.FisherForecast</em>) – input source model</p></li>
+<li><p><strong>addnoise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add thermal noise to the visibilities</p></li>
+<li><p><strong>addgains</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add station gain corruptions</p></li>
+<li><p><strong>gainamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – standard deviation of amplitude log-gains</p></li>
+<li><p><strong>leakamp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – standard deviation of leakage real and imaginary parts</p></li>
+<li><p><strong>opacitycal</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out</p></li>
+<li><p><strong>addFR</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add feed rotations</p></li>
+<li><p><strong>addleakage</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether or not to add polarization leakage corruptions</p></li>
+<li><p><strong>flagwind</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to derate sites with high wind</p></li>
+<li><p><strong>flagday</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to flag sites during the local daytime</p></li>
+<li><p><strong>flagsun</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to impose a minimum solar avoidance angle</p></li>
+<li><p><strong>allow_mixed_basis</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – flag for whether to apply polarization basis conversions</p></li>
+<li><p><strong>el_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – minimum elevation that a site can observe at, in degrees</p></li>
+<li><p><strong>el_max</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – maximum elevation that a site can observe at, in degrees</p></li>
+<li><p><strong>p</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><em>numpy.ndarray</em></a>) – list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>eht-imaging Obsdata object containing the generated observation</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.6)">ehtim.obsdata.Obsdata</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.10)">ehtim.obsdata.Obsdata</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -636,21 +656,21 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="obs.obs_generator.windspeed_SEFD_modification">
-<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">windspeed_SEFD_modification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">windspeed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windspeed_degradation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windspeed_shutdown</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">25.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#windspeed_SEFD_modification"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.windspeed_SEFD_modification" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">obs.obs_generator.</span></span><span class="sig-name descname"><span class="pre">windspeed_SEFD_modification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">windspeed</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windspeed_v0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">windspeed_w</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/obs/obs_generator.html#windspeed_SEFD_modification"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#obs.obs_generator.windspeed_SEFD_modification" title="Permalink to this definition"></a></dt>
 <dd><p>Function to convert a windspeed to an effective SEFD scaling factor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>windspeed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – windspeed value, in m/s</p></li>
-<li><p><strong>windspeed_degradation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – windspeed value at which to start substantially degrading performance</p></li>
-<li><p><strong>windspeed_shutdown</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – windspeed value at which a site must be shut down</p></li>
+<li><p><strong>windspeed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – windspeed value, in m/s</p></li>
+<li><p><strong>windspeed_v0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – central point of the logistic function</p></li>
+<li><p><strong>windspeed_w</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – parameter describing the width of the logistic function; larger is more permissive</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>factor by which to scale the SEFD</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)">float</a>)</p>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)">float</a>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -666,10 +686,10 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.6)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – file name for output plot</p></li>
-<li><p><strong>xlim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a>) – x-axis range, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
-<li><p><strong>ylim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a>) – y-axis range, in Jy</p></li>
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.10)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – file name for output plot</p></li>
+<li><p><strong>xlim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><em>tuple</em></a>) – x-axis range, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
+<li><p><strong>ylim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><em>tuple</em></a>) – y-axis range, in Jy</p></li>
 </ul>
 </dd>
 </dl>
@@ -682,10 +702,10 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.6)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – file name for output plot</p></li>
-<li><p><strong>xlim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a>) – x-axis range, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
-<li><p><strong>ylim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a>) – y-axis range, in degrees</p></li>
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.10)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – file name for output plot</p></li>
+<li><p><strong>xlim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><em>tuple</em></a>) – x-axis range, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
+<li><p><strong>ylim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><em>tuple</em></a>) – y-axis range, in degrees</p></li>
 </ul>
 </dd>
 </dl>
@@ -698,19 +718,19 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.6)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.10)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
 <li><p><strong>obsgen</strong> (<em>ngehtsim.obs.obs_generator</em>) – an input obs_generator object</p></li>
-<li><p><strong>metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – selected metric to plot; can be ‘ff’, ‘bff’, lcg’, ‘ar’</p></li>
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – file name for output plot</p></li>
-<li><p><strong>timetype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – eht-imaging recognized timetype; can be ‘UTC’ or ‘GMST’</p></li>
-<li><p><strong>fov</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – field of view for computing FF, in <span class="math notranslate nohighlight">\(\mu\rm{as}\)</span></p></li>
-<li><p><strong>logmid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – the logarithmic midpoint of the BFF SNR mapping function</p></li>
-<li><p><strong>logwid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – the logarithmic width of the BFF SNR mapping function</p></li>
-<li><p><strong>stokes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – Stokes parameter for which to compute the BFF metric; can be ‘I’, ‘Q’, ‘U’, ‘V’</p></li>
-<li><p><strong>artype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – what measure of the beam shape to use for AR metric; can be ‘mean’, ‘minor’, ‘major’, ‘PA’, ‘angle’</p></li>
-<li><p><strong>weighting</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – <span class="math notranslate nohighlight">\((u,v)\)</span>-weighting scheme for AR metric; can be ‘natural’, ‘uniform’, ‘Briggs’, ‘robust’</p></li>
-<li><p><strong>robust</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – the robust parameter for Briggs weighting in the AR metric</p></li>
-<li><p><strong>ylim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a>) – y-axis range</p></li>
+<li><p><strong>metric</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – selected metric to plot; can be ‘ff’, ‘bff’, lcg’, ‘ar’</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – file name for output plot</p></li>
+<li><p><strong>timetype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – eht-imaging recognized timetype; can be ‘UTC’ or ‘GMST’</p></li>
+<li><p><strong>fov</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – field of view for computing FF, in <span class="math notranslate nohighlight">\(\mu\rm{as}\)</span></p></li>
+<li><p><strong>logmid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – the logarithmic midpoint of the BFF SNR mapping function</p></li>
+<li><p><strong>logwid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – the logarithmic width of the BFF SNR mapping function</p></li>
+<li><p><strong>stokes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Stokes parameter for which to compute the BFF metric; can be ‘I’, ‘Q’, ‘U’, ‘V’</p></li>
+<li><p><strong>artype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – what measure of the beam shape to use for AR metric; can be ‘mean’, ‘minor’, ‘major’, ‘PA’, ‘angle’</p></li>
+<li><p><strong>weighting</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – <span class="math notranslate nohighlight">\((u,v)\)</span>-weighting scheme for AR metric; can be ‘natural’, ‘uniform’, ‘Briggs’, ‘robust’</p></li>
+<li><p><strong>robust</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – the robust parameter for Briggs weighting in the AR metric</p></li>
+<li><p><strong>ylim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><em>tuple</em></a>) – y-axis range</p></li>
 </ul>
 </dd>
 </dl>
@@ -723,10 +743,10 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.6)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – file name for output plot</p></li>
-<li><p><strong>xlim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a>) – x-axis range, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
-<li><p><strong>ylim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.12)"><em>tuple</em></a>) – y-axis range</p></li>
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.10)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – file name for output plot</p></li>
+<li><p><strong>xlim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><em>tuple</em></a>) – x-axis range, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
+<li><p><strong>ylim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><em>tuple</em></a>) – y-axis range</p></li>
 </ul>
 </dd>
 </dl>
@@ -739,9 +759,9 @@ and applies a specified SNR thresholding scheme to mimic fringe-finding.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.6)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – file name for output plot</p></li>
-<li><p><strong>umax</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – maximum baseline length for plot axes, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
+<li><p><strong>obs</strong> (<a class="reference external" href="https://achael.github.io/eht-imaging/obsdata.html#ehtim.obsdata.Obsdata" title="(in ehtim v1.2.10)"><em>ehtim.obsdata.Obsdata</em></a>) – eht-imaging Obsdata object</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – file name for output plot</p></li>
+<li><p><strong>umax</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) – maximum baseline length for plot axes, in <span class="math notranslate nohighlight">\(\rm{G}\lambda\)</span></p></li>
 </ul>
 </dd>
 </dl>
