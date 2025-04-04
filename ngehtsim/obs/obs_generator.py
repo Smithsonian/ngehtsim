@@ -1118,69 +1118,10 @@ class obs_generator(object):
                            el_max=el_max,
                            p=p)
 
-        # apply naive SNR thresholding
-        if (snr_algo.lower() == 'naive'):
-            mask = obs.unpack('snr')['snr'] > snr_args
+        # create a running index list of baselines to keep
+        master_index = np.ones(len(obs.data), dtype='bool')
 
-        # apply a proxy for the "fringegroups" procedure from HOPS
-        elif (snr_algo.lower() == 'fringegroups'):
-
-            # parse fringe_finder arguments
-            snr_ref = snr_args[0]
-            tint_ref = snr_args[1]
-
-            mask = fringegroups(self, obs, snr_ref, tint_ref)
-
-        # apply an FPT proxy for SNR thresholding
-        elif (snr_algo.lower() == 'fpt'):
-
-            # parse fringe_finder arguments
-            snr_ref = snr_args[0]
-            tint_ref = snr_args[1]
-            freq_ref = snr_args[2]
-            model_path_ref = snr_args[3]
-
-            mask = FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, flagsun=flagsun, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p)
-
-        # unrecognized SNR thresholding scheme
-        else:
-            raise ValueError('Unknown algorithm for fringe_finder.')
-
-        # apply the data flags to the observation
-        data_copy = obs.data.copy()
-        obs.data = data_copy[mask]
-        if self.verbosity > 0:
-            print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points during fringe-finding emulation.')
-
-        # flag the additional stored quantities as well
-        if self.weight > 0:
-            self.timestamps = self.timestamps[mask]
-            self.ant1 = self.ant1[mask]
-            self.ant2 = self.ant2[mask]
-            self.bandwidths = self.bandwidths[mask]
-            self.Tsys1 = self.Tsys1[mask]
-            self.Tsys2 = self.Tsys2[mask]
-            self.tau1 = self.tau1[mask]
-            self.tau2 = self.tau2[mask]
-            self.Tb1 = self.Tb1[mask]
-            self.Tb2 = self.Tb2[mask]
-            self.SEFD1 = self.SEFD1[mask]
-            self.SEFD2 = self.SEFD2[mask]
-            if addgains:
-                self.station_gains1R = self.station_gains1R[mask]
-                self.station_gains2R = self.station_gains2R[mask]
-                self.station_gains1L = self.station_gains1L[mask]
-                self.station_gains2L = self.station_gains2L[mask]
-            if addFR:
-                self.fa_1 = self.fa_1[mask]
-                self.fa_2 = self.fa_2[mask]
-            if addleakage:
-                self.station_leakage1R = self.station_leakage1R[mask]
-                self.station_leakage2R = self.station_leakage2R[mask]
-                self.station_leakage1L = self.station_leakage1L[mask]
-                self.station_leakage2L = self.station_leakage2L[mask]
-
-        # remove sites that can't observe at the requested frequency
+        # identify sites that can't observe at the requested frequency
         sites_to_remove = list()
         for site in obs.tarr['site']:
             if self.bands[site] is None:
@@ -1191,43 +1132,9 @@ class obs_generator(object):
             if len(obs.data) > 0:
                 t1_list = obs.unpack('t1')['t1']
                 t2_list = obs.unpack('t2')['t2']
-                mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+                master_index &= np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
 
-                # apply the data flags to the observation
-                data_copy = obs.data.copy()
-                obs.data = data_copy[mask]
-                if self.verbosity > 0:
-                    print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points because of no appropriate receiver at the observing frequency.')
-
-                # flag the additional stored quantities as well
-                if self.weight > 0:
-                    self.timestamps = self.timestamps[mask]
-                    self.ant1 = self.ant1[mask]
-                    self.ant2 = self.ant2[mask]
-                    self.bandwidths = self.bandwidths[mask]
-                    self.Tsys1 = self.Tsys1[mask]
-                    self.Tsys2 = self.Tsys2[mask]
-                    self.tau1 = self.tau1[mask]
-                    self.tau2 = self.tau2[mask]
-                    self.Tb1 = self.Tb1[mask]
-                    self.Tb2 = self.Tb2[mask]
-                    self.SEFD1 = self.SEFD1[mask]
-                    self.SEFD2 = self.SEFD2[mask]
-                    if addgains:
-                        self.station_gains1R = self.station_gains1R[mask]
-                        self.station_gains2R = self.station_gains2R[mask]
-                        self.station_gains1L = self.station_gains1L[mask]
-                        self.station_gains2L = self.station_gains2L[mask]
-                    if addFR:
-                        self.fa_1 = self.fa_1[mask]
-                        self.fa_2 = self.fa_2[mask]
-                    if addleakage:
-                        self.station_leakage1R = self.station_leakage1R[mask]
-                        self.station_leakage2R = self.station_leakage2R[mask]
-                        self.station_leakage1L = self.station_leakage1L[mask]
-                        self.station_leakage2L = self.station_leakage2L[mask]
-
-        # drop any sites that are randomly deemed to be technically unready
+        # identify sites that are randomly deemed to be technically unready
         sites_to_remove = get_unready_sites(obs.tarr['site'], self.settings['tech_readiness'], rng=self.rng)
         if len(sites_to_remove) > 0:
             if self.verbosity > 0:
@@ -1235,41 +1142,73 @@ class obs_generator(object):
             if len(obs.data) > 0:
                 t1_list = obs.unpack('t1')['t1']
                 t2_list = obs.unpack('t2')['t2']
-                mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+                master_index &= np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
 
-                # apply the data flags to the observation
-                data_copy = obs.data.copy()
-                obs.data = data_copy[mask]
-                if self.verbosity > 0:
-                    print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points because of techincal unreadiness.')
+        # apply naive SNR thresholding
+        if (snr_algo.lower() == 'naive'):
+            master_index &= obs.unpack('snr')['snr'] > snr_args
 
-                # flag the additional stored quantities as well
-                if self.weight > 0:
-                    self.timestamps = self.timestamps[mask]
-                    self.ant1 = self.ant1[mask]
-                    self.ant2 = self.ant2[mask]
-                    self.bandwidths = self.bandwidths[mask]
-                    self.Tsys1 = self.Tsys1[mask]
-                    self.Tsys2 = self.Tsys2[mask]
-                    self.tau1 = self.tau1[mask]
-                    self.tau2 = self.tau2[mask]
-                    self.Tb1 = self.Tb1[mask]
-                    self.Tb2 = self.Tb2[mask]
-                    self.SEFD1 = self.SEFD1[mask]
-                    self.SEFD2 = self.SEFD2[mask]
-                    if addgains:
-                        self.station_gains1R = self.station_gains1R[mask]
-                        self.station_gains2R = self.station_gains2R[mask]
-                        self.station_gains1L = self.station_gains1L[mask]
-                        self.station_gains2L = self.station_gains2L[mask]
-                    if addFR:
-                        self.fa_1 = self.fa_1[mask]
-                        self.fa_2 = self.fa_2[mask]
-                    if addleakage:
-                        self.station_leakage1R = self.station_leakage1R[mask]
-                        self.station_leakage2R = self.station_leakage2R[mask]
-                        self.station_leakage1L = self.station_leakage1L[mask]
-                        self.station_leakage2L = self.station_leakage2L[mask]
+        # apply a proxy for the "fringegroups" procedure from HOPS
+        elif (snr_algo.lower() == 'fringegroups'):
+
+            # parse fringe_finder arguments
+            snr_ref = snr_args[0]
+            tint_ref = snr_args[1]
+
+            # run fringegroups
+            obs_pass = obs.copy()
+            obs_pass.data = obs.data.copy()[master_index]
+            master_index[np.where(master_index)] &= fringegroups(self, obs_pass, snr_ref, tint_ref)
+
+        # apply an FPT proxy for SNR thresholding
+        elif (snr_algo.lower() == 'fpt'):
+
+            # parse fringe_finder arguments
+            snr_ref = snr_args[0]
+            tint_ref = snr_args[1]
+            freq_ref = snr_args[2]
+            model_path_ref = snr_args[3]
+
+            # run FPT
+            master_index &= FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, flagsun=flagsun, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p)
+
+        # unrecognized SNR thresholding scheme
+        else:
+            raise ValueError('Unknown algorithm for fringe_finder.')
+
+        # apply the data flags to the observation
+        data_copy = obs.data.copy()
+        obs.data = data_copy[master_index]
+        if self.verbosity > 0:
+            print('Flagged '+str(len(master_index) - master_index.sum())+' of '+str(len(master_index))+' data points during fringe-finding emulation.')
+
+        # flag the additional stored quantities as well
+        if self.weight > 0:
+            self.timestamps = self.timestamps[master_index]
+            self.ant1 = self.ant1[master_index]
+            self.ant2 = self.ant2[master_index]
+            self.bandwidths = self.bandwidths[master_index]
+            self.Tsys1 = self.Tsys1[master_index]
+            self.Tsys2 = self.Tsys2[master_index]
+            self.tau1 = self.tau1[master_index]
+            self.tau2 = self.tau2[master_index]
+            self.Tb1 = self.Tb1[master_index]
+            self.Tb2 = self.Tb2[master_index]
+            self.SEFD1 = self.SEFD1[master_index]
+            self.SEFD2 = self.SEFD2[master_index]
+            if addgains:
+                self.station_gains1R = self.station_gains1R[master_index]
+                self.station_gains2R = self.station_gains2R[master_index]
+                self.station_gains1L = self.station_gains1L[master_index]
+                self.station_gains2L = self.station_gains2L[master_index]
+            if addFR:
+                self.fa_1 = self.fa_1[master_index]
+                self.fa_2 = self.fa_2[master_index]
+            if addleakage:
+                self.station_leakage1R = self.station_leakage1R[master_index]
+                self.station_leakage2R = self.station_leakage2R[master_index]
+                self.station_leakage1L = self.station_leakage1L[master_index]
+                self.station_leakage2L = self.station_leakage2L[master_index]
 
         # return observation object
         return obs
@@ -1925,6 +1864,9 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
       (numpy.ndarray): An array of kept data indices
     """
 
+    # frequency ratio
+    freq_rat = (freq_ref/(obsgen.freq/(1.0e9)))
+
     # determine settings for dummy obsgen object
     new_settings = copy.deepcopy(obsgen.settings)
     new_settings['frequency'] = freq_ref
@@ -1974,14 +1916,58 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
     # create a running index list of baselines to flag
     master_index = np.zeros(len(obs_ref.data), dtype='bool')
 
-    # get detections from the reference frequency
-    fringegroups_index = fringegroups(obsgen_ref, obs_ref, snr_ref, tint_ref)
-    master_index |= fringegroups_index
+    # identify sites that can't observe at the reference frequency
+    sites_to_remove = list()
+    for site in obs_ref.tarr['site']:
+        if obsgen_ref.bands[site] is None:
+            sites_to_remove.append(site)
+    if len(sites_to_remove) > 0:
+        if len(obs_ref.data) > 0:
+            t1_list = obs_ref.unpack('t1')['t1']
+            t2_list = obs_ref.unpack('t2')['t2']
+            mask_ref = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+    wheremask_ref = np.where(mask_ref)
 
-    # get any additional detections from normal fringe-fitting
-    snr_fringegroups = snr_ref * (freq_ref/(obsgen.freq/(1.0e9)))
-    fringegroups_index = fringegroups(obsgen, obs, snr_fringegroups, tint_ref)
-    master_index |= fringegroups_index
+    # identify sites that can't observe at the target frequency
+    sites_to_remove = list()
+    for site in obs_ref.tarr['site']:
+        if obsgen.bands[site] is None:
+            sites_to_remove.append(site)
+    if len(sites_to_remove) > 0:
+        if len(obs_ref.data) > 0:
+            t1_list = obs_ref.unpack('t1')['t1']
+            t2_list = obs_ref.unpack('t2')['t2']
+            mask_tar = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+    wheremask_tar = np.where(mask_tar)
+
+    # get detections from fringe-fitting at the reference frequency
+    obs_ref_pass = obs_ref.copy()
+    obs_ref_pass.data = obs_ref.data.copy()[wheremask_ref]
+    fringegroups_index = fringegroups(obsgen_ref, obs_ref_pass, snr_ref, tint_ref)
+    master_index[wheremask_ref] |= fringegroups_index
+
+    # compare target SNR and (scaled) reference SNR, using the larger of the two
+    pseudo_I_amp = 0.5*(np.abs(obs.data['rrvis']) + np.abs(obs.data['llvis']))
+    pseudo_I_sig = obs.data['rrsigma'] / np.sqrt(2.0)
+    snr_data = pseudo_I_amp / pseudo_I_sig
+    pseudo_I_amp_ref = 0.5*(np.abs(obs_ref.data['rrvis']) + np.abs(obs_ref.data['llvis']))
+    pseudo_I_sig_ref = obs_ref.data['rrsigma'] / np.sqrt(2.0)
+    snr_data_ref = (pseudo_I_amp_ref / pseudo_I_sig_ref)*freq_rat
+    ind_snr = snr_data > snr_data_ref
+
+    # get any additional detections from fringe-fitting at the target frequency
+    obs_pass = obs.copy()
+    data_copy = obs.data.copy()
+    data_copy[ind_snr] = obs.data[ind_snr]
+    data_copy[~ind_snr] = obs_ref.data[~ind_snr]
+    data_copy['rrsigma'][~ind_snr] /= freq_rat
+    data_copy['llsigma'][~ind_snr] /= freq_rat
+    data_copy['rlsigma'][~ind_snr] /= freq_rat
+    data_copy['lrsigma'][~ind_snr] /= freq_rat
+    obs_pass.data = data_copy[wheremask_tar]
+    snr_fringegroups = snr_ref * freq_rat
+    fringegroups_index = fringegroups(obsgen, obs_pass, snr_fringegroups, tint_ref)
+    master_index[wheremask_tar] |= fringegroups_index
 
     return master_index
 
