@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Introduction &mdash; ngehtsim v1.1.3+37.g42021402a.dirty documentation</title>
+  <title>Introduction &mdash; ngehtsim v1.1.3+38.gc7928297b documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                v1.1.3+37.g42021402a.dirty
+                v1.1.3+38.gc7928297b
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -87,7 +87,7 @@
 <span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>When called with no arguments, this function will return an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object with the default settings, which are stored in <code class="docutils literal notranslate"><span class="pre">obsgen.settings</span></code>.  To specify non-default settings during initialization, a user can either provide path to a YAML file or else pass a dictionary to the initialization function.  For instance, to specify the right ascension and declination of a target source while also aiming to observe with only a small array consisting of the ALMA, LMT, and SMT telescopes, we could pass a settings dictionary:</p>
+<p>When called with no arguments, this function will return an <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object with the default settings, which are stored in <code class="docutils literal notranslate"><span class="pre">obsgen.settings</span></code>.  To specify non-default settings during initialization, a user can either provide a path to a YAML file or else pass a dictionary to the initialization function.  For instance, to specify the right ascension and declination of a target source while also aiming to observe with only a small array consisting of the ALMA, LMT, and SMT telescopes, we could pass a settings dictionary:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">settings</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;RA&#39;</span><span class="p">:</span> <span class="mf">12.5137</span><span class="p">,</span>
             <span class="s1">&#39;DEC&#39;</span><span class="p">:</span> <span class="mf">12.3911</span><span class="p">,</span>
             <span class="s1">&#39;sites&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;ALMA&#39;</span><span class="p">,</span> <span class="s1">&#39;LMT&#39;</span><span class="p">,</span> <span class="s1">&#39;SMT&#39;</span><span class="p">]}</span>
@@ -118,8 +118,8 @@
 </pre></div>
 </div>
 <p>For sites with existing telescopes, such as the LMT, various pieces of telescope information – such as the dish size, surface accuracy, and coordinate location – are already tabulated within ngehtsim.</p>
-<p>The ngehtsim package also contains historical weather information at every site that has been tabulated from the <a class="reference external" href="https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/">MERRA-2</a> database <a class="footnote-reference brackets" href="#rienecker2011" id="id6">3</a> <a class="footnote-reference brackets" href="#molod2015" id="id7">4</a> <a class="footnote-reference brackets" href="#gelaro2017" id="id8">5</a>.  The atmospheric state data from MERRA-2 have been processed through the <em>am</em> radiative transfer code <a class="footnote-reference brackets" href="#paine2022" id="id9">6</a> to determine opacities and brightness temperatures as a function of time and observing frequency (any frequency in the range from 0 to 2THz can be specified).  This information is used internally by ngehtsim to determine the sensitivity of each site during observation generation.</p>
-<p>We can access the available weather information for an individual site using the <code class="docutils literal notranslate"><span class="pre">ngehtsim.weather</span></code> subpackage.  For instance, to access the 230GHz zenith opacity at the LMT site on 2017 April 10, we can call:</p>
+<p>The ngehtsim package also contains historical weather information at every site that has been tabulated from the <a class="reference external" href="https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/">MERRA-2</a> database <a class="footnote-reference brackets" href="#rienecker2011" id="id6">3</a> <a class="footnote-reference brackets" href="#molod2015" id="id7">4</a> <a class="footnote-reference brackets" href="#gelaro2017" id="id8">5</a>.  The atmospheric state data from MERRA-2 have been processed through the <em>am</em> radiative transfer code <a class="footnote-reference brackets" href="#paine2022" id="id9">6</a> to determine opacities and brightness temperatures as a function of time and observing frequency (any frequency in the range from 0 to 2 THz can be specified).  This information is used internally by ngehtsim to determine the sensitivity of each site during observation generation.</p>
+<p>We can access the available weather information for an individual site using the <code class="docutils literal notranslate"><span class="pre">ngehtsim.weather</span></code> subpackage.  For instance, to access the 230 GHz zenith opacity at the LMT site on 2017 April 10, we can call:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ngehtsim.weather.weather</span> <span class="k">as</span> <span class="nn">nw</span>
 <span class="n">tau</span> <span class="o">=</span> <span class="n">nw</span><span class="o">.</span><span class="n">opacity</span><span class="p">(</span><span class="s1">&#39;LMT&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mf">230.0</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="s1">&#39;Apr&#39;</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2017</span><span class="p">)</span>
 </pre></div>

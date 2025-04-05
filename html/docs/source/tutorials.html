@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorials &mdash; ngehtsim v1.1.3+37.g42021402a.dirty documentation</title>
+  <title>Tutorials &mdash; ngehtsim v1.1.3+38.gc7928297b documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -31,7 +31,7 @@
             <a href="index.html" class="icon icon-home"> ngehtsim
           </a>
               <div class="version">
-                v1.1.3+37.g42021402a.dirty
+                v1.1.3+38.gc7928297b
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -153,6 +153,9 @@
                             <span class="s1">&#39;SM&#39;</span><span class="p">:</span> <span class="s1">&#39;SMA&#39;</span><span class="p">,</span>
                             <span class="s1">&#39;AZ&#39;</span><span class="p">:</span> <span class="s1">&#39;SMT&#39;</span><span class="p">}</span>
 
+<span class="c1"># switch from circular to Stokes basis</span>
+<span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">switch_polrep</span><span class="p">(</span><span class="s1">&#39;stokes&#39;</span><span class="p">)</span>
+
 <span class="c1"># extract the relevant simulated metadata</span>
 <span class="n">simulated_timestamps</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span>
 <span class="n">simulated_station1</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;t1&#39;</span><span class="p">]</span>
@@ -210,7 +213,7 @@
 <li><p>The IRAM receiver temperature is about 80K (see <a class="reference external" href="https://www.iram.fr/GENERAL/calls/w21/30mCapabilities.pdf">here</a>)</p></li>
 <li><p>The LMT receiver temperature is about 70K (see <a class="reference external" href="http://lmtgtm.org/single-pixel-1mm-receiver/">here</a>).</p></li>
 <li><p>The SMA receiver temperature is about 66K (see <a class="reference external" href="https://lweb.cfa.harvard.edu/sma/memos/125.pdf">here</a>).</p></li>
-<li><p>The SMT receiver temperature is about 66K (see <a class="reference external" href="https://aro.as.arizona.edu/?q=facilities/submillimeter-telescope">here</a>).</p></li>
+<li><p>The SMT receiver temperature is about 66K (see <a class="reference external" href="https://aro.as.arizona.edu/?q=facilities/uarizona-aro-submillimeter-telescope">here</a>).</p></li>
 </ul>
 <p>Within ngehtsim, we can override the default receiver temperatures by specifying yet another dictionary that will get passed to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">T_R_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;APEX&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Band6&#39;</span><span class="p">:</span> <span class="mf">90.0</span><span class="p">},</span>
@@ -220,7 +223,7 @@
                  <span class="s1">&#39;SMA&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;Band6&#39;</span><span class="p">:</span> <span class="mf">66.0</span><span class="p">}}</span>
 </pre></div>
 </div>
-<p>Note that we have to specify that the “Band6” receiver is the one whose temperature is being set.  ngehtsim contains default information – such as lower and upper frequency bounds, receiver temperatures, and sideband separation ratios – for all of the ALMA receivers.  Custom receivers can be supplied by a user by passing the “custom_receivers” keyword argument when initiating the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object.</p>
+<p>Note that we have to specify that the “Band6” receiver is the one whose temperature is being set.  ngehtsim contains default information – such as lower and upper frequency bounds, receiver temperatures, and sideband separation ratios – for all of the ALMA receivers (e.g., see <a class="reference external" href="https://www.eso.org/public/teles-instr/alma/receiver-bands/">here</a>).  Custom receivers can be supplied by a user by passing the “custom_receivers” keyword argument when initiating the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object.</p>
 <p>Given all of the above corrections, we can now re-generate the observations.  This time, we will pass additional arguments to the <code class="docutils literal notranslate"><span class="pre">obs_generator</span></code> object that capture the above effects:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">obsgen</span> <span class="o">=</span> <span class="n">og</span><span class="o">.</span><span class="n">obs_generator</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span>
                           <span class="n">D_overrides</span> <span class="o">=</span> <span class="n">D_overrides</span><span class="p">,</span>

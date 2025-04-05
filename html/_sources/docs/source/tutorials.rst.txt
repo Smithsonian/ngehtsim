@@ -85,6 +85,9 @@ And how does the array sensitivity compare between the simulated and real datase
                                'SM': 'SMA',
                                'AZ': 'SMT'}
 
+   # switch from circular to Stokes basis
+   obs = obs.switch_polrep('stokes')
+
    # extract the relevant simulated metadata
    simulated_timestamps = obs.data['time']
    simulated_station1 = obs.data['t1']
@@ -149,7 +152,7 @@ Another relevant factor for station sensitivities is the receiver temperature.  
 * The IRAM receiver temperature is about 80K (see `here <https://www.iram.fr/GENERAL/calls/w21/30mCapabilities.pdf>`_)
 * The LMT receiver temperature is about 70K (see `here <http://lmtgtm.org/single-pixel-1mm-receiver/>`_).
 * The SMA receiver temperature is about 66K (see `here <https://lweb.cfa.harvard.edu/sma/memos/125.pdf>`_).
-* The SMT receiver temperature is about 66K (see `here <https://aro.as.arizona.edu/?q=facilities/submillimeter-telescope>`_).
+* The SMT receiver temperature is about 66K (see `here <https://aro.as.arizona.edu/?q=facilities/uarizona-aro-submillimeter-telescope>`_).
 
 Within ngehtsim, we can override the default receiver temperatures by specifying yet another dictionary that will get passed to the ``obs_generator`` object::
 
@@ -159,7 +162,7 @@ Within ngehtsim, we can override the default receiver temperatures by specifying
                     'SMT': {'Band6': 66.0},
                     'SMA': {'Band6': 66.0}}
 
-Note that we have to specify that the "Band6" receiver is the one whose temperature is being set.  ngehtsim contains default information -- such as lower and upper frequency bounds, receiver temperatures, and sideband separation ratios -- for all of the ALMA receivers.  Custom receivers can be supplied by a user by passing the "custom_receivers" keyword argument when initiating the ``obs_generator`` object.
+Note that we have to specify that the "Band6" receiver is the one whose temperature is being set.  ngehtsim contains default information -- such as lower and upper frequency bounds, receiver temperatures, and sideband separation ratios -- for all of the ALMA receivers (e.g., see `here <https://www.eso.org/public/teles-instr/alma/receiver-bands/>`_).  Custom receivers can be supplied by a user by passing the "custom_receivers" keyword argument when initiating the ``obs_generator`` object.
 
 Given all of the above corrections, we can now re-generate the observations.  This time, we will pass additional arguments to the ``obs_generator`` object that capture the above effects::
 
