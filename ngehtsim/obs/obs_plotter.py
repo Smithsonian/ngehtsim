@@ -52,6 +52,10 @@ def plot_amp(obs, filename='ampplot.png', xlim=(0, 10), ylim=(0.01, 3)):
 
     """
 
+    # make sure polrep is stokes
+    if obs.polrep != 'stokes':
+        obs = obs.switch_polrep(polrep_out='stokes')
+
     # unpack data
     u = obs.data['u'] / (1.0e9)
     v = obs.data['v'] / (1.0e9)
@@ -83,6 +87,10 @@ def plot_phase(obs, filename='phaseplot.png', xlim=(0, 10), ylim=(-180, 180)):
 
     """
 
+    # make sure polrep is stokes
+    if obs.polrep != 'stokes':
+        obs = obs.switch_polrep(polrep_out='stokes')
+
     # unpack data
     u = obs.data['u'] / (1.0e9)
     v = obs.data['v'] / (1.0e9)
@@ -112,6 +120,10 @@ def plot_snr(obs, filename='snrplot.png', xlim=(0, 10), ylim=(1e0, 1e4)):
       ylim (tuple): y-axis range
 
     """
+
+    # make sure polrep is stokes
+    if obs.polrep != 'stokes':
+        obs = obs.switch_polrep(polrep_out='stokes')
 
     # unpack data
     u = obs.data['u'] / (1.0e9)

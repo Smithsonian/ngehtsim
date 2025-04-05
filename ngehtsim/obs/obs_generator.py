@@ -5,12 +5,17 @@ import numpy as np
 import ehtim as eh
 from collections import defaultdict
 from astropy.time import Time
-from astropy.coordinates import EarthLocation, AltAz, get_sun
-import ngEHTforecast.fisher as fp
+from astropy import units as astrounits
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun
 import yaml
 import time
 import os
 import copy
+
+try:
+    import ngEHTforecast.fisher as fp
+except ImportError:
+    print('Warning: ngEHTforecast not installed! Cannot use FisherForecast functionality.')
 
 import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
@@ -39,6 +44,7 @@ class obs_generator(object):
       lo_freq_overrides (dict): A dictionary of station names and receiver lowest frequency values to override defaults
       hi_freq_overrides (dict): A dictionary of station names and receiver lowest frequency values to override defaults
       ap_eff_overrides (dict): A dictionary of station names and aperture efficiency values to override defaults
+      wind_loading_overrides (dict): A dictionary of station names and wind-loading v0, w values (in m/s) to override defaults
       custom_receivers (dict): A dictionary of custom receiver names and properties
       station_uptimes (dict): A dictionary of station names and associated uptime ranges, in UT
       array (str): Provide the name of a known array to load the corresponding sites and configuration
@@ -49,7 +55,8 @@ class obs_generator(object):
     def __init__(self, settings={}, settings_file=None, verbosity=0, weight=0, D_overrides={},
                  surf_rms_overrides={}, receiver_configuration_overrides={}, bandwidth_overrides={},
                  T_R_overrides={}, sideband_ratio_overrides={}, lo_freq_overrides={}, hi_freq_overrides={},
-                 ap_eff_overrides={}, custom_receivers={}, station_uptimes={}, array=None, ephem='ephemeris/space'):
+                 ap_eff_overrides={}, wind_loading_overrides={}, custom_receivers={}, station_uptimes={},
+                 array=None, ephem='ephemeris/space'):
 
         #############################
         # parse inputs
@@ -66,6 +73,7 @@ class obs_generator(object):
         self.lo_freq_overrides = copy.deepcopy(lo_freq_overrides)
         self.hi_freq_overrides = copy.deepcopy(hi_freq_overrides)
         self.ap_eff_overrides = copy.deepcopy(ap_eff_overrides)
+        self.wind_loading_overrides = copy.deepcopy(wind_loading_overrides)
         self.custom_receivers = copy.deepcopy(custom_receivers)
         self.station_uptimes = copy.deepcopy(station_uptimes)
         self.array = array
@@ -137,9 +145,9 @@ class obs_generator(object):
         self.set_seed()
         self.get_sites()
         self.translate_sites()
-        self.set_coords()
         self.mjd = determine_mjd(self.settings['day'], self.settings['month'], self.settings['year'])
         self.arr = make_array(self.sites, ephem=self.ephem, verbosity=self.verbosity)
+        self.set_coords()
         self.set_receivers()
         self.set_bands()
         self.set_bandwidths()
@@ -294,6 +302,12 @@ class obs_generator(object):
             self.RA = self.settings['RA']
         if self.settings['DEC'] is not None:
             self.DEC = self.settings['DEC']
+
+        # determine solar angle
+        source_location = SkyCoord(ra=self.RA*15.0*astrounits.degree, dec=self.DEC*astrounits.degree, frame='gcrs')
+        jd = self.mjd + 2400000.5
+        sun_location = get_sun(Time(jd, format='jd'))
+        self.solar_angle = sun_location.separation(source_location).value
 
     # create a receiver suite dictionary
     def set_receivers(self):
@@ -468,18 +482,26 @@ class obs_generator(object):
 
         D_dict = {}
         eta_dict = {}
+        wind_loading_dict = {}
+        solar_avoidance_dict = {}
         for site in self.sites:
 
-            # start with the values for a new site
+            # start with the default values for a new site
             D_dict[site] = self.settings['D_new']
             rms_here = const.surf_rms
             ap_eff_here = const.ap_eff
+            solar_avoidance_dict[site] = const.sol_avoid
 
-            # if the site is known, replace those values with the known ones
+            # if the site is known, replace those values with the known ones or start with defaults
             if site in list(const.known_diameters.keys()):
                 D_dict[site] = const.known_diameters[site]
             if site in list(const.known_surf_rms.keys()):
                 rms_here = const.known_surf_rms[site]
+            wind_loading_dict[site] = {'v0': const.windspeed_v0,
+                                       'w': const.windspeed_w,
+                                       'shutdown': const.windspeed_shutdown}
+            if site in list(const.known_solar_avoidance_angles.keys()):
+                solar_avoidance_dict[site] = const.known_solar_avoidance_angles[site]
 
             # if the user has provided overrides, use those instead
             if site in list(self.D_overrides.keys()):
@@ -489,11 +511,17 @@ class obs_generator(object):
             if site in list(self.ap_eff_overrides.keys()):
                 if self.bands[site] in list(self.ap_eff_overrides[site].keys()):
                     ap_eff_here = self.ap_eff_overrides[site][self.bands[site]]
+            if site in list(self.wind_loading_overrides.keys()):
+                wind_loading_dict[site] = {'v0': self.wind_loading_overrides[site]['v0'],
+                                           'w': self.wind_loading_overrides[site]['w'],
+                                           'shutdown': self.wind_loading_overrides[site]['shutdown']}
 
             eta_dict[site] = eta_dish(self.freq, rms_here, const.focus_offset, ap_eff_here)
 
         self.D_dict = D_dict
         self.eta_dict = eta_dict
+        self.wind_loading_dict = wind_loading_dict
+        self.solar_avoidance_dict = solar_avoidance_dict
 
     # segment the observation into timestamps
     def get_obs_times(self):
@@ -511,9 +539,10 @@ class obs_generator(object):
     # functions for generating observations
 
     # generate a raw observation
-    def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                flagwind=True, flagday=False, addFR=False, allow_mixed_basis=False,
-                el_min=const.el_min, el_max=const.el_max, p=None):
+    def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
+                opacitycal=True, addFR=True, addleakage=False,
+                flagwind=True, flagday=False, flagsun=True,
+                allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a raw single-band observation that folds in weather-based opacity and sensitivity effects.
 
@@ -522,10 +551,13 @@ class obs_generator(object):
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
+          leakamp (float): standard deviation of leakage real and imaginary parts
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
+          addFR (bool): flag for whether or not to add feed rotations
+          addleakage (bool): flag for whether or not to add polarization leakage corruptions
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
-          addFR (bool): flag for whether or not to add feed rotations
+          flagsun (bool): flag for whether to impose a minimum solar avoidance angle
           allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
@@ -536,8 +568,6 @@ class obs_generator(object):
         """
 
         # print some warnings
-        if addFR:
-            print('WARNING: adding feed rotations is currently known to break with multi-frequency data generation, and it is suspect at all times.')
         if allow_mixed_basis:
             print('WARNING: data generated in a non-circular polarization basis does not have properly-stored metadata info.')
 
@@ -552,7 +582,7 @@ class obs_generator(object):
                                               self.settings['t_start'],
                                               self.settings['t_start'] + self.settings['dt'],
                                               mjd=self.mjd,
-                                              polrep='stokes',
+                                              polrep='circ',
                                               tau=0.0,
                                               timetype='UTC',
                                               elevmin=-90,
@@ -609,9 +639,11 @@ class obs_generator(object):
             obs.source = self.settings['source']
             if (input_model.stokes == 'I'):
                 Ivis = input_model.visibilities(obs, p, verbosity=self.verbosity)
+                obs = obs.switch_polrep(polrep_out='stokes')
                 obs.data['vis'] = Ivis
+                obs = obs.switch_polrep(polrep_out='circ')
             else:
-                obs.switch_polrep(polrep_out='circ')
+                obs = obs.switch_polrep(polrep_out='circ')
                 RRvis, LLvis, RLvis, LRvis = input_model.visibilities(obs, p, verbosity=self.verbosity)
                 obs.data['rrvis'] = RRvis
                 obs.data['llvis'] = LLvis
@@ -623,9 +655,6 @@ class obs_generator(object):
             dumdatatable['v'] = 0.0
             dumobs.data = dumdatatable
             F0 = np.abs(input_model.visibilities(dumobs, p))
-
-        # make sure we're in a circular basis
-        obs = obs.switch_polrep(polrep_out='circ')
 
         # extract relevant information
         t1 = obs.data['t1']
@@ -668,6 +697,12 @@ class obs_generator(object):
             gainphase1L = np.zeros_like(el1)
             gainphase2L = np.zeros_like(el2)
 
+        if addleakage:
+            leak1R = np.zeros_like(el1,dtype=complex)
+            leak2R = np.zeros_like(el2,dtype=complex)
+            leak1L = np.zeros_like(el1,dtype=complex)
+            leak2L = np.zeros_like(el2,dtype=complex)
+
         # loop through the sites in the array
         flagsites = list()
         uptime_mask = np.ones(len(obs.data),dtype=bool)
@@ -683,7 +718,7 @@ class obs_generator(object):
             Aeff = (np.pi/4.0)*self.eta_dict[site]*((self.D_dict[site])**2)
 
             # if the windspeed exceeds the shutdown threshold, mark the site as to be flagged
-            if (ws > const.windspeed_shutdown):
+            if (ws > self.wind_loading_dict[site]['shutdown']):
                 if flagwind:
                     flagsites.append(site)
                     if self.verbosity > 0:
@@ -709,6 +744,13 @@ class obs_generator(object):
                     # mark as to-be-flagged all times for which the Sun is above the horizon
                     ind_daytime = (((t1 == site) | (t2 == site)) & (sun_altaz.alt.value > 0.0))
                     uptime_mask[ind_daytime] = False
+
+            # impose solar avoidance, if desired
+            if flagsun:
+                if self.solar_angle < self.solar_avoidance_dict[site]:
+                    flagsites.append(site)
+                    if self.verbosity > 0:
+                        print(site + ' cannot observe because the source is too close to the Sun.')
 
             # flag the times that fall outside of the specified station uptime window
             if site in list(self.station_uptimes.keys()):
@@ -797,9 +839,21 @@ class obs_generator(object):
 
             # modify SEFDs to account for wind
             if flagwind:
-                SEFD_factor = windspeed_SEFD_modification(ws)
+                SEFD_factor = windspeed_SEFD_modification(ws,
+                                                          self.wind_loading_dict[site]['v0'],
+                                                          self.wind_loading_dict[site]['w'])
                 SEFD1[ind1] *= SEFD_factor
                 SEFD2[ind2] *= SEFD_factor
+
+            # update tarr
+            sefdind = (self.arr.tarr['site'] == site)
+            sefdr_arr = np.copy(self.arr.tarr['sefdr'])
+            sefdl_arr = np.copy(self.arr.tarr['sefdl'])
+            sefdhere = np.mean(np.concatenate((SEFD1[ind1],SEFD2[ind2])))
+            sefdr_arr[sefdind] = sefdhere
+            sefdl_arr[sefdind] = sefdhere
+            self.arr.tarr['sefdr'] = sefdr_arr
+            self.arr.tarr['sefdl'] = sefdl_arr
 
             # determine bandwidth
             if band in list(self.bandwidth_setup[site].keys()):
@@ -841,6 +895,25 @@ class obs_generator(object):
                     gainphase1L[ind1here] = gainphasehere
                     gainphase2L[ind2here] = gainphasehere
 
+            # generate leakages
+            if addleakage:
+                leakRhere = (leakamp*self.rng.normal(0.0, 1.0)) + ((1.0j)*leakamp*self.rng.normal(0.0, 1.0))
+                leakLhere = (leakamp*self.rng.normal(0.0, 1.0)) + ((1.0j)*leakamp*self.rng.normal(0.0, 1.0))
+                leak1R[ind1] = leakRhere
+                leak2R[ind2] = leakRhere
+                leak1L[ind1] = leakLhere
+                leak2L[ind2] = leakLhere
+
+                # update tarr
+                if site != 'space':
+                    tarrind = (self.arr.tarr['site'] == site)
+                    dr_arr = np.copy(self.arr.tarr['dr'])
+                    dl_arr = np.copy(self.arr.tarr['dl'])
+                    dr_arr[tarrind] = leakRhere
+                    dl_arr[tarrind] = leakLhere
+                    self.arr.tarr['dr'] = dr_arr
+                    self.arr.tarr['dl'] = dl_arr
+
         # store opacities as part of the observation
         obs.data['tau1'] = tau1
         obs.data['tau2'] = tau2
@@ -856,6 +929,8 @@ class obs_generator(object):
         if addFR:
             fa_1 = (f_par1*par1) + (f_el1*el1) + ((np.pi/180.0)*phi_off1)
             fa_2 = (f_par2*par2) + (f_el2*el2) + ((np.pi/180.0)*phi_off2)
+            fa_1[(t1 == 'space')] = 0.0
+            fa_2[(t2 == 'space')] = 0.0
             if self.weight > 0:
                 self.fa_1 = fa_1
                 self.fa_2 = fa_2
@@ -863,6 +938,22 @@ class obs_generator(object):
             obs.data['rlvis'] *= np.exp(-(1.0j)*fa_1)*np.exp(-(1.0j)*fa_2)
             obs.data['lrvis'] *= np.exp((1.0j)*fa_1)*np.exp((1.0j)*fa_2)
             obs.data['llvis'] *= np.exp((1.0j)*fa_1)*np.exp(-(1.0j)*fa_2)
+
+        # store and apply leakages
+        if addleakage:
+            if self.weight > 0:
+                self.station_leakage1R = leak1R
+                self.station_leakage2R = leak2R
+                self.station_leakage1L = leak1L
+                self.station_leakage2L = leak2L
+            RR = obs.data['rrvis']
+            LL = obs.data['llvis']
+            RL = obs.data['rlvis']
+            LR = obs.data['lrvis']
+            obs.data['rrvis'] = RR + (leak1R*LR) + (np.conj(leak2R)*RL) + (leak1R*np.conj(leak2R)*LL)
+            obs.data['llvis'] = LL + (leak1L*RL) + (np.conj(leak2L)*LR) + (leak1L*np.conj(leak2L)*RR)
+            obs.data['rlvis'] = RL + (leak1R*LL) + (np.conj(leak2L)*RR) + (leak1R*np.conj(leak2L)*LR)
+            obs.data['lrvis'] = LR + (leak1L*RR) + (np.conj(leak2R)*LL) + (leak1L*np.conj(leak2R)*RL)
 
         # store and apply gains
         if addgains:
@@ -933,9 +1024,6 @@ class obs_generator(object):
         if self.verbosity > 0:
             print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points because of wind.')
 
-        # restore Stokes polrep
-        obs = obs.switch_polrep(polrep_out='stokes')
-
         # store additional info if requested
         if self.weight > 0:
             self.timestamps = times[mask]
@@ -959,14 +1047,23 @@ class obs_generator(object):
                 self.station_gains2R = self.station_gains2R[mask]
                 self.station_gains1L = self.station_gains1L[mask]
                 self.station_gains2L = self.station_gains2L[mask]
+            if addFR:
+                self.fa_1 = self.fa_1[mask]
+                self.fa_2 = self.fa_2[mask]
+            if addleakage:
+                self.station_leakage1R = self.station_leakage1R[mask]
+                self.station_leakage2R = self.station_leakage2R[mask]
+                self.station_leakage1L = self.station_leakage1L[mask]
+                self.station_leakage2L = self.station_leakage2L[mask]
 
         # return observation object
         return obs
 
     # generate observation
-    def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                 addFR=False, flagwind=True, flagday=False, allow_mixed_basis=False,
-                 el_min=const.el_min, el_max=const.el_max, p=None):
+    def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
+                 opacitycal=True, addFR=True, addleakage=False,
+                 flagwind=True, flagday=False, flagsun=True,
+                 allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate an observation that folds in weather-based opacity effects
         and applies a specified SNR thresholding scheme to mimic fringe-finding.
@@ -976,10 +1073,13 @@ class obs_generator(object):
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
+          leakamp (float): standard deviation of leakage real and imaginary parts
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
+          addFR (bool): flag for whether or not to add feed rotations
+          addleakage (bool): flag for whether or not to add polarization leakage corruptions
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
-          addFR (bool): flag for whether or not to add feed rotations
+          flagsun (bool): flag for whether to impose a minimum solar avoidance angle
           allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
@@ -1006,70 +1106,22 @@ class obs_generator(object):
                            addnoise=addnoise,
                            addgains=addgains,
                            gainamp=gainamp,
+                           leakamp=leakamp,
                            opacitycal=opacitycal,
                            flagwind=flagwind,
                            flagday=flagday,
+                           flagsun=flagsun,
                            addFR=addFR,
+                           addleakage=addleakage,
                            allow_mixed_basis=allow_mixed_basis,
                            el_min=el_min,
                            el_max=el_max,
                            p=p)
 
-        # apply naive SNR thresholding
-        if (snr_algo.lower() == 'naive'):
-            mask = obs.unpack('snr')['snr'] > snr_args
+        # create a running index list of baselines to keep
+        master_index = np.ones(len(obs.data), dtype='bool')
 
-        # apply a proxy for the "fringegroups" procedure from HOPS
-        elif (snr_algo.lower() == 'fringegroups'):
-
-            # parse fringe_finder arguments
-            snr_ref = snr_args[0]
-            tint_ref = snr_args[1]
-
-            mask = fringegroups(self, obs, snr_ref, tint_ref)
-
-        # apply an FPT proxy for SNR thresholding
-        elif (snr_algo.lower() == 'fpt'):
-
-            # parse fringe_finder arguments
-            snr_ref = snr_args[0]
-            tint_ref = snr_args[1]
-            freq_ref = snr_args[2]
-            model_path_ref = snr_args[3]
-
-            mask = FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, addFR=addFR, el_min=el_min, el_max=el_max, p=p)
-
-        # unrecognized SNR thresholding scheme
-        else:
-            raise ValueError('Unknown algorithm for fringe_finder.')
-
-        # apply the data flags to the observation
-        data_copy = obs.data.copy()
-        obs.data = data_copy[mask]
-        if self.verbosity > 0:
-            print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points during fringe-finding emulation.')
-
-        # flag the additional stored quantities as well
-        if self.weight > 0:
-            self.timestamps = self.timestamps[mask]
-            self.ant1 = self.ant1[mask]
-            self.ant2 = self.ant2[mask]
-            self.bandwidths = self.bandwidths[mask]
-            self.Tsys1 = self.Tsys1[mask]
-            self.Tsys2 = self.Tsys2[mask]
-            self.tau1 = self.tau1[mask]
-            self.tau2 = self.tau2[mask]
-            self.Tb1 = self.Tb1[mask]
-            self.Tb2 = self.Tb2[mask]
-            self.SEFD1 = self.SEFD1[mask]
-            self.SEFD2 = self.SEFD2[mask]
-            if addgains:
-                self.station_gains1R = self.station_gains1R[mask]
-                self.station_gains2R = self.station_gains2R[mask]
-                self.station_gains1L = self.station_gains1L[mask]
-                self.station_gains2L = self.station_gains2L[mask]
-
-        # remove sites that can't observe at the requested frequency
+        # identify sites that can't observe at the requested frequency
         sites_to_remove = list()
         for site in obs.tarr['site']:
             if self.bands[site] is None:
@@ -1080,35 +1132,9 @@ class obs_generator(object):
             if len(obs.data) > 0:
                 t1_list = obs.unpack('t1')['t1']
                 t2_list = obs.unpack('t2')['t2']
-                mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+                master_index &= np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
 
-                # apply the data flags to the observation
-                data_copy = obs.data.copy()
-                obs.data = data_copy[mask]
-                if self.verbosity > 0:
-                    print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points because of no appropriate receiver at the observing frequency.')
-
-                # flag the additional stored quantities as well
-                if self.weight > 0:
-                    self.timestamps = self.timestamps[mask]
-                    self.ant1 = self.ant1[mask]
-                    self.ant2 = self.ant2[mask]
-                    self.bandwidths = self.bandwidths[mask]
-                    self.Tsys1 = self.Tsys1[mask]
-                    self.Tsys2 = self.Tsys2[mask]
-                    self.tau1 = self.tau1[mask]
-                    self.tau2 = self.tau2[mask]
-                    self.Tb1 = self.Tb1[mask]
-                    self.Tb2 = self.Tb2[mask]
-                    self.SEFD1 = self.SEFD1[mask]
-                    self.SEFD2 = self.SEFD2[mask]
-                    if addgains:
-                        self.station_gains1R = self.station_gains1R[mask]
-                        self.station_gains2R = self.station_gains2R[mask]
-                        self.station_gains1L = self.station_gains1L[mask]
-                        self.station_gains2L = self.station_gains2L[mask]
-
-        # drop any sites that are randomly deemed to be technically unready
+        # identify sites that are randomly deemed to be technically unready
         sites_to_remove = get_unready_sites(obs.tarr['site'], self.settings['tech_readiness'], rng=self.rng)
         if len(sites_to_remove) > 0:
             if self.verbosity > 0:
@@ -1116,40 +1142,82 @@ class obs_generator(object):
             if len(obs.data) > 0:
                 t1_list = obs.unpack('t1')['t1']
                 t2_list = obs.unpack('t2')['t2']
-                mask = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+                master_index &= np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
 
-                # apply the data flags to the observation
-                data_copy = obs.data.copy()
-                obs.data = data_copy[mask]
-                if self.verbosity > 0:
-                    print('Flagged '+str(len(mask) - mask.sum())+' of '+str(len(mask))+' data points because of techincal unreadiness.')
+        # apply naive SNR thresholding
+        if (snr_algo.lower() == 'naive'):
+            master_index &= obs.unpack('snr')['snr'] > snr_args
 
-                # flag the additional stored quantities as well
-                if self.weight > 0:
-                    self.timestamps = self.timestamps[mask]
-                    self.ant1 = self.ant1[mask]
-                    self.ant2 = self.ant2[mask]
-                    self.bandwidths = self.bandwidths[mask]
-                    self.Tsys1 = self.Tsys1[mask]
-                    self.Tsys2 = self.Tsys2[mask]
-                    self.tau1 = self.tau1[mask]
-                    self.tau2 = self.tau2[mask]
-                    self.Tb1 = self.Tb1[mask]
-                    self.Tb2 = self.Tb2[mask]
-                    self.SEFD1 = self.SEFD1[mask]
-                    self.SEFD2 = self.SEFD2[mask]
-                    if addgains:
-                        self.station_gains1R = self.station_gains1R[mask]
-                        self.station_gains2R = self.station_gains2R[mask]
-                        self.station_gains1L = self.station_gains1L[mask]
-                        self.station_gains2L = self.station_gains2L[mask]
+        # apply a proxy for the "fringegroups" procedure from HOPS
+        elif (snr_algo.lower() == 'fringegroups'):
+
+            # parse fringe_finder arguments
+            snr_ref = snr_args[0]
+            tint_ref = snr_args[1]
+
+            # run fringegroups
+            obs_pass = obs.copy()
+            obs_pass.data = obs.data.copy()[master_index]
+            master_index[np.where(master_index)] &= fringegroups(self, obs_pass, snr_ref, tint_ref)
+
+        # apply an FPT proxy for SNR thresholding
+        elif (snr_algo.lower() == 'fpt'):
+
+            # parse fringe_finder arguments
+            snr_ref = snr_args[0]
+            tint_ref = snr_args[1]
+            freq_ref = snr_args[2]
+            model_path_ref = snr_args[3]
+
+            # run FPT
+            master_index &= FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, flagsun=flagsun, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p)
+
+        # unrecognized SNR thresholding scheme
+        else:
+            raise ValueError('Unknown algorithm for fringe_finder.')
+
+        # apply the data flags to the observation
+        data_copy = obs.data.copy()
+        obs.data = data_copy[master_index]
+        if self.verbosity > 0:
+            print('Flagged '+str(len(master_index) - master_index.sum())+' of '+str(len(master_index))+' data points during fringe-finding emulation.')
+
+        # flag the additional stored quantities as well
+        if self.weight > 0:
+            self.timestamps = self.timestamps[master_index]
+            self.ant1 = self.ant1[master_index]
+            self.ant2 = self.ant2[master_index]
+            self.bandwidths = self.bandwidths[master_index]
+            self.Tsys1 = self.Tsys1[master_index]
+            self.Tsys2 = self.Tsys2[master_index]
+            self.tau1 = self.tau1[master_index]
+            self.tau2 = self.tau2[master_index]
+            self.Tb1 = self.Tb1[master_index]
+            self.Tb2 = self.Tb2[master_index]
+            self.SEFD1 = self.SEFD1[master_index]
+            self.SEFD2 = self.SEFD2[master_index]
+            if addgains:
+                self.station_gains1R = self.station_gains1R[master_index]
+                self.station_gains2R = self.station_gains2R[master_index]
+                self.station_gains1L = self.station_gains1L[master_index]
+                self.station_gains2L = self.station_gains2L[master_index]
+            if addFR:
+                self.fa_1 = self.fa_1[master_index]
+                self.fa_2 = self.fa_2[master_index]
+            if addleakage:
+                self.station_leakage1R = self.station_leakage1R[master_index]
+                self.station_leakage2R = self.station_leakage2R[master_index]
+                self.station_leakage1L = self.station_leakage1L[master_index]
+                self.station_leakage2L = self.station_leakage2L[master_index]
 
         # return observation object
         return obs
 
     # generate multifrequency observation, assuming that FPT will be used wherever possible
-    def make_obs_mf(self, freqs, input_models, addnoise=True, addgains=True, gainamp=0.04, opacitycal=True,
-                    addFR=False, el_min=const.el_min, el_max=const.el_max, flagwind=True, flagday=False, p=None):
+    def make_obs_mf(self, freqs, input_models, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
+                    opacitycal=True, addFR=True, addleakage=False,
+                    flagwind=True, flagday=False, flagsun=True,
+                    el_min=const.el_min, el_max=const.el_max, p=None):
         """
         Generate a multi-frequency observation
 
@@ -1159,12 +1227,15 @@ class obs_generator(object):
           addnoise (bool): flag for whether or not to add thermal noise to the visibilities
           addgains (bool): flag for whether or not to add station gain corruptions
           gainamp (float): standard deviation of amplitude log-gains
+          leakamp (float): standard deviation of leakage real and imaginary parts
           opacitycal (bool): flag for whether or not to assume that atmospheric opacity is assumed to be calibrated out
           addFR (bool): flag for whether or not to add feed rotations
-          el_min (float): minimum elevation that a site can observe at, in degrees
-          el_max (float): maximum elevation that a site can observe at, in degrees
+          addleakage (bool): flag for whether or not to add polarization leakage corruptions
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
+          flagsun (bool): flag for whether to impose a minimum solar avoidance angle
+          el_min (float): minimum elevation that a site can observe at, in degrees
+          el_max (float): maximum elevation that a site can observe at, in degrees
           p (list): list of lists of parameters for input ngEHTforecast.fisher.fisher_forecast.FisherForecast objects; one for each frequency
 
         Returns:
@@ -1249,6 +1320,7 @@ class obs_generator(object):
                                             lo_freq_overrides=copy.deepcopy(self.lo_freq_overrides),
                                             hi_freq_overrides=copy.deepcopy(self.hi_freq_overrides),
                                             ap_eff_overrides=copy.deepcopy(self.ap_eff_overrides),
+                                            wind_loading_overrides=copy.deepcopy(self.wind_loading_overrides),
                                             custom_receivers=copy.deepcopy(self.custom_receivers),
                                             station_uptimes=copy.deepcopy(self.station_uptimes),
                                             array=self.array,
@@ -1258,7 +1330,7 @@ class obs_generator(object):
                     obsgen_here.im = model_target
 
                 # generate observation at target frequency
-                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, opacitycal=opacitycal, addFR=addFR, el_min=el_min, el_max=el_max, flagwind=flagwind, flagday=flagday, p=p_target)
+                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, flagwind=flagwind, flagday=flagday, flagsun=flagsun, p=p_target)
 
                 # add any new detections to the running datatable
                 if count == 0:
@@ -1670,24 +1742,22 @@ def get_unready_sites(sites, tech_readiness, rng=np.random.default_rng()):
     return sites_to_drop
 
 
-def windspeed_SEFD_modification(windspeed, windspeed_degradation=const.windspeed_degradation,
-                                windspeed_shutdown=const.windspeed_shutdown):
+def windspeed_SEFD_modification(windspeed, windspeed_v0=const.windspeed_v0,
+                                windspeed_w=const.windspeed_w):
     """
     Function to convert a windspeed to an effective SEFD scaling factor.
 
     Args:
       windspeed (float): windspeed value, in m/s
-      windspeed_degradation (float): windspeed value at which to start substantially degrading performance
-      windspeed_shutdown (float): windspeed value at which a site must be shut down
-
+      windspeed_v0 (float): central point of the logistic function
+      windspeed_w (float): parameter describing the width of the logistic function; larger is more permissive
+      
     Returns:
       (float): factor by which to scale the SEFD
     """
 
-    centerpoint = 0.5*(windspeed_degradation + windspeed_shutdown)
-    rate = (windspeed_shutdown - windspeed_degradation) / 10.0
-    scale_factor = 1.0 - (1.0 / (1.0 + np.exp(-5.0*((windspeed / (2.0*(windspeed_shutdown - windspeed_degradation))) - 1.0))))
-    
+    scale_factor = 1.0 - (1.0 / (1.0 + np.exp(-(3.0/windspeed_w)*(windspeed - windspeed_v0))))
+        
     return 1.0/scale_factor
 
 
@@ -1794,6 +1864,9 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
       (numpy.ndarray): An array of kept data indices
     """
 
+    # frequency ratio
+    freq_rat = (freq_ref/(obsgen.freq/(1.0e9)))
+
     # determine settings for dummy obsgen object
     new_settings = copy.deepcopy(obsgen.settings)
     new_settings['frequency'] = freq_ref
@@ -1815,6 +1888,7 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
     new_lo_freq_overrides = copy.deepcopy(obsgen.lo_freq_overrides)
     new_hi_freq_overrides = copy.deepcopy(obsgen.hi_freq_overrides)
     new_ap_eff_overrides = copy.deepcopy(obsgen.ap_eff_overrides)
+    new_wind_loading_overrides = copy.deepcopy(obsgen.wind_loading_overrides)
     new_custom_receivers = copy.deepcopy(obsgen.custom_receivers)
     new_station_uptimes = copy.deepcopy(obsgen.station_uptimes)
 
@@ -1829,6 +1903,7 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
                                lo_freq_overrides=new_lo_freq_overrides,
                                hi_freq_overrides=new_hi_freq_overrides,
                                ap_eff_overrides=new_ap_eff_overrides,
+                               wind_loading_overrides=new_wind_loading_overrides,
                                custom_receivers=new_custom_receivers,
                                station_uptimes=new_station_uptimes,
                                ephem=ephem)
@@ -1841,14 +1916,57 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
     # create a running index list of baselines to flag
     master_index = np.zeros(len(obs_ref.data), dtype='bool')
 
-    # get detections from the reference frequency
-    fringegroups_index = fringegroups(obsgen_ref, obs_ref, snr_ref, tint_ref)
-    master_index |= fringegroups_index
+    # identify sites that can't observe at the reference frequency
+    sites_to_remove = list()
+    for site in obs_ref.tarr['site']:
+        if obsgen_ref.bands[site] is None:
+            sites_to_remove.append(site)
+    if len(sites_to_remove) > 0:
+        if len(obs_ref.data) > 0:
+            t1_list = obs_ref.unpack('t1')['t1']
+            t2_list = obs_ref.unpack('t2')['t2']
+            mask_ref = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+    wheremask_ref = np.where(mask_ref)
 
-    # get any additional detections from normal fringe-fitting
-    snr_fringegroups = snr_ref * (freq_ref/(obsgen.freq/(1.0e9)))
-    fringegroups_index = fringegroups(obsgen, obs, snr_fringegroups, tint_ref)
-    master_index |= fringegroups_index
+    # identify sites that can't observe at the target frequency
+    sites_to_remove = list()
+    for site in obs_ref.tarr['site']:
+        if obsgen.bands[site] is None:
+            sites_to_remove.append(site)
+    if len(sites_to_remove) > 0:
+        if len(obs_ref.data) > 0:
+            t1_list = obs_ref.unpack('t1')['t1']
+            t2_list = obs_ref.unpack('t2')['t2']
+            mask_tar = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+    wheremask_tar = np.where(mask_tar)
+
+    # get detections from fringe-fitting at the reference frequency
+    obs_ref_pass = obs_ref.copy()
+    obs_ref_pass.data = obs_ref.data.copy()[wheremask_ref]
+    fringegroups_index = fringegroups(obsgen_ref, obs_ref_pass, snr_ref, tint_ref)
+    master_index[wheremask_ref] |= fringegroups_index
+
+    # compare target SNR and (scaled) reference SNR, using the larger of the two for dual-band baselines
+    pseudo_I_amp = 0.5*(np.abs(obs.data['rrvis']) + np.abs(obs.data['llvis']))
+    pseudo_I_sig = obs.data['rrsigma'] / np.sqrt(2.0)
+    snr_data = pseudo_I_amp / pseudo_I_sig
+    pseudo_I_amp_ref = 0.5*(np.abs(obs_ref.data['rrvis']) + np.abs(obs_ref.data['llvis']))
+    pseudo_I_sig_ref = obs_ref.data['rrsigma'] / np.sqrt(2.0)
+    snr_data_ref = (pseudo_I_amp_ref / pseudo_I_sig_ref)*freq_rat
+    ind_snr_boost = (snr_data_ref > snr_data) & mask_ref & mask_tar
+
+    # get any additional detections from fringe-fitting at the target frequency
+    obs_pass = obs.copy()
+    data_copy = obs.data.copy()
+    data_copy[ind_snr_boost] = obs_ref.data[ind_snr_boost]
+    data_copy['rrsigma'][ind_snr_boost] /= freq_rat
+    data_copy['llsigma'][ind_snr_boost] /= freq_rat
+    data_copy['rlsigma'][ind_snr_boost] /= freq_rat
+    data_copy['lrsigma'][ind_snr_boost] /= freq_rat
+    obs_pass.data = data_copy[wheremask_tar]
+    snr_fringegroups = snr_ref * freq_rat
+    fringegroups_index = fringegroups(obsgen, obs_pass, snr_fringegroups, tint_ref)
+    master_index[wheremask_tar] |= fringegroups_index
 
     return master_index
 

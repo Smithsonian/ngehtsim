@@ -48,8 +48,9 @@ el_min = 10.0
 el_max = 80.0
 
 # windspeed limitations
-windspeed_degradation = 15.0
 windspeed_shutdown = 25.0
+windspeed_v0 = 20.0
+windspeed_w = 10.0
 
 # minimum and maximum years from which to query weather data
 year_min = 2012
@@ -82,6 +83,9 @@ pol_basis = 'circular'
 # polarization basis conversion matrices
 circ_to_lin = np.array([[1.0,1.0],[-1.0j,1.0j]])/np.sqrt(2.0)
 lin_to_circ = np.array([[1.0,1.0j],[1.0,-1.0j]])/np.sqrt(2.0)
+
+# default solar avoidance angle, if not otherwise known, in degrees
+sol_avoid = 30.0
 
 ###################################################
 # physical constants
@@ -361,12 +365,12 @@ known_sources = {'M87': {'RA': 12.51373,
 ###################################################
 # pull antenna properties from table
 
-known_stations, tlcs, diam_arr, surf_arr, polbasis_arr, mnts_arr, fa_arr, altnames = np.loadtxt(path_to_tsm,
-                                                                                     delimiter=',',
-                                                                                     skiprows=1,
-                                                                                     usecols=(0, 1, 7, 8, 9, 10, 11, 12),
-                                                                                     dtype=str,
-                                                                                     unpack=True)
+known_stations, tlcs, diam_arr, surf_arr, solar_avoidance_angle_arr, polbasis_arr, mnts_arr, fa_arr, altnames = np.loadtxt(path_to_tsm,
+                                                                                                                delimiter=',',
+                                                                                                                skiprows=1,
+                                                                                                                usecols=(0, 1, 7, 8, 9, 10, 11, 12, 13),
+                                                                                                                dtype=str,
+                                                                                                                unpack=True)
 lat_arr, lon_arr, elev_arr = np.loadtxt(path_to_tsm,
                                         delimiter=',',
                                         skiprows=1,
@@ -397,6 +401,11 @@ known_elevations = {}
 for i in range(len(known_stations)):
     if (elev_arr[i] != ''):
         known_elevations[known_stations[i]] = elev_arr[i]
+
+known_solar_avoidance_angles = {}
+for i in range(len(known_stations)):
+    if (solar_avoidance_angle_arr[i] != ''):
+        known_solar_avoidance_angles[known_stations[i]] = float(solar_avoidance_angle_arr[i])
 
 known_polbases = {}
 for i in range(len(known_stations)):

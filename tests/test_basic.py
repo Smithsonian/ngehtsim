@@ -42,6 +42,8 @@ def with_vs_without(obsgen):
 
 def test_with_vs_without():
     obs1, obs2 = with_vs_without(obsgen)
+    obs1 = obs1.switch_polrep(polrep_out='stokes')
+    obs2 = obs2.switch_polrep(polrep_out='stokes')
     len1 = (obs1.data['vis'] == obs2.data['vis']).sum()
     len2 = len(obs1.data)
     assert len1 == len2

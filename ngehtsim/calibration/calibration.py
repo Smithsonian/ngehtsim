@@ -53,7 +53,7 @@ def argunique(array):
 
 
 def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
-               RA=None,DEC=None,SNR_cut=0.0,station_codes={},**kwargs):
+               SNR_cut=0.0,station_codes={},return_coords=False,**kwargs):
     """
     Read an alist data file and carry out a priori flux density calibration.
 
@@ -63,10 +63,9 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
       bandwidth (float): The bandwidth over which the data have been averaged, in GHz
       debias (bool): Flag for whether to debias the amplitudes stored in the alist file
       remove_autocorr (bool): Flag for whether to remove autocorrelations during calibration
-      RA (float): Right ascension of the source, in decimal hours
-      DEC (float): Declination of the source, in decimal degrees
       SNR_cut (float): SNR cut to apply
       station_codes (dict): Dictionary containing conversions between single- and multi-letter station codes
+      return_coords (bool): Flag for whether to return RA and DEC of the source
 
     Returns:
       (pandas.DataFrame): pandas DataFrame containing the calibrated data and associated metainfo
@@ -75,15 +74,6 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
     ############################################
     # check inputs
     
-    # make sure source is known or else RA+DEC are supplied
-    if sourcename in const.known_sources:
-        if (RA is None) | (DEC is None):
-            RA = const.known_sources[sourcename]['RA']
-            DEC = const.known_sources[sourcename]['DEC']
-    else:
-        if (RA is None) | (DEC is None):
-            raise Exception('Source with name ' + sourcename + ' is not already known, so RA and DEC values need to be provided.')
-
     # update the station codes if needed
     station_dict = copy.deepcopy(known_station_dict)
     station_dict.update(station_codes)
@@ -106,9 +96,13 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
     phase_orig = np.array(df.resid_phas, dtype=float)
     elev1_orig = np.array(df.ref_elev, dtype=float)
     elev2_orig = np.array(df.rem_elev, dtype=float)
+    az1_orig = np.array(df.ref_az, dtype=float)
+    az2_orig = np.array(df.rem_az, dtype=float)
     u_orig = np.array(df.u, dtype=float)
     v_orig = np.array(df.v, dtype=float)
     freq_orig = np.array(df.ref_freq, dtype=float)
+    ra_orig = np.array(df.ra_hrs, dtype=float)
+    dec_orig = np.array(df.dec_deg, dtype=float)
 
     # debias SNR if desired
     if debias:
@@ -151,6 +145,10 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
     snr = snr_orig[ind]
     elev1 = elev1_orig[ind] * (np.pi/180.0)
     elev2 = elev2_orig[ind] * (np.pi/180.0)
+    az1 = az1_orig[ind] * (np.pi/180.0)
+    az2 = az2_orig[ind] * (np.pi/180.0)
+    ra = ra_orig[ind]
+    dec = dec_orig[ind]
     amp_err = amp_err_orig[ind]
     tint = tint_orig[ind]
 
@@ -194,6 +192,10 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
         snr = snr[ind]
         elev1 = elev1[ind]
         elev2 = elev2[ind]
+        az1 = az1[ind]
+        az2 = az2[ind]
+        ra = ra[ind]
+        dec = dec[ind]
         amp_err = amp_err[ind]
         tint = tint[ind]
         vis = vis[ind]
@@ -220,9 +222,19 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
         snr = snr[ind]
         elev1 = elev1[ind]
         elev2 = elev2[ind]
+        az1 = az1[ind]
+        az2 = az2[ind]
+        ra = ra[ind]
+        dec = dec[ind]
         amp_err = amp_err[ind]
         tint = tint[ind]
         vis = vis[ind]
+
+    # flag if there's more than one RA/DEC
+    if ((len(np.unique(ra)) > 1) | (len(np.unique(dec)) > 1)):
+        raise Exception('More than one RA and/or DEC value for this source is listed!  Check the alist file.')
+    RA = np.mean(ra)
+    DEC = np.mean(dec)
 
     ############################################
     # simulate the observation with ngehtsim
@@ -267,7 +279,9 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
         amp_err_here = amp_err[ind]
         tint_here = tint[ind]
         dt = np.max(tint_here)
-
+        if len(np.unique(tint_here)) > 1:
+            print('Warning: Some baselines in the scan at time '+str(there)+' have different integration times than others.  Assumption here is to use a single integration time corresponding to the maximum value in the scan, but some baselines may be poorly-calibrated as a result.')
+        
         # settings
         settings = {'source': sourcename,
                     'RA': RA,
@@ -330,6 +344,8 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
               'v': v,
               'elev1': elev1,
               'elev2': elev2,
+              'az1': az1,
+              'az2': az2,
               'datetime': datetime,
               'vis': vis_corrected,
               'err': amp_err_corrected,
@@ -337,11 +353,14 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
 
     df_out = pd.DataFrame(struct)
 
-    return df_out
+    if return_coords:
+        return df_out, RA, DEC
+    else:
+        return df_out
 
 
 def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocorr=True,
-               RA=None,DEC=None,SNR_cut=0.0,station_codes={},**kwargs):
+                SNR_cut=0.0,station_codes={},**kwargs):
     """
     Write a "dlist" data file from an "alist" file.
 
@@ -352,26 +371,15 @@ def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocor
       outname (str): The name of the output dlist data file
       debias (bool): Flag for whether to debias the amplitudes stored in the alist file
       remove_autocorr (bool): Flag for whether to remove autocorrelations during calibration
-      RA (float): Right ascension of the source, in decimal hours
-      DEC (float): Declination of the source, in decimal degrees
       SNR_cut (float): SNR cut to apply
       station_codes (dict): Dictionary containing conversions between single- and multi-letter station codes
 
     Returns:
-      (numpy.ndarray): Several arrays containing the calibrated data and associated metainfo
+      Writes a dlist file to disk
     """
 
     ############################################
     # check inputs
-
-    # make sure source is known or else RA+DEC are supplied
-    if sourcename in const.known_sources:
-        if (RA is None) | (DEC is None):
-            RA = const.known_sources[sourcename]['RA']
-            DEC = const.known_sources[sourcename]['DEC']
-    else:
-        if (RA is None) | (DEC is None):
-            raise Exception('Source with name ' + sourcename + ' is not already known, so RA and DEC values need to be provided.')
 
     # update the station codes if needed
     station_dict = copy.deepcopy(known_station_dict)
@@ -380,7 +388,7 @@ def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocor
     ############################################
     # carry out the flux density calibration
         
-    df = apriorical(filename,sourcename,bandwidth,debias=debias,remove_autocorr=remove_autocorr,RA=RA,DEC=DEC,station_codes=station_codes,**kwargs)
+    df, RA, DEC = apriorical(filename,sourcename,bandwidth,debias=debias,remove_autocorr=remove_autocorr,station_codes=station_codes,return_coords=True,**kwargs)
     freq = df.freq
     t = df.t
     t_hr = df.t_hr
@@ -390,6 +398,8 @@ def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocor
     v = df.v
     elev1 = df.elev1
     elev2 = df.elev2
+    az1 = df.az1
+    az2 = df.az2
     datetime = df.datetime
     vis_corrected = df.vis
     err_corrected = df.err
@@ -448,10 +458,10 @@ def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocor
             lat2 = const.known_latitudes[station_dict[bl[i][1]]]*(np.pi/180.0)
             lon1 = const.known_longitudes[station_dict[bl[i][0]]]*(np.pi/180.0)
             lon2 = const.known_longitudes[station_dict[bl[i][1]]]*(np.pi/180.0)
-            hr_angle1 = eh.observing.obs_helpers.hr_angle(gst,lon1,RA)
-            hr_angle2 = eh.observing.obs_helpers.hr_angle(gst,lon2,RA)
-            par_angle1 = eh.observing.obs_helpers.par_angle(hr_angle1, lat1, DEC)
-            par_angle2 = eh.observing.obs_helpers.par_angle(hr_angle2, lat2, DEC)
+            hr_angle1 = eh.observing.obs_helpers.hr_angle(gst,lon1,RA_rad)
+            hr_angle2 = eh.observing.obs_helpers.hr_angle(gst,lon2,RA_rad)
+            par_angle1 = eh.observing.obs_helpers.par_angle(hr_angle1, lat1, DEC_rad)
+            par_angle2 = eh.observing.obs_helpers.par_angle(hr_angle2, lat2, DEC_rad)
 
             # continue populating table entries
             strhere += str(np.round(par_angle1,10)).ljust(24)
