@@ -12,7 +12,7 @@ The primary functionality provided by the ngehtsim package is synthetic data gen
    import ngehtsim.obs.obs_generator as og
    obsgen = og.obs_generator()
 
-When called with no arguments, this function will return an ``obs_generator`` object with the default settings, which are stored in ``obsgen.settings``.  To specify non-default settings during initialization, a user can either provide path to a YAML file or else pass a dictionary to the initialization function.  For instance, to specify the right ascension and declination of a target source while also aiming to observe with only a small array consisting of the ALMA, LMT, and SMT telescopes, we could pass a settings dictionary::
+When called with no arguments, this function will return an ``obs_generator`` object with the default settings, which are stored in ``obsgen.settings``.  To specify non-default settings during initialization, a user can either provide a path to a YAML file or else pass a dictionary to the initialization function.  For instance, to specify the right ascension and declination of a target source while also aiming to observe with only a small array consisting of the ALMA, LMT, and SMT telescopes, we could pass a settings dictionary::
 
    settings = {'RA': 12.5137,
                'DEC': 12.3911,
@@ -45,9 +45,9 @@ The ngehtsim package contains a library of existing and potential telescope site
 
 For sites with existing telescopes, such as the LMT, various pieces of telescope information -- such as the dish size, surface accuracy, and coordinate location -- are already tabulated within ngehtsim.
 
-The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database [#Rienecker2011]_ [#Molod2015]_ [#Gelaro2017]_.  The atmospheric state data from MERRA-2 have been processed through the *am* radiative transfer code [#Paine2022]_ to determine opacities and brightness temperatures as a function of time and observing frequency (any frequency in the range from 0 to 2THz can be specified).  This information is used internally by ngehtsim to determine the sensitivity of each site during observation generation.
+The ngehtsim package also contains historical weather information at every site that has been tabulated from the `MERRA-2 <https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/>`_ database [#Rienecker2011]_ [#Molod2015]_ [#Gelaro2017]_.  The atmospheric state data from MERRA-2 have been processed through the *am* radiative transfer code [#Paine2022]_ to determine opacities and brightness temperatures as a function of time and observing frequency (any frequency in the range from 0 to 2 THz can be specified).  This information is used internally by ngehtsim to determine the sensitivity of each site during observation generation.
 
-We can access the available weather information for an individual site using the ``ngehtsim.weather`` subpackage.  For instance, to access the 230GHz zenith opacity at the LMT site on 2017 April 10, we can call::
+We can access the available weather information for an individual site using the ``ngehtsim.weather`` subpackage.  For instance, to access the 230 GHz zenith opacity at the LMT site on 2017 April 10, we can call::
 
    import ngehtsim.weather.weather as nw
    tau = nw.opacity('LMT', freq=230.0, day=10, month='Apr', year=2017)
