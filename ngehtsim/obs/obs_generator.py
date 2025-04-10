@@ -1926,6 +1926,10 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
             t1_list = obs_ref.unpack('t1')['t1']
             t2_list = obs_ref.unpack('t2')['t2']
             mask_ref = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+        else:
+            mask_ref = np.ones(len(obs_ref.data),dtype=bool)
+    else:
+        mask_ref = np.ones(len(obs_ref.data),dtype=bool)
     wheremask_ref = np.where(mask_ref)
 
     # identify sites that can't observe at the target frequency
@@ -1938,6 +1942,10 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
             t1_list = obs_ref.unpack('t1')['t1']
             t2_list = obs_ref.unpack('t2')['t2']
             mask_tar = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+        else:
+            mask_tar = np.ones(len(obs_ref.data),dtype=bool)
+    else:
+        mask_tar = np.ones(len(obs_ref.data),dtype=bool)
     wheremask_tar = np.where(mask_tar)
 
     # get detections from fringe-fitting at the reference frequency
