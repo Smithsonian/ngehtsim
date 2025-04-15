@@ -301,7 +301,7 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
 
         # simulate this scan, tracking SEFDs
         obsgen = og.obs_generator(settings,weight=1,**kwargs)
-        obs = obsgen.make_obs(mod,addnoise=False,addgains=False,flagwind=False,el_min=0.0,el_max=90.0)
+        obs = obsgen.make_obs(mod,addnoise=False,addgains=False,flagwind=False,flagday=False,flagsun=False,el_min=0.0,el_max=90.0)
         obs = obs.switch_polrep('circ')
 
         # flag any unwanted times
