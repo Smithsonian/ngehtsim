@@ -7,10 +7,12 @@ from collections import defaultdict
 from astropy.time import Time
 from astropy import units as astrounits
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun
+from astropy.utils.exceptions import AstropyWarning
 import yaml
 import time
 import os
 import copy
+import warnings
 
 try:
     import ngEHTforecast.fisher as fp
@@ -304,10 +306,12 @@ class obs_generator(object):
             self.DEC = self.settings['DEC']
 
         # determine solar angle
-        source_location = SkyCoord(ra=self.RA*15.0*astrounits.degree, dec=self.DEC*astrounits.degree, frame='gcrs')
-        jd = self.mjd + 2400000.5
-        sun_location = get_sun(Time(jd, format='jd'))
-        self.solar_angle = sun_location.separation(source_location).value
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', AstropyWarning)
+            source_location = SkyCoord(ra=self.RA*15.0*astrounits.degree, dec=self.DEC*astrounits.degree, frame='gcrs')
+            jd = self.mjd + 2400000.5
+            sun_location = get_sun(Time(jd, format='jd'))
+            self.solar_angle = sun_location.separation(source_location).value
 
     # create a receiver suite dictionary
     def set_receivers(self):
