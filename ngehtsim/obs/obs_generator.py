@@ -1455,7 +1455,7 @@ def determine_mjd(day, month, year):
     Determine the MJD from a given day, month, and year.
 
     Args:
-      day (str): Numerical cay of the month; e.g. '15' or '22'
+      day (str): Numerical day of the month; e.g. '15' or '22'
       month (str): Three-letter abbreviation for month of the year; e.g., 'Feb' or 'Sep'
       year (str): Calendar year; e.g., '2025'
 
