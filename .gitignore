@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.egg-info/
+*.uvfits
+tests/data_generation/*.png
+tests/data_generation_flagging/*.png
+tests/data_generation_flagging/*.uvfits
