@@ -141,6 +141,21 @@ def reconstruct_spectrum_Tb(coeffs):
     reconstructed_spectrum += meanspec_Tb
     return reconstructed_spectrum
 
+def _parse_month(month):
+    monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
+    monthnams = np.array(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])
+
+    if month in monthnams:
+        monthnum = monthnums[monthnams == month][0]
+        monthnam = month
+    elif str(month).zfill(2) in monthnums:
+        monthnum = str(month).zfill(2)
+        monthnam = monthnams[monthnums == monthnum][0]
+    else:
+        raise ValueError('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
+
+    return monthnum, monthnam
+
 def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
     """
     Retrieve the zenith opacity information for a specified site as a function of frequency.
@@ -158,16 +173,7 @@ def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015, path_to
     """
 
     # extract month number
-    monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
-    monthnams = np.array(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])
-    if month in monthnams:
-        monthnum = monthnums[monthnams == month][0]
-        monthnam = month
-    elif str(month).zfill(2) in monthnums:
-        monthnum = str(month).zfill(2)
-        monthnam = monthnams[monthnums == month][0]
-    else:
-        raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
+    monthnum, monthnam = _parse_month(month)
 
     # determine which table to read
     pathhere = path_to_weather + '/'
@@ -179,7 +185,7 @@ def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015, path_to
     years, months, days, coeffs = read_binary_atm(pathhere)
 
     # remove false Feb 29 entries
-    if (month == 'Feb'):
+    if (monthnam == 'Feb'):
         indlist = np.ones(len(days),dtype=bool)
         for i in range(1,len(days)):
             if (days[i] == days[i-1]):
@@ -264,16 +270,7 @@ def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, yea
     """
 
     # extract month number
-    monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
-    monthnams = np.array(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])
-    if month in monthnams:
-        monthnum = monthnums[monthnams == month][0]
-        monthnam = month
-    elif str(month).zfill(2) in monthnums:
-        monthnum = str(month).zfill(2)
-        monthnam = monthnams[monthnums == month][0]
-    else:
-        raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
+    monthnum, monthnam = _parse_month(month)
 
     # determine which table to read
     pathhere = path_to_weather + '/'
@@ -285,7 +282,7 @@ def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, yea
     years, months, days, coeffs = read_binary_atm(pathhere)
 
     # remove false Feb 29 entries
-    if (month == 'Feb'):
+    if (monthnam == 'Feb'):
         indlist = np.ones(len(days),dtype=bool)
         for i in range(1,len(days)):
             if (days[i] == days[i-1]):
@@ -370,16 +367,7 @@ def pressure(site, form='exact', month='Apr', day=15, year=2015, path_to_weather
     """
 
     # extract month number
-    monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
-    monthnams = np.array(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])
-    if month in monthnams:
-        monthnum = monthnums[monthnams == month][0]
-        monthnam = month
-    elif str(month).zfill(2) in monthnums:
-        monthnum = str(month).zfill(2)
-        monthnam = monthnams[monthnums == month][0]
-    else:
-        raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
+    monthnum, monthnam = _parse_month(month)
 
     # determine which table to read
     pathhere = path_to_weather + '/'
@@ -391,7 +379,7 @@ def pressure(site, form='exact', month='Apr', day=15, year=2015, path_to_weather
     years, months, days, vals = read_binary_weather(pathhere)
 
     # remove false Feb 29 entries
-    if (month == 'Feb'):
+    if (monthnam == 'Feb'):
         indlist = np.ones(len(days),dtype=bool)
         for i in range(1,len(days)):
             if (days[i] == days[i-1]):
@@ -439,16 +427,7 @@ def temperature(site, form='exact', month='Apr', day=15, year=2015, path_to_weat
     """
 
     # extract month number
-    monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
-    monthnams = np.array(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])
-    if month in monthnams:
-        monthnum = monthnums[monthnams == month][0]
-        monthnam = month
-    elif str(month).zfill(2) in monthnums:
-        monthnum = str(month).zfill(2)
-        monthnam = monthnams[monthnums == month][0]
-    else:
-        raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
+    monthnum, monthnam = _parse_month(month)
 
     # determine which table to read
     pathhere = path_to_weather + '/'
@@ -460,7 +439,7 @@ def temperature(site, form='exact', month='Apr', day=15, year=2015, path_to_weat
     years, months, days, vals = read_binary_weather(pathhere)
 
     # remove false Feb 29 entries
-    if (month == 'Feb'):
+    if (monthnam == 'Feb'):
         indlist = np.ones(len(days),dtype=bool)
         for i in range(1,len(days)):
             if (days[i] == days[i-1]):
@@ -508,16 +487,7 @@ def PWV(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=cons
     """
 
     # extract month number
-    monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
-    monthnams = np.array(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])
-    if month in monthnams:
-        monthnum = monthnums[monthnams == month][0]
-        monthnam = month
-    elif str(month).zfill(2) in monthnums:
-        monthnum = str(month).zfill(2)
-        monthnam = monthnams[monthnums == month][0]
-    else:
-        raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
+    monthnum, monthnam = _parse_month(month)
 
     # determine which table to read
     pathhere = path_to_weather + '/'
@@ -529,7 +499,7 @@ def PWV(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=cons
     years, months, days, vals = read_binary_weather(pathhere)
 
     # remove false Feb 29 entries
-    if (month == 'Feb'):
+    if (monthnam == 'Feb'):
         indlist = np.ones(len(days),dtype=bool)
         for i in range(1,len(days)):
             if (days[i] == days[i-1]):
@@ -577,16 +547,7 @@ def windspeed(site, form='exact', month='Apr', day=15, year=2015, path_to_weathe
     """
 
     # extract month number
-    monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
-    monthnams = np.array(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])
-    if month in monthnams:
-        monthnum = monthnums[monthnams == month][0]
-        monthnam = month
-    elif str(month).zfill(2) in monthnums:
-        monthnum = str(month).zfill(2)
-        monthnam = monthnams[monthnums == month][0]
-    else:
-        raise Exception('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
+    monthnum, monthnam = _parse_month(month)
 
     # determine which table to read
     pathhere = path_to_weather + '/'
@@ -598,7 +559,7 @@ def windspeed(site, form='exact', month='Apr', day=15, year=2015, path_to_weathe
     years, months, days, vals = read_binary_weather(pathhere)
 
     # remove false Feb 29 entries
-    if (month == 'Feb'):
+    if (monthnam == 'Feb'):
         indlist = np.ones(len(days),dtype=bool)
         for i in range(1,len(days)):
             if (days[i] == days[i-1]):
