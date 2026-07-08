@@ -8,6 +8,7 @@ from astropy.time import Time
 from astropy import units as astrounits
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun
 from astropy.utils.exceptions import AstropyWarning
+from astropy.utils.iers import IERS_Auto, conf as iers_conf
 import yaml
 import time
 import os
@@ -21,6 +22,21 @@ except ImportError:
 
 import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
+
+###################################################
+# helpers
+
+def _ensure_iers_cached():
+    """Pre-load IERS once for Astropy sidereal-time calculations used by ehtim."""
+    if IERS_Auto.iers_table is not None:
+        return
+
+    auto_download = iers_conf.auto_download
+    try:
+        iers_conf.auto_download = False
+        IERS_Auto.iers_table = IERS_Auto.open()
+    finally:
+        iers_conf.auto_download = auto_download
 
 ###################################################
 # class definition
@@ -59,6 +75,11 @@ class obs_generator(object):
                  T_R_overrides={}, sideband_ratio_overrides={}, lo_freq_overrides={}, hi_freq_overrides={},
                  ap_eff_overrides={}, wind_loading_overrides={}, custom_receivers={}, station_uptimes={},
                  array=None, ephem='ephemeris/space'):
+
+        #############################
+        # astropy cache
+
+        _ensure_iers_cached()
 
         #############################
         # parse inputs
@@ -611,7 +632,7 @@ class obs_generator(object):
                     obs = input_model.observe_same_nonoise(self.obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
             else:
                 obs = input_model.observe_same_nonoise(self.obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
-            F0 = np.abs(input_model.sample_uv([[0.0, 0.0]], ttype=self.settings['ttype'])[0][0])
+            F0 = input_model.total_flux()
         elif isinstance(input_model, eh.movie.Movie):
             input_model.ra = self.RA
             input_model.dec = self.DEC
