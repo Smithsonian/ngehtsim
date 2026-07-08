@@ -29,6 +29,7 @@ DomeA,DA,Antarctica,-80.366736,77.351258,4090,Dome Argus on the East Antarctic I
 DomeC,DC,Antarctica,-75.100503,123.34202,3230,Dome Concordia on the Antarctic Ice Sheet,,,,,,,
 DomeF,DF,Antarctica,-77.316617,39.702097,3700,Dome Fuji on the East Antarctic Ice Sheet,,,,,,,
 EFF,EB,Germany,50.52477,6.883635,393,Effelsberg,100,550,5,circular,ALT-AZ,0,
+ELK,EL,US,41.633248,-106.526248,3400,the summit of Elk Mountain in Wyoming,,,,,,,
 ERB,ER,IQ,36.584237,44.465782,2111,site of the inactive Erbil Observatory,,,,,,,
 FAIR,FA,US,64.988399,-147.598528,616,The Fox Range near Fairbanks,,,,,,,
 FLWO,FL,US,31.675479,-110.951028,1274,Fred Lawrence Whipple Observatory,,,,,,,HOP
@@ -48,7 +49,8 @@ HOR,HR,Tanzania,-3.139078,37.438599,3726,The Horombo Hut site on Kilimanjaro,,,,
 IRK,IR,Japan,31.74789,130.43989,574,Iriki dish of VERA,20,500,,circular,ALT-AZ,0,
 ISG,IS,Japan,24.412167,124.171,65,Ishigakijima dish of VERA,20,500,,circular,ALT-AZ,0,
 ISH,IH,Japan,36.20918915,140.2189587,164,Ishioka VGOS dish,13.2,100,,linear,ALT-AZ,0,ISHIOKA
-JELM,JE,US,41.096991,-105.976692,2943,the summit of Jelm Mountain,,,,,,,
+JELM,JE,US,41.096991,-105.976692,2943,the summit of Jelm Mountain in Wyoming,,,,,,,
+JELM2,J2,US,41.08418,-105.98643,2751,farther down Jelm Mountain in Wyoming,,,,,,,
 KATH,KE,Australia,-14.37545703,132.1523771,189,Katherine VGOS dish in Cossack,12,100,,linear,ALT-AZ,0,KATH12M
 KEN,KN,Kenya,-0.141467,37.314792,4260,Shiptons mountain hut on Mount Kenya,,,,,,,
 KILI,KI,Tanzania,-3.088055,37.405676,4433,the saddle region between Kibo and Mawenzi peaks of Mount Kilimanjaro,,,,,,,

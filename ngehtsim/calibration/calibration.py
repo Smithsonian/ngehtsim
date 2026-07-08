@@ -53,7 +53,8 @@ def argunique(array):
 
 
 def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
-               SNR_cut=0.0,station_codes={},return_coords=False,**kwargs):
+               SNR_cut=0.0,station_codes={},return_coords=False,
+               weather='exact',random_seed=None,**kwargs):
     """
     Read an alist data file and carry out a priori flux density calibration.
 
@@ -66,6 +67,8 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
       SNR_cut (float): SNR cut to apply
       station_codes (dict): Dictionary containing conversions between single- and multi-letter station codes
       return_coords (bool): Flag for whether to return RA and DEC of the source
+      weather (str): pass to make_obs() settings "weather" parameter
+      random_seed (int): pass to make_obs() settings "random_seed" parameter
 
     Returns:
       (pandas.DataFrame): pandas DataFrame containing the calibrated data and associated metainfo
@@ -297,11 +300,12 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
                     't_rest': dt,
                     'fringe_finder': ['naive', 0.0],
                     'sites': sites,
-                    'weather': 'exact'}
+                    'weather': weather,
+                    'random_seed': None}
 
         # simulate this scan, tracking SEFDs
         obsgen = og.obs_generator(settings,weight=1,**kwargs)
-        obs = obsgen.make_obs(mod,addnoise=False,addgains=False,flagwind=False,el_min=0.0,el_max=90.0)
+        obs = obsgen.make_obs(mod,addnoise=False,addgains=False,flagwind=False,flagday=False,flagsun=False,el_min=0.0,el_max=90.0)
         obs = obs.switch_polrep('circ')
 
         # flag any unwanted times
@@ -360,7 +364,7 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
 
 
 def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocorr=True,
-                SNR_cut=0.0,station_codes={},**kwargs):
+                SNR_cut=0.0,station_codes={},weather='exact',random_seed=None,**kwargs):
     """
     Write a "dlist" data file from an "alist" file.
 
@@ -373,6 +377,8 @@ def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocor
       remove_autocorr (bool): Flag for whether to remove autocorrelations during calibration
       SNR_cut (float): SNR cut to apply
       station_codes (dict): Dictionary containing conversions between single- and multi-letter station codes
+      weather (str): pass to make_obs() settings "weather" parameter
+      random_seed (int): pass to make_obs() settings "random_seed" parameter
 
     Returns:
       Writes a dlist file to disk
@@ -388,7 +394,10 @@ def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocor
     ############################################
     # carry out the flux density calibration
         
-    df, RA, DEC = apriorical(filename,sourcename,bandwidth,debias=debias,remove_autocorr=remove_autocorr,station_codes=station_codes,return_coords=True,**kwargs)
+    df, RA, DEC = apriorical(filename,sourcename,bandwidth,
+                             debias=debias,remove_autocorr=remove_autocorr,
+                             station_codes=station_codes,return_coords=True,
+                             weather=weather,random_seed=random_seed,**kwargs)
     freq = df.freq
     t = df.t
     t_hr = df.t_hr

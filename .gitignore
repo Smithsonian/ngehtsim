@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.tox/
+.coverage*
+coverage.json
+htmlcov/
+build/
+dist/
+*.uvfits
+tests/data_generation/*.png
+tests/data_generation_flagging/*.png
+tests/data_generation_flagging/*.uvfits
+tests/weather_plots/

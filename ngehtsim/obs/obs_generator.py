@@ -7,10 +7,13 @@ from collections import defaultdict
 from astropy.time import Time
 from astropy import units as astrounits
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun
+from astropy.utils.exceptions import AstropyWarning
+from astropy.utils.iers import IERS_Auto, conf as iers_conf
 import yaml
 import time
 import os
 import copy
+import warnings
 
 try:
     import ngEHTforecast.fisher as fp
@@ -19,6 +22,21 @@ except ImportError:
 
 import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
+
+###################################################
+# helpers
+
+def _ensure_iers_cached():
+    """Pre-load IERS once for Astropy sidereal-time calculations used by ehtim."""
+    if IERS_Auto.iers_table is not None:
+        return
+
+    auto_download = iers_conf.auto_download
+    try:
+        iers_conf.auto_download = False
+        IERS_Auto.iers_table = IERS_Auto.open()
+    finally:
+        iers_conf.auto_download = auto_download
 
 ###################################################
 # class definition
@@ -57,6 +75,11 @@ class obs_generator(object):
                  T_R_overrides={}, sideband_ratio_overrides={}, lo_freq_overrides={}, hi_freq_overrides={},
                  ap_eff_overrides={}, wind_loading_overrides={}, custom_receivers={}, station_uptimes={},
                  array=None, ephem='ephemeris/space'):
+
+        #############################
+        # astropy cache
+
+        _ensure_iers_cached()
 
         #############################
         # parse inputs
@@ -304,10 +327,12 @@ class obs_generator(object):
             self.DEC = self.settings['DEC']
 
         # determine solar angle
-        source_location = SkyCoord(ra=self.RA*15.0*astrounits.degree, dec=self.DEC*astrounits.degree, frame='gcrs')
-        jd = self.mjd + 2400000.5
-        sun_location = get_sun(Time(jd, format='jd'))
-        self.solar_angle = sun_location.separation(source_location).value
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', AstropyWarning)
+            source_location = SkyCoord(ra=self.RA*15.0*astrounits.degree, dec=self.DEC*astrounits.degree, frame='gcrs')
+            jd = self.mjd + 2400000.5
+            sun_location = get_sun(Time(jd, format='jd'))
+            self.solar_angle = sun_location.separation(source_location).value
 
     # create a receiver suite dictionary
     def set_receivers(self):
@@ -607,7 +632,7 @@ class obs_generator(object):
                     obs = input_model.observe_same_nonoise(self.obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
             else:
                 obs = input_model.observe_same_nonoise(self.obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
-            F0 = np.abs(input_model.sample_uv([[0.0, 0.0]], ttype=self.settings['ttype'])[0][0])
+            F0 = input_model.total_flux()
         elif isinstance(input_model, eh.movie.Movie):
             input_model.ra = self.RA
             input_model.dec = self.DEC
@@ -1451,7 +1476,7 @@ def determine_mjd(day, month, year):
     Determine the MJD from a given day, month, and year.
 
     Args:
-      day (str): Numerical cay of the month; e.g. '15' or '22'
+      day (str): Numerical day of the month; e.g. '15' or '22'
       month (str): Three-letter abbreviation for month of the year; e.g., 'Feb' or 'Sep'
       year (str): Calendar year; e.g., '2025'
 
@@ -1926,6 +1951,10 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
             t1_list = obs_ref.unpack('t1')['t1']
             t2_list = obs_ref.unpack('t2')['t2']
             mask_ref = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+        else:
+            mask_ref = np.ones(len(obs_ref.data),dtype=bool)
+    else:
+        mask_ref = np.ones(len(obs_ref.data),dtype=bool)
     wheremask_ref = np.where(mask_ref)
 
     # identify sites that can't observe at the target frequency
@@ -1938,6 +1967,10 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
             t1_list = obs_ref.unpack('t1')['t1']
             t2_list = obs_ref.unpack('t2')['t2']
             mask_tar = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+        else:
+            mask_tar = np.ones(len(obs_ref.data),dtype=bool)
+    else:
+        mask_tar = np.ones(len(obs_ref.data),dtype=bool)
     wheremask_tar = np.where(mask_tar)
 
     # get detections from fringe-fitting at the reference frequency
