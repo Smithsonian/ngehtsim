@@ -19,6 +19,7 @@ import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.observation_geometry as observation_geometry
+import ngehtsim.obs.station_observation as station_observation
 
 ###################################################
 # helpers
@@ -703,250 +704,67 @@ class obs_generator(object):
         # observe the source
         obs, F0 = source_models.observe_source(input_model, obs_empty, self.source_context(), p=p)
 
-        # extract relevant information
-        t1 = obs.data['t1']
-        t2 = obs.data['t2']
-        sites_obs = np.unique(np.concatenate((t1, t2)))
-        els = obs.unpack(['el1', 'el2'], ang_unit='rad')
-        pars = obs.unpack(['par_ang1', 'par_ang2'], ang_unit='rad')
-        el1 = els['el1']
-        el2 = els['el2']
-        par1 = pars['par_ang1']
-        par2 = pars['par_ang2']
-        times = obs.data['time']
-        tuniq = np.unique(times)
-        station_context = self.station_context()
+        # calculate station/weather/noise terms
+        station_terms = station_observation.station_terms(
+            obs,
+            F0,
+            self.station_context(),
+            self.arr,
+            self.rng,
+            gainamp=gainamp,
+            leakamp=leakamp,
+            addgains=addgains,
+            addleakage=addleakage,
+            flagwind=flagwind,
+            flagday=flagday,
+            flagsun=flagsun,
+            allow_mixed_basis=allow_mixed_basis,
+            solar_angle=self.solar_angle,
+            verbosity=self.verbosity,
+            windspeed_sefd_modifier=windspeed_SEFD_modification,
+        )
 
-        # initialize various arrays
-        tau1 = np.zeros_like(el1)
-        tau2 = np.zeros_like(el2)
-        Tb1 = np.zeros_like(el1)
-        Tb2 = np.zeros_like(el2)
-        Tsys1 = np.zeros_like(el1)
-        Tsys2 = np.zeros_like(el2)
-        SEFD1 = np.zeros_like(el1)
-        SEFD2 = np.zeros_like(el2)
-        bw1 = np.zeros_like(el1)
-        bw2 = np.zeros_like(el2)
-        f_el1 = np.zeros_like(el1)
-        f_el2 = np.zeros_like(el2)
-        f_par1 = np.zeros_like(el1)
-        f_par2 = np.zeros_like(el2)
-        phi_off1 = np.zeros_like(el1)
-        phi_off2 = np.zeros_like(el2)
+        t1 = station_terms["t1"]
+        t2 = station_terms["t2"]
+        el1 = station_terms["el1"]
+        el2 = station_terms["el2"]
+        par1 = station_terms["par1"]
+        par2 = station_terms["par2"]
+        times = station_terms["times"]
+        tau1 = station_terms["tau1"]
+        tau2 = station_terms["tau2"]
+        Tb1 = station_terms["Tb1"]
+        Tb2 = station_terms["Tb2"]
+        Tsys1 = station_terms["Tsys1"]
+        Tsys2 = station_terms["Tsys2"]
+        SEFD1 = station_terms["SEFD1"]
+        SEFD2 = station_terms["SEFD2"]
+        bw1 = station_terms["bw1"]
+        bw2 = station_terms["bw2"]
+        f_el1 = station_terms["f_el1"]
+        f_el2 = station_terms["f_el2"]
+        f_par1 = station_terms["f_par1"]
+        f_par2 = station_terms["f_par2"]
+        phi_off1 = station_terms["phi_off1"]
+        phi_off2 = station_terms["phi_off2"]
+        flagsites = station_terms["flagsites"]
+        uptime_mask = station_terms["uptime_mask"]
 
         if addgains:
-            gainamp1R = np.zeros_like(el1)
-            gainamp2R = np.zeros_like(el2)
-            gainphase1R = np.zeros_like(el1)
-            gainphase2R = np.zeros_like(el2)
-            gainamp1L = np.zeros_like(el1)
-            gainamp2L = np.zeros_like(el2)
-            gainphase1L = np.zeros_like(el1)
-            gainphase2L = np.zeros_like(el2)
+            gainamp1R = station_terms["gainamp1R"]
+            gainamp2R = station_terms["gainamp2R"]
+            gainphase1R = station_terms["gainphase1R"]
+            gainphase2R = station_terms["gainphase2R"]
+            gainamp1L = station_terms["gainamp1L"]
+            gainamp2L = station_terms["gainamp2L"]
+            gainphase1L = station_terms["gainphase1L"]
+            gainphase2L = station_terms["gainphase2L"]
 
         if addleakage:
-            leak1R = np.zeros_like(el1,dtype=complex)
-            leak2R = np.zeros_like(el2,dtype=complex)
-            leak1L = np.zeros_like(el1,dtype=complex)
-            leak2L = np.zeros_like(el2,dtype=complex)
-
-        # loop through the sites in the array
-        flagsites = list()
-        uptime_mask = np.ones(len(obs.data),dtype=bool)
-        for isite, site in enumerate(sites_obs):
-
-            # zenith opacity, atmospheric temperature, ground temperature, windspeed, and effective collecting area
-            tau_z = station_context["tau"][site]
-            Tatm = station_context["Tatm"][site]
-            Tgnd = station_context["Tgnd"][site]
-            ws = station_context["windspeed"][site]
-            Aeff = station_context["effective_area"][site]
-            wind_loading = station_context["wind_loading"][site]
-
-            # if the windspeed exceeds the shutdown threshold, mark the site as to be flagged
-            if (ws > wind_loading['shutdown']):
-                if flagwind:
-                    flagsites.append(site)
-                    if self.verbosity > 0:
-                        print(site + ' cannot observe because of high wind.')
-
-            # flag the daytime observations, if desired
-            if flagday:
-                if site != 'space':
-                    
-                    # get location of this site
-                    lon = const.known_longitudes[site]
-                    lat = const.known_latitudes[site]
-                    elev = const.known_elevations[site]
-                    location = EarthLocation.from_geodetic(lon,lat,height=elev)
-
-                    # get the altitude of the Sun over time
-                    jd = obs.mjd + 2400000.5 + (times/24.0)
-                    timehere = Time(jd, format='jd')
-                    altazframe = AltAz(obstime=timehere, location=location)
-                    sun_altaz = get_sun(timehere).transform_to(altazframe)
-                    alt = sun_altaz.alt.value
-
-                    # mark as to-be-flagged all times for which the Sun is above the horizon
-                    ind_daytime = (((t1 == site) | (t2 == site)) & (sun_altaz.alt.value > 0.0))
-                    uptime_mask[ind_daytime] = False
-
-            # impose solar avoidance, if desired
-            if flagsun:
-                if self.solar_angle < station_context["solar_avoidance"][site]:
-                    flagsites.append(site)
-                    if self.verbosity > 0:
-                        print(site + ' cannot observe because the source is too close to the Sun.')
-
-            # flag the times that fall outside of the specified station uptime window
-            if site in station_context["station_uptimes"]:
-                ind_too_early = (((t1 == site) | (t2 == site)) & (times < station_context["station_uptimes"][site][0]))
-                ind_too_late = (((t1 == site) | (t2 == site)) & (times > station_context["station_uptimes"][site][1]))
-                uptime_mask[ind_too_early] = False
-                uptime_mask[ind_too_late] = False
-
-            # indices for this site
-            ind1 = (t1 == site)
-            ind2 = (t2 == site)
-
-            # transform polarization basis if need be
-            if allow_mixed_basis:
-                if site in list(const.known_polbases.keys()):
-                    if (const.known_polbases[site] == 'linear'):
-
-                        # populate vectors of transform matrices
-                        tform_mat1 = np.zeros((ind1.sum(), 2, 2), dtype=complex)
-                        tform_mat2 = np.zeros((ind2.sum(), 2, 2), dtype=complex)
-                        tform_mat1[:] = const.circ_to_lin
-                        tform_mat2[:] = np.conj(const.circ_to_lin).T
-
-                        # populate vectors of coherency matrices
-                        coh_mat1 = np.zeros((ind1.sum(), 2, 2), dtype=complex)
-                        coh_mat1[:,0,0] = obs.data['rrvis'][ind1]
-                        coh_mat1[:,0,1] = obs.data['rlvis'][ind1]
-                        coh_mat1[:,1,0] = obs.data['lrvis'][ind1]
-                        coh_mat1[:,1,1] = obs.data['llvis'][ind1]
-                        coh_mat2 = np.zeros((ind2.sum(), 2, 2), dtype=complex)
-                        coh_mat2[:,0,0] = obs.data['rrvis'][ind2]
-                        coh_mat2[:,0,1] = obs.data['rlvis'][ind2]
-                        coh_mat2[:,1,0] = obs.data['lrvis'][ind2]
-                        coh_mat2[:,1,1] = obs.data['llvis'][ind2]
-
-                        # transform the basis
-                        coh_mat_tformed1 = np.matmul(tform_mat1,coh_mat1)
-                        coh_mat_tformed2 = np.matmul(coh_mat2,tform_mat2)
-
-                        # re-populate the data vector
-                        obs.data['rrvis'][ind1] = coh_mat_tformed1[:,0,0]
-                        obs.data['rlvis'][ind1] = coh_mat_tformed1[:,0,1]
-                        obs.data['lrvis'][ind1] = coh_mat_tformed1[:,1,0]
-                        obs.data['llvis'][ind1] = coh_mat_tformed1[:,1,1]
-                        obs.data['rrvis'][ind2] = coh_mat_tformed2[:,0,0]
-                        obs.data['rlvis'][ind2] = coh_mat_tformed2[:,0,1]
-                        obs.data['lrvis'][ind2] = coh_mat_tformed2[:,1,0]
-                        obs.data['llvis'][ind2] = coh_mat_tformed2[:,1,1]
-
-            # get opacities at each timestamp
-            if site != 'space':
-                tau1[ind1] = tau_z / np.cos((np.pi/2.0) - el1[ind1])
-                tau2[ind2] = tau_z / np.cos((np.pi/2.0) - el2[ind2])
-            else:
-                tau1[ind1] = 0.0
-                tau2[ind2] = 0.0
-
-            # get Tb contributions at each timestamp
-            Tsource = (F0*Aeff)/(2.0*const.k)
-
-            if site != 'space':
-                Tb1[ind1] = ((const.T_CMB + Tsource)*np.exp(-tau1[ind1])) + (Tatm*(1.0 - np.exp(-tau1[ind1])))
-                Tb2[ind2] = ((const.T_CMB + Tsource)*np.exp(-tau2[ind2])) + (Tatm*(1.0 - np.exp(-tau2[ind2])))
-            else:
-                Tb1[ind1] = const.T_CMB + Tsource
-                Tb2[ind2] = const.T_CMB + Tsource
-
-            # receiver, receiver temperature, and sideband separation ratio
-            band = station_context["bands"][site]
-            T_R = station_context["receiver_temperature"][site]
-            sideband_ratio = station_context["sideband_ratio"][site]
-
-            # determine system temperatures
-            Tsys1[ind1] = (T_R + (const.eta_ff*Tb1[ind1]) + ((1.0 - const.eta_ff)*Tgnd))*(1.0 + sideband_ratio)
-            Tsys2[ind2] = (T_R + (const.eta_ff*Tb2[ind2]) + ((1.0 - const.eta_ff)*Tgnd))*(1.0 + sideband_ratio)
-
-            # determine SEFDs
-            SEFD1[ind1] = (2.0*const.k*Tsys1[ind1])/Aeff
-            SEFD2[ind2] = (2.0*const.k*Tsys2[ind2])/Aeff
-
-            # modify SEFDs to account for wind
-            if flagwind:
-                SEFD_factor = windspeed_SEFD_modification(ws,
-                                                          wind_loading['v0'],
-                                                          wind_loading['w'])
-                SEFD1[ind1] *= SEFD_factor
-                SEFD2[ind2] *= SEFD_factor
-
-            # update tarr
-            sefdind = (self.arr.tarr['site'] == site)
-            sefdr_arr = np.copy(self.arr.tarr['sefdr'])
-            sefdl_arr = np.copy(self.arr.tarr['sefdl'])
-            sefdhere = np.mean(np.concatenate((SEFD1[ind1],SEFD2[ind2])))
-            sefdr_arr[sefdind] = sefdhere
-            sefdl_arr[sefdind] = sefdhere
-            self.arr.tarr['sefdr'] = sefdr_arr
-            self.arr.tarr['sefdl'] = sefdl_arr
-
-            # determine bandwidth
-            valhere = station_context["bandwidth_hz"][site]
-            if valhere is None:
-                valhere = obs.bw
-            bw1[ind1] = valhere
-            bw2[ind2] = valhere
-
-            # determine various angles relevant for feed rotations
-            mttyp = station_context["mount_type"][site]
-            fdang = station_context["feed_angle"][site]
-            f_el1[ind1] = const.mount_type_dict[mttyp]['f_el']
-            f_el2[ind2] = const.mount_type_dict[mttyp]['f_el']
-            f_par1[ind1] = const.mount_type_dict[mttyp]['f_par']
-            f_par2[ind2] = const.mount_type_dict[mttyp]['f_par']
-            phi_off1[ind1] = fdang
-            phi_off2[ind2] = fdang
-
-            # generate gains
-            if addgains:
-                for t in tuniq:
-                    ind1here = ((times == t) & (t1 == site))
-                    ind2here = ((times == t) & (t2 == site))
-                    gainamphere = 10.0**(gainamp*self.rng.normal(0.0, 1.0))
-                    gainphasehere = self.rng.uniform(-np.pi, np.pi)
-                    gainamp1R[ind1here] = gainamphere
-                    gainamp2R[ind2here] = gainamphere
-                    gainphase1R[ind1here] = gainphasehere
-                    gainphase2R[ind2here] = gainphasehere
-                    gainamp1L[ind1here] = gainamphere
-                    gainamp2L[ind2here] = gainamphere
-                    gainphase1L[ind1here] = gainphasehere
-                    gainphase2L[ind2here] = gainphasehere
-
-            # generate leakages
-            if addleakage:
-                leakRhere = (leakamp*self.rng.normal(0.0, 1.0)) + ((1.0j)*leakamp*self.rng.normal(0.0, 1.0))
-                leakLhere = (leakamp*self.rng.normal(0.0, 1.0)) + ((1.0j)*leakamp*self.rng.normal(0.0, 1.0))
-                leak1R[ind1] = leakRhere
-                leak2R[ind2] = leakRhere
-                leak1L[ind1] = leakLhere
-                leak2L[ind2] = leakLhere
-
-                # update tarr
-                if site != 'space':
-                    tarrind = (self.arr.tarr['site'] == site)
-                    dr_arr = np.copy(self.arr.tarr['dr'])
-                    dl_arr = np.copy(self.arr.tarr['dl'])
-                    dr_arr[tarrind] = leakRhere
-                    dl_arr[tarrind] = leakLhere
-                    self.arr.tarr['dr'] = dr_arr
-                    self.arr.tarr['dl'] = dl_arr
+            leak1R = station_terms["leak1R"]
+            leak2R = station_terms["leak2R"]
+            leak1L = station_terms["leak1L"]
+            leak2L = station_terms["leak2L"]
 
         # store opacities as part of the observation
         obs.data['tau1'] = tau1
