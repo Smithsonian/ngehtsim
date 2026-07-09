@@ -201,6 +201,7 @@ class obs_generator(object):
         self.obs_empty = None
         self.obs_empty_key = None
         self.obs_template_cache = {}
+        self.station_term_cache = {}
 
     ###################################################
     # initialization functions
@@ -722,6 +723,7 @@ class obs_generator(object):
             solar_angle=self.solar_angle,
             verbosity=self.verbosity,
             windspeed_sefd_modifier=windspeed_SEFD_modification,
+            cache=self.station_term_cache,
         )
 
         t1 = station_terms["t1"]

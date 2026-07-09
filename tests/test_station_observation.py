@@ -68,6 +68,52 @@ def _station_terms(obsgen, obs, F0, **kwargs):
 # tests
 
 
+def test_station_metadata_reuses_cached_geometry_terms():
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    obs, _ = _source_observation(obsgen)
+    cache = {}
+    context = obsgen.station_context()
+
+    metadata = station_observation.station_metadata(obs, context, cache=cache)
+    metadata_again = station_observation.station_metadata(obs, context, cache=cache)
+
+    assert metadata_again is metadata
+    assert len(cache) == 1
+
+
+def test_station_metadata_cache_key_changes_with_station_context():
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    obs, _ = _source_observation(obsgen)
+    cache = {}
+    context = obsgen.station_context()
+
+    metadata = station_observation.station_metadata(obs, context, cache=cache)
+
+    changed_context = dict(context)
+    changed_context["bandwidth_hz"] = dict(context["bandwidth_hz"])
+    changed_site = obsgen.sites[0]
+    if context["bandwidth_hz"][changed_site] is None:
+        changed_context["bandwidth_hz"][changed_site] = 1.0
+    else:
+        changed_context["bandwidth_hz"][changed_site] = context["bandwidth_hz"][changed_site]*2.0
+
+    changed_metadata = station_observation.station_metadata(obs, changed_context, cache=cache)
+
+    assert changed_metadata is not metadata
+    assert len(cache) == 2
+
+
+def test_station_terms_populates_metadata_cache():
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    obs, F0 = _source_observation(obsgen)
+    cache = {}
+
+    _station_terms(obsgen, obs, F0, cache=cache)
+    _station_terms(obsgen, obs, F0, cache=cache)
+
+    assert len(cache) == 1
+
+
 def test_station_terms_populates_weather_arrays_without_corruptions():
     obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
     obs, F0 = _source_observation(obsgen)

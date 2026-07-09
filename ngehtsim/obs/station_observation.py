@@ -11,10 +11,50 @@ import ngehtsim.const_def as const
 # helpers
 
 
-def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.1,
-                  addgains=True, addleakage=False, flagwind=True, flagday=False,
-                  flagsun=True, allow_mixed_basis=False, solar_angle=None,
-                  verbosity=0, windspeed_sefd_modifier=None):
+def _cache_value(value):
+    if hasattr(value, "tolist"):
+        value = value.tolist()
+    if isinstance(value, list):
+        return tuple(_cache_value(item) for item in value)
+    if isinstance(value, tuple):
+        return tuple(_cache_value(item) for item in value)
+    if isinstance(value, dict):
+        return tuple(sorted((key, _cache_value(item)) for key, item in value.items()))
+    return value
+
+
+def station_metadata_cache_key(obs, station_context):
+    sites = tuple(station_context["sites"])
+    station_key = tuple(
+        (
+            site,
+            _cache_value(station_context["bandwidth_hz"][site]),
+            _cache_value(station_context["mount_type"][site]),
+            _cache_value(station_context["feed_angle"][site]),
+            _cache_value(station_context["polarization_basis"][site]),
+        )
+        for site in sites
+    )
+
+    return (
+        _cache_value(getattr(obs, "source", None)),
+        _cache_value(getattr(obs, "ra", None)),
+        _cache_value(getattr(obs, "dec", None)),
+        _cache_value(getattr(obs, "rf", None)),
+        _cache_value(getattr(obs, "bw", None)),
+        _cache_value(getattr(obs, "mjd", None)),
+        _cache_value(obs.data["time"]),
+        _cache_value(obs.data["t1"]),
+        _cache_value(obs.data["t2"]),
+        station_key,
+    )
+
+
+def station_metadata(obs, station_context, cache=None):
+    key = station_metadata_cache_key(obs, station_context)
+    if cache is not None and key in cache:
+        return cache[key]
+
     t1 = obs.data["t1"]
     t2 = obs.data["t2"]
     sites_obs = np.unique(np.concatenate((t1, t2)))
@@ -27,14 +67,6 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
     times = obs.data["time"]
     tuniq = np.unique(times)
 
-    tau1 = np.zeros_like(el1)
-    tau2 = np.zeros_like(el2)
-    Tb1 = np.zeros_like(el1)
-    Tb2 = np.zeros_like(el2)
-    Tsys1 = np.zeros_like(el1)
-    Tsys2 = np.zeros_like(el2)
-    SEFD1 = np.zeros_like(el1)
-    SEFD2 = np.zeros_like(el2)
     bw1 = np.zeros_like(el1)
     bw2 = np.zeros_like(el2)
     f_el1 = np.zeros_like(el1)
@@ -43,6 +75,84 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
     f_par2 = np.zeros_like(el2)
     phi_off1 = np.zeros_like(el1)
     phi_off2 = np.zeros_like(el2)
+    site_masks = {}
+
+    for site in sites_obs:
+        ind1 = (t1 == site)
+        ind2 = (t2 == site)
+        site_masks[site] = (ind1, ind2)
+
+        valhere = station_context["bandwidth_hz"][site]
+        if valhere is None:
+            valhere = obs.bw
+        bw1[ind1] = valhere
+        bw2[ind2] = valhere
+
+        mttyp = station_context["mount_type"][site]
+        fdang = station_context["feed_angle"][site]
+        f_el1[ind1] = const.mount_type_dict[mttyp]["f_el"]
+        f_el2[ind2] = const.mount_type_dict[mttyp]["f_el"]
+        f_par1[ind1] = const.mount_type_dict[mttyp]["f_par"]
+        f_par2[ind2] = const.mount_type_dict[mttyp]["f_par"]
+        phi_off1[ind1] = fdang
+        phi_off2[ind2] = fdang
+
+    metadata = {
+        "sites_obs": sites_obs,
+        "site_masks": site_masks,
+        "el1": el1,
+        "el2": el2,
+        "par1": par1,
+        "par2": par2,
+        "tuniq": tuniq,
+        "bw1": bw1,
+        "bw2": bw2,
+        "f_el1": f_el1,
+        "f_el2": f_el2,
+        "f_par1": f_par1,
+        "f_par2": f_par2,
+        "phi_off1": phi_off1,
+        "phi_off2": phi_off2,
+    }
+
+    if cache is not None:
+        cache[key] = metadata
+
+    return metadata
+
+
+def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.1,
+                  addgains=True, addleakage=False, flagwind=True, flagday=False,
+                  flagsun=True, allow_mixed_basis=False, solar_angle=None,
+                  verbosity=0, windspeed_sefd_modifier=None, cache=None):
+    t1 = obs.data["t1"]
+    t2 = obs.data["t2"]
+    times = obs.data["time"]
+    metadata = station_metadata(obs, station_context, cache=cache)
+    sites_obs = metadata["sites_obs"]
+    site_masks = metadata["site_masks"]
+    el1 = metadata["el1"]
+    el2 = metadata["el2"]
+    par1 = metadata["par1"]
+    par2 = metadata["par2"]
+    tuniq = metadata["tuniq"]
+
+    tau1 = np.zeros_like(el1)
+    tau2 = np.zeros_like(el2)
+    Tb1 = np.zeros_like(el1)
+    Tb2 = np.zeros_like(el2)
+    Tsys1 = np.zeros_like(el1)
+    Tsys2 = np.zeros_like(el2)
+    SEFD1 = np.zeros_like(el1)
+    SEFD2 = np.zeros_like(el2)
+    bw1 = metadata["bw1"]
+    bw2 = metadata["bw2"]
+    f_el1 = metadata["f_el1"]
+    f_el2 = metadata["f_el2"]
+    f_par1 = metadata["f_par1"]
+    f_par2 = metadata["f_par2"]
+    phi_off1 = metadata["phi_off1"]
+    phi_off2 = metadata["phi_off2"]
 
     if addgains:
         gainamp1R = np.zeros_like(el1)
@@ -103,8 +213,7 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
             uptime_mask[ind_too_early] = False
             uptime_mask[ind_too_late] = False
 
-        ind1 = (t1 == site)
-        ind2 = (t2 == site)
+        ind1, ind2 = site_masks[site]
 
         if allow_mixed_basis:
             if station_context["polarization_basis"][site] == "linear":
@@ -174,21 +283,6 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
         sefdl_arr[sefdind] = sefdhere
         array.tarr["sefdr"] = sefdr_arr
         array.tarr["sefdl"] = sefdl_arr
-
-        valhere = station_context["bandwidth_hz"][site]
-        if valhere is None:
-            valhere = obs.bw
-        bw1[ind1] = valhere
-        bw2[ind2] = valhere
-
-        mttyp = station_context["mount_type"][site]
-        fdang = station_context["feed_angle"][site]
-        f_el1[ind1] = const.mount_type_dict[mttyp]["f_el"]
-        f_el2[ind2] = const.mount_type_dict[mttyp]["f_el"]
-        f_par1[ind1] = const.mount_type_dict[mttyp]["f_par"]
-        f_par2[ind2] = const.mount_type_dict[mttyp]["f_par"]
-        phi_off1[ind1] = fdang
-        phi_off2[ind2] = fdang
 
         if addgains:
             for t in tuniq:
