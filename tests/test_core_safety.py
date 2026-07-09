@@ -6,6 +6,7 @@ import pytest
 import ehtim as eh
 import ngehtsim.calibration.calibration as nc
 import ngehtsim.obs.obs_generator as og
+import ngehtsim.obs.source_models as source_models
 
 #######################################################
 # helpers
@@ -92,7 +93,7 @@ def test_observe_elevation_cuts_do_not_mutate_cached_empty_observation():
 
 
 def test_unsupported_model_raises_type_error_when_ngEHTforecast_is_missing(monkeypatch):
-    monkeypatch.setattr(og, "fp", None)
+    monkeypatch.setattr(source_models, "fp", None)
 
     obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
 

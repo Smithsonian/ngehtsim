@@ -15,14 +15,9 @@ import os
 import copy
 import warnings
 
-try:
-    import ngEHTforecast.fisher as fp
-except ImportError:
-    fp = None
-    print('Warning: ngEHTforecast not installed! Cannot use FisherForecast functionality.')
-
 import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
+import ngehtsim.obs.source_models as source_models
 
 ###################################################
 # helpers
@@ -640,67 +635,17 @@ class obs_generator(object):
         obs_empty.data = obs_empty.data[mask]
 
         # observe the source
-        if isinstance(input_model, eh.image.Image):
-            input_model.ra = self.RA
-            input_model.dec = self.DEC
-            input_model.mjd = self.mjd
-            input_model.source = self.settings['source']
-            input_model.rf = self.freq
-            if self.verbosity <= 0:
-                with eh.parloop.HiddenPrints():
-                    obs = input_model.observe_same_nonoise(obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
-            else:
-                obs = input_model.observe_same_nonoise(obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
-            F0 = input_model.total_flux()
-        elif isinstance(input_model, eh.movie.Movie):
-            input_model.ra = self.RA
-            input_model.dec = self.DEC
-            input_model.mjd = self.mjd
-            input_model.source = self.settings['source']
-            input_model.rf = self.freq
-            if self.verbosity <= 0:
-                with eh.parloop.HiddenPrints():
-                    obs = input_model.observe_same_nonoise(obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'], repeat=True)
-            else:
-                obs = input_model.observe_same_nonoise(obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'], repeat=True)
-            F0 = np.mean(input_model.lightcurve)
-        elif isinstance(input_model, eh.model.Model):
-            input_model.ra = self.RA
-            input_model.dec = self.DEC
-            input_model.mjd = self.mjd
-            input_model.source = self.settings['source']
-            input_model.rf = self.freq
-            if self.verbosity <= 0:
-                with eh.parloop.HiddenPrints():
-                    obs = input_model.observe_same_nonoise(obs_empty)
-            else:
-                obs = input_model.observe_same_nonoise(obs_empty)
-            F0 = np.abs(input_model.sample_uv(0.0, 0.0))
-        elif (fp is not None) and isinstance(input_model, fp.FisherForecast):
-            if p is None:
-                raise Exception('When observing an ngEHTforecast model, the parameter vector keyword argument p must be specified!')
-            obs = obs_empty.copy()
-            obs.source = self.settings['source']
-            if (input_model.stokes == 'I'):
-                Ivis = input_model.visibilities(obs, p, verbosity=self.verbosity)
-                obs = obs.switch_polrep(polrep_out='stokes')
-                obs.data['vis'] = Ivis
-                obs = obs.switch_polrep(polrep_out='circ')
-            else:
-                obs = obs.switch_polrep(polrep_out='circ')
-                RRvis, LLvis, RLvis, LRvis = input_model.visibilities(obs, p, verbosity=self.verbosity)
-                obs.data['rrvis'] = RRvis
-                obs.data['llvis'] = LLvis
-                obs.data['rlvis'] = RLvis
-                obs.data['lrvis'] = LRvis
-            dumobs = obs_empty.copy()
-            dumdatatable = dumobs.data[0]
-            dumdatatable['u'] = 0.0
-            dumdatatable['v'] = 0.0
-            dumobs.data = dumdatatable
-            F0 = np.abs(input_model.visibilities(dumobs, p))
-        else:
-            raise TypeError('input_model must be an ehtim Image, Movie, Model, or ngEHTforecast FisherForecast object.')
+        source_context = {
+            "ra": self.RA,
+            "dec": self.DEC,
+            "mjd": self.mjd,
+            "source": self.settings["source"],
+            "rf": self.freq,
+            "ttype": self.settings["ttype"],
+            "fft_pad_factor": self.settings["fft_pad_factor"],
+            "verbosity": self.verbosity,
+        }
+        obs, F0 = source_models.observe_source(input_model, obs_empty, source_context, p=p)
 
         # extract relevant information
         t1 = obs.data['t1']
