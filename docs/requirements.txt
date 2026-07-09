@@ -1,0 +1,10 @@
+astropy>=5.2.2
+ehtim>=1.2.7
+matplotlib>=3.7.4
+numpy>=1.23.1,<2.0.0
+pandas<2.0.0; python_version < "3.12"
+pandas>=2.2.2; python_version >= "3.12"
+PyYAML>=6.0
+scipy>=1.10.1
+sphinx>=7
+sphinx-rtd-theme>=2

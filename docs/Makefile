@@ -7,7 +7,7 @@ SPHINXOPTS    ?=
 SPHINXBUILD   ?= sphinx-build
 SPHINXPROJ    = ngehtsim
 SOURCEDIR     = ../
-BUILDDIR      = ../../ngehtsim_docs/ngeht-sims
+BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
 help:
@@ -21,4 +21,4 @@ help:
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 htmlpush: html
-	touch .docdate; cd $(BUILDDIR); git add . ; git commit -m "rebuilt docs"; git push origin gh-pages
+	@echo "Documentation deployment is handled by GitHub Actions."
