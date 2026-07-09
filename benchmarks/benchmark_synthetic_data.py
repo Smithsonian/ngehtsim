@@ -152,11 +152,15 @@ def run_fresh_iteration(scenario):
     }
 
 
-def run_reused_generator_iterations(scenario, repeats):
+def run_reused_generator_iterations(scenario, repeats, warmups=0):
     t0 = time.perf_counter()
     obsgen = og.obs_generator(settings=dict(scenario["settings"]))
     t1 = time.perf_counter()
     obsgen_init_seconds = t1 - t0
+
+    for _ in range(warmups):
+        input_model = make_source(scenario["input_kind"])
+        obsgen.make_obs(input_model, **scenario["make_obs_kwargs"])
 
     results = []
     for index in range(repeats):
@@ -179,9 +183,7 @@ def run_scenario(scenario, repeats, warmups):
     print("Running {0}...".format(scenario["name"]), flush=True)
 
     if scenario["reuse_generator"]:
-        if warmups > 0:
-            run_reused_generator_iterations(scenario, warmups)
-        raw_results = run_reused_generator_iterations(scenario, repeats)
+        raw_results = run_reused_generator_iterations(scenario, repeats, warmups=warmups)
     else:
         for _ in range(warmups):
             run_fresh_iteration(scenario)
