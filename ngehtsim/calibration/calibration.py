@@ -53,7 +53,7 @@ def argunique(array):
 
 
 def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
-               SNR_cut=0.0,station_codes={},return_coords=False,
+               SNR_cut=0.0,station_codes=None,return_coords=False,
                weather='exact',random_seed=None,**kwargs):
     """
     Read an alist data file and carry out a priori flux density calibration.
@@ -76,6 +76,10 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
 
     ############################################
     # check inputs
+
+    # initialize station codes
+    if station_codes is None:
+        station_codes = {}
     
     # update the station codes if needed
     station_dict = copy.deepcopy(known_station_dict)
@@ -364,7 +368,7 @@ def apriorical(filename,sourcename,bandwidth,debias=True,remove_autocorr=True,
 
 
 def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocorr=True,
-                SNR_cut=0.0,station_codes={},weather='exact',random_seed=None,**kwargs):
+                SNR_cut=0.0,station_codes=None,weather='exact',random_seed=None,**kwargs):
     """
     Write a "dlist" data file from an "alist" file.
 
@@ -386,6 +390,10 @@ def write_dlist(filename,sourcename,bandwidth,outname,debias=True,remove_autocor
 
     ############################################
     # check inputs
+
+    # initialize station codes
+    if station_codes is None:
+        station_codes = {}
 
     # update the station codes if needed
     station_dict = copy.deepcopy(known_station_dict)
