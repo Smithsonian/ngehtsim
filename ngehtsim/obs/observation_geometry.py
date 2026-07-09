@@ -92,7 +92,30 @@ def apply_elevation_limits(obs_empty, el_min, el_max):
 # public interface
 
 
-def observation_template(obs_empty, cached_key, array, context, el_min, el_max):
+def elevation_cache_key(cached_key, el_min, el_max):
+    return cached_key, _cache_value(el_min), _cache_value(el_max)
+
+
+def cached_elevation_template(obs_empty, template_cache, cached_key, el_min, el_max):
+    key = elevation_cache_key(cached_key, el_min, el_max)
+    if key not in template_cache:
+        template_cache[key] = apply_elevation_limits(obs_empty, el_min, el_max)
+    return template_cache[key]
+
+
+def observation_template(obs_empty, cached_key, template_cache, array, context, el_min, el_max):
+    old_key = cached_key
     obs_empty, cached_key = ensure_empty_observation(obs_empty, cached_key, array, context)
-    obs_limited = apply_elevation_limits(obs_empty, el_min, el_max)
-    return obs_empty, cached_key, obs_limited
+
+    if template_cache is None or cached_key != old_key:
+        template_cache = {}
+
+    obs_limited = cached_elevation_template(
+        obs_empty,
+        template_cache,
+        cached_key,
+        el_min,
+        el_max,
+    )
+
+    return obs_empty, cached_key, template_cache, obs_limited.copy()

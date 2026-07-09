@@ -199,6 +199,7 @@ class obs_generator(object):
 
         self.obs_empty = None
         self.obs_empty_key = None
+        self.obs_template_cache = {}
 
     ###################################################
     # initialization functions
@@ -640,9 +641,10 @@ class obs_generator(object):
             print('WARNING: data generated in a non-circular polarization basis does not have properly-stored metadata info.')
 
         # generate and elevation-limit an empty observation template
-        self.obs_empty, self.obs_empty_key, obs_empty = observation_geometry.observation_template(
+        self.obs_empty, self.obs_empty_key, self.obs_template_cache, obs_empty = observation_geometry.observation_template(
             self.obs_empty,
             self.obs_empty_key,
+            self.obs_template_cache,
             self.arr,
             self.geometry_context(),
             el_min=el_min,
