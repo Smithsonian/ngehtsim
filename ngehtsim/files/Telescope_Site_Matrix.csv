@@ -10,17 +10,21 @@ NOEMA,PB,France,44.63366,5.90669,2554,Northern Extended Millimeter Array,50,35,3
 SMA,SM,US,19.8241,-155.47823,4075,Submillimeter Array,15,20,25,circular,ALT-AZ+NASMYTH-L,45,
 SMT,AZ,US,32.7016,-109.8913,3173,Submillimeter Telescope,10,15,45,circular,ALT-AZ+NASMYTH-R,0,
 SPT,SP,Antarctica,-90,45,2820,South Pole Telescope,10,25,,circular,ALT-AZ,0,
+AGGO,AG,Argentina,-34.8739,-58.51398,36,Argentine-German Geodetic Observatory,6,100,,linear,,,
 ALI,AL,China,32.305711,80.045628,5405,summit of a minor peak at the top of a trail located in Gar County Tibet,,,,,,,
+ARE,AR,Puerto Rico,18.3442,-66.752703,242,Arecibo Observatory radio telescope (decommissioned),305,3000,,linear,,,
 ATCA,AT,Australia,-30.312912,149.56445,212,Australia Telescope Compact Array,54,200,40,circular,ALT-AZ,0,
 BAJA,BA,Mexico,31.043898,-115.463636,2802,National Astronomical Observatory of Mexico in San Pedro Martir,,,,,,,SPM
 BAN,BN,Canada,51.350366,-116.206317,3473,summit of Mount Temple in Banff,,,,,,,
 BAR,BR,US,37.633996,-118.255716,4342,White Mountain Research Station summit observatory near Mount Barcroft,,,,,,,
+BDRY,BD,Russia,51.76935,102.23555,835,Badary VGOS 13m station,13,200,,linear,,,
 BGA,BG,Bulgaria,41.695234,24.738929,1732,Rozhen National Astronomical Observatory,,,,,,,
 BGK,BK,Iceland,66.032485,-23.05252,827,minor ridge near Sudavik in Westfjords,,,,,,,
 BLDR,BL,US,39.58838,-105.6434,4337,summit of Mount Evans,,,,,,,
 BMAC,BM,South Africa,-30.648081,27.935199,3000,summit of Ben Macdhui,,,,,,,
 BOL,BO,Bolivia,-16.35075,-68.1314,5227,near the summit of Chacaltaya mountain,,,,,,,
 BRZ,BZ,Brazil,-20.438965,-41.798766,2847,Pico da Bandeira,,,,,,,
+CAM,CM,England,52.166939,0.037154,21,Mullard Radio Astronomy Observatory VLBI dish,32,640,,circular,,,
 CAS,CS,Argentina,-54.790173,-68.415421,1295,minor summit in the Martial Glacier mountain range near Ushuaia,,,,,,,
 CAT,CA,Argentina,-41.169754,-71.486301,2097,summit of Cerro Catedral,,,,,,,
 CNI,CI,Canary Islands,28.299309,-16.508709,2364,Teide Astronomical Observatory in the Canary Islands,,,,,,,TEA
@@ -41,20 +45,26 @@ GGAO,GG,US,39.02202151,-76.82730398,19,GGAO VGOS station,12,100,,linear,ALT-AZ,0
 GLTS,GS,Greenland,72.579967,-38.449163,3229,summit of the Greenland ice sheet,,,,,,,GLT-S
 GOR,GO,Switzerland,45.983333,7.784793,3128,Gornergrat observation platform,,,,,,,
 HAN,HN,India,32.779767,78.963318,4496,Indian Astronomical Observatory near the Hanle River,,,,,,,
+HART,HH,South Africa,-25.889736,27.684296,1379,Hartebeesthoek Radio Astronomy Observatory VGOS antenna,13.2,190,,linear,,,
 HAY,HA,US,42.623943,-71.488769,114,Haystack Observatory,37,85,,circular,ALT-AZ,0,
 HESS,HE,Namibia,-23.27154,16.5002,1900,HESS site  considered for the Africa Millimeter Telescope,15,25,,circular,ALT-AZ,0,AMT
 HIT,HT,Japan,36.69744,140.69211,120,Hitachi dish of the EAVN,32,1600,,circular,ALT-AZ,0,HIT32
 HOB,HB,Australia,-42.80556702,147.4381427,41,Hobart VGOS dish in Tasmania,12,100,,linear,ALT-AZ,0,HOBART12
 HOR,HR,Tanzania,-3.139078,37.438599,3726,The Horombo Hut site on Kilimanjaro,,,,,,,
+IRB,IB,Latvia,57.55321,21.854877,19,Ventspils International Radioastronomy Center,32,300,,circular,,,
 IRK,IR,Japan,31.74789,130.43989,574,Iriki dish of VERA,20,500,,circular,ALT-AZ,0,
 ISG,IS,Japan,24.412167,124.171,65,Ishigakijima dish of VERA,20,500,,circular,ALT-AZ,0,
 ISH,IH,Japan,36.20918915,140.2189587,164,Ishioka VGOS dish,13.2,100,,linear,ALT-AZ,0,ISHIOKA
+JARE,SY,Antarctica,-69.005723,39.585435,29,Syowa Station VGOS dish of the Japanese Antarctic Research Expedition,11,100,,linear,,,
 JELM,JE,US,41.096991,-105.976692,2943,the summit of Jelm Mountain in Wyoming,,,,,,,
 JELM2,J2,US,41.08418,-105.98643,2751,farther down Jelm Mountain in Wyoming,,,,,,,
+JOD,JB,England,53.236477,-2.308722,90,Lovell Telescope at Jodrell Bank,76.2,1500,,circular,,,
+KASH,KB,Japan,35.9559,140.6601,28,Kashima 34m radio telescope (decommissioned),34,170,,linear,,,
 KATH,KE,Australia,-14.37545703,132.1523771,189,Katherine VGOS dish in Cossack,12,100,,linear,ALT-AZ,0,KATH12M
 KEN,KN,Kenya,-0.141467,37.314792,4260,Shiptons mountain hut on Mount Kenya,,,,,,,
 KILI,KI,Tanzania,-3.088055,37.405676,4433,the saddle region between Kibo and Mawenzi peaks of Mount Kilimanjaro,,,,,,,
-KNM,KM,China,25.028,102.796,1974,Kunming dish of the EAVN,26,500,,circular,ALT-AZ,0,KMRT40
+KNM,KM,China,25.028,102.796,1974,Kunming dish of the EAVN,40,500,,circular,ALT-AZ,0,KMRT40
+KOG,KG,Japan,35.710554,139.48809,125,Koganei VLBI station (decommissioned),11,100,,linear,,,
 KOKEE,K2,US,22.12644472,-159.6649188,1169,Kokee Park VGOS dish in Hawaii,12,100,,linear,ALT-AZ,0,KOKEE12M
 KVNPC,KC,Korea,37.534119,128.449676,504,Korean VLBI Network Pyeongchang,21,70,,circular,ALT-AZ,0,
 KVNTN,KT,Korea,33.289021,126.459573,411,Korean VLBI Network Tamna,21,70,,circular,ALT-AZ,0,
@@ -64,14 +74,17 @@ LAS,LA,Chile,-29.031711,-70.685063,2321,Las Campanas Observatory,,,,,,,LCO
 LLA,LL,Argentina,-24.192081,-66.474786,4781,Large Latin American Millimeter Array,12,25,,circular,ALT-AZ,0,
 LOS,LO,US,35.880473,-106.675016,2000,site of a shuttered gamma-ray observatory,,,,,,,
 MACGO,MG,US,30.68031655,-104.0237118,1891,McDonald VGOS dish in Fort Davis,12,100,,linear,ALT-AZ,0,MACGO12M
-MATJ,MA,South Africa,-33.266,20.582,1340,Matjiesfontein,,,,,,,
+MAT,MA,Italy,40.649514,16.703986,537,Matera CGS VLBI station,20,170,,linear,,,
+MATJ,MJ,South Africa,-33.266,20.582,1340,Matjiesfontein,,,,,,,
+MED,MC,Italy,44.520513,11.646938,25,Medicina Gavril Grueff Radio Telescope,32,1500,,linear,,,
 MET,MH,Finland,60.2178,24.39307,52,Metsähovi Radio Observatory,13.7,100,5,circular,ALT-AZ,0,
 MIZ,MZ,Japan,39.133528,141.132583,117,Mizusawa dish of VERA,20,500,,circular,ALT-AZ,0,
 MOR,MR,Morocco,31.206771,-7.866164,2743,Cadi Ayyad University Space Science and Research Center near Marrakesh,,,,,,,
 MUZ,MZ,China,38.330119,74.896783,4527,Muztag; developed summit of a minor peak located in Akto County China,,,,,,,
-NAN,NS,China,43.471,87.17789,2029,Nanshan dish of the EAVN,26,400,,circular,ALT-AZ,0,NSRT26
+NAN,NS,China,43.471,87.17789,2029,Nanshan dish of the EAVN in Urumqi,26,400,,circular,ALT-AZ,0,NSRT26
 NOB,NB,Japan,35.944476,138.47246,1370,Nobeyama Radio Observatory,45,100,,circular,ALT-AZ,0,
 NOR,NR,Japan,35.467583,136.737082,17,Gifu Observatory 11-meter radio dish,11,,,,,,
+NOTO,NT,Sicily,36.87605,14.989031,30,Noto Radio Telescope operated by INAF,32,400,,linear,,,
 NYALE,NY,Norway,78.94337333,11.85476064,54,Ny-Alesund VGOS dish in Svalbard,13.2,100,,linear,ALT-AZ,0,NYALE13N
 NZ,NZ,New Zealand,-43.986753,170.465097,1012,University of Canterbury Mount John Observatory,,,,,,,
 OGA,OG,Japan,27.09181,142.21661,273,Ogasawara dish of VERA,20,500,,circular,ALT-AZ,0,
@@ -82,18 +95,27 @@ ORG,OR,US,42.635413,-118.576287,2971,summit of Steens Mountain,,,,,,,
 OVRO,OV,US,37.231409,-118.282436,1207,Owens Valley Radio Observatory,10.4,40,,circular,ALT-AZ,0,
 PAR,PR,Chile,-24.628155,-70.404142,2638,Paranal Observatory,,,,,,,
 PIKE,PK,US,38.840837,-105.041792,4284,Pikes Peak,,,,,,,PIKES
+PRKS,PA,Australia,-32.998328,148.263623,415,Parkes Observatory,64,1500,,linear,,,
+ROEN,FT,Brazil,-3.877487,-38.426339,28,Fortaleza Geodetic Observatory aka Radio Observatorio Espacial do Nordeste,12,100,,lienar,,,
 ROT,RT,Armenia,40.352974,44.239865,1739,site of the inactive ROT54 radio telescope,,,,,,,
 SAN,SN,US,34.099287,-116.824632,3502,summit of San Gorgonio mountain,,,,,,,
+SEJ,KV,South Korea,36.520991,127.302913,146,Sejong VLBI station,22,100,,linear,,,
 SGO,SG,Chile,-33.346151,-70.269859,3345,Cima Tres Puntas mountain peak,,,,,,,
 SHE,SH,China,31.099167,121.199667,29,Sheshan dish of the EAVN,25,650,,circular,ALT-AZ,0,SHRT25
+SIM,SZ,Ukraine,44.397533,33.979593,15,Simeiz Observatory radio telescope (not operational),22,250,,linear,,,
 SKS,SK,Greece,35.211771,24.898374,1743,Skinakas Observatory,,,,,,,
 SMAR,SA,Portugal,36.98528526,-25.12589335,302,Santa Maria VGOS dish,13.2,100,,linear,ALT-AZ,0,RAEGSMAR
 SPX,SX,Switzerland,46.54759,7.98526,3505,Sphinx Observatory,,,,,,,
+SRT,SR,Sardinia,39.493004,9.245102,590,Sardinia Radio Telescope,64,150,,circular,,,
 STL,SL,South Africa,-32.378,20.813,1800,site of the South African Astronomical Observatory in Sutherland,,,,,,,
 SUF,SF,Uzbekistan,39.62321,68.467537,2437,site of an unfinished Suffa RT-70 Soviet radio dish,,,,,,,
+SVET,SV,Russia,60.5343,29.7795,39,Svetloe VGOS 13m station,13,200,,linear,,,
 TAK,TK,Japan,36.69847,140.69472,117,Takahagi dish of the EAVN,32,1600,,circular,ALT-AZ,0,TAK32
 TNMA,TN,China,31.09211,121.135944,49,Tianma dish of the EAVN,65,300,,circular,ALT-AZ,0,TMRT65
+TOR,TO,Poland,53.095422,18.5642,83,Toruń Radio Observatory,32,350,,circular,,,
 TRL,TR,Antarctica,-72.010456,2.536986,1275,site of the Norwegian research station Troll,,,,,,,
+TSU,TS,Japan,36.1031,140.0887,27,Tsukuba VLBI station (decommissioned),34,500,,linear,,,
+UDSC,UD,Japan,36.1324037,138.3627739,1459,Usuda Deep Space Center,64,70,,circular,,,
 VLA,VL,US,34.079048,-107.618354,2123,Very Large Array,130,420,3,circular,ALT-AZ,0,SOC
 VLBBR,VB,US,48.1312,-119.68327,257,VLBA dish at Brewster in Washington,25,320,5,circular,ALT-AZ,0,
 VLBFD,VF,US,30.63499,-103.94485,1614,VLBA dish at Fort Davis in Texas,25,320,5,circular,ALT-AZ,0,
@@ -105,12 +127,16 @@ VLBNL,VN,US,41.77148,-91.57422,241,VLBA dish at North Liberty in Iowa,25,320,5,c
 VLBOV,VO,US,37.231652,-118.277053,1208,VLBA dish at Owens Valley in California,25,320,5,circular,ALT-AZ,0,
 VLBPT,VP,US,34.301002,-108.119211,2373,VLBA dish at Pie Town in New Mexico,25,320,5,circular,ALT-AZ,0,
 VLBSC,VS,US,17.75652,-64.58376,13,VLBA dish at St. Croix in the Virgin Islands,25,320,5,circular,ALT-AZ,0,
+WARK,WW,New Zealand,-36.431784,174.668153,71,Warkworth Space Center,12.1,350,,linear,,,
 WEST,WF,US,42.61294938,-71.49379868,87,Westford VGOS dish,18,100,,linear,ALT-AZ,0,WESTFORD
 WETTZ,WS,Germany,49.14341883,12.87828553,673,Wettzell VGOS dish,13.2,100,,linear,ALT-AZ,0,WETTZ13S
+WSRT,WB,Netherlands,52.915065,6.603337,19,Westerbork Synthesis Radio Telescope,93.5,2500,,linear,,,
 XSMC,XS,China,37.971837,96.58383,4807,undeveloped plateau in Qinghai province Tibet,,,,,,,
 YAM,YM,Japan,34.216028,131.55708,133,Yamaguchi dish of the EAVN,32,1600,,circular,ALT-AZ,0,YAM32
 YAN,YA,Peru,-13.938431,-74.391871,4232,site of the Future Infrared and Submillimeter Astronomical Observatory of Peru,,,,,,,
+YAR,YG,Australia,-29.047121,115.345629,244,Yarragadee Geodetic Observatory operated by University of Tasmania,12,100,,linear,,,
 YBJ,YJ,China,30.104812,90.525583,4316,small developed town in Damxung County Tibet,,,,,,,YBG
 YEB,YS,Spain,40.523472,-3.088497,917,Yebes Observatory RT40m,40,150,5,circular,ALT-AZ,0,
 YEBRG,YB,Spain,40.52347605,-3.088524547,977,Yebes Observatory VGOS dish,13.2,100,,linear,ALT-AZ,0,RAEGYEB
+ZELE,ZC,Russia,43.7882,41.5637,1131,Zelenchukskaya VGOS 13m station,13,200,,linear,,,
 ZUG,ZG,Germany,47.416686,10.979614,2680,Schneefernerhaus research station on Zugspitze,,,,,,,
