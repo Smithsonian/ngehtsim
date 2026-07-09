@@ -9,6 +9,7 @@ __pycache__/
 .tox/
 .coverage*
 coverage.json
+docs/_build/
 htmlcov/
 build/
 dist/
