@@ -13,3 +13,4 @@ tests/data_generation/*.png
 tests/data_generation_flagging/*.png
 tests/data_generation_flagging/*.uvfits
 tests/weather_plots/
+.DS_Store
