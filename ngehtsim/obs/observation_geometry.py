@@ -1,9 +1,45 @@
 ###################################################
+# cache key construction
+
+GEOMETRY_CACHE_FIELDS = (
+    "sites",
+    "ra",
+    "dec",
+    "rf",
+    "bandwidth_hz",
+    "t_int",
+    "t_rest",
+    "t_start",
+    "t_stop",
+    "mjd",
+)
+
+
+def _cache_value(value):
+    if hasattr(value, "tolist"):
+        value = value.tolist()
+
+    if isinstance(value, list):
+        return tuple(_cache_value(item) for item in value)
+
+    if isinstance(value, tuple):
+        return tuple(_cache_value(item) for item in value)
+
+    if isinstance(value, dict):
+        return tuple(sorted((key, _cache_value(item)) for key, item in value.items()))
+
+    return value
+
+
+def geometry_cache_key(context):
+    return tuple((field, _cache_value(context[field])) for field in GEOMETRY_CACHE_FIELDS)
+
+###################################################
 # empty observation construction
 
 
-def needs_new_empty_observation(obs_empty, rf):
-    return (obs_empty is None) or (obs_empty.rf != rf)
+def needs_new_empty_observation(obs_empty, cached_key, context):
+    return (obs_empty is None) or (cached_key != geometry_cache_key(context))
 
 
 def make_empty_observation(array, context):
@@ -26,10 +62,13 @@ def make_empty_observation(array, context):
     )
 
 
-def ensure_empty_observation(obs_empty, array, context):
-    if needs_new_empty_observation(obs_empty, context["rf"]):
-        return make_empty_observation(array, context)
-    return obs_empty
+def ensure_empty_observation(obs_empty, cached_key, array, context):
+    new_key = geometry_cache_key(context)
+
+    if needs_new_empty_observation(obs_empty, cached_key, context):
+        return make_empty_observation(array, context), new_key
+
+    return obs_empty, cached_key
 
 ###################################################
 # elevation limits
@@ -53,7 +92,7 @@ def apply_elevation_limits(obs_empty, el_min, el_max):
 # public interface
 
 
-def observation_template(obs_empty, array, context, el_min, el_max):
-    obs_empty = ensure_empty_observation(obs_empty, array, context)
+def observation_template(obs_empty, cached_key, array, context, el_min, el_max):
+    obs_empty, cached_key = ensure_empty_observation(obs_empty, cached_key, array, context)
     obs_limited = apply_elevation_limits(obs_empty, el_min, el_max)
-    return obs_empty, obs_limited
+    return obs_empty, cached_key, obs_limited
