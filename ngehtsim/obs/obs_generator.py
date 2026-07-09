@@ -18,6 +18,7 @@ import warnings
 import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
 import ngehtsim.obs.source_models as source_models
+import ngehtsim.obs.observation_geometry as observation_geometry
 
 ###################################################
 # helpers
@@ -609,30 +610,25 @@ class obs_generator(object):
         if allow_mixed_basis:
             print('WARNING: data generated in a non-circular polarization basis does not have properly-stored metadata info.')
 
-        # generate an empty obsdata object
-        if ((self.obs_empty is None) or (self.obs_empty.rf != self.freq)):
-            self.obs_empty = self.arr.obsdata(self.RA,
-                                              self.DEC,
-                                              self.freq,
-                                              (1.0e9)*float(self.settings['bandwidth']),
-                                              self.settings['t_int'],
-                                              self.settings['t_rest'],
-                                              self.settings['t_start'],
-                                              self.settings['t_start'] + self.settings['dt'],
-                                              mjd=self.mjd,
-                                              polrep='circ',
-                                              tau=0.0,
-                                              timetype='UTC',
-                                              elevmin=-90,
-                                              elevmax=90,
-                                              fix_theta_GMST=False)
-
-        # apply elevation cuts to ground stations
-        els = self.obs_empty.unpack(['el1', 'el2'])
-        mask = (self.obs_empty.data['t1'] == 'space') | ((els['el1'] > el_min) & (els['el1'] < el_max))
-        mask &= (self.obs_empty.data['t2'] == 'space') | ((els['el2'] > el_min) & (els['el2'] < el_max))
-        obs_empty = self.obs_empty.copy()
-        obs_empty.data = obs_empty.data[mask]
+        # generate and elevation-limit an empty observation template
+        geometry_context = {
+            "ra": self.RA,
+            "dec": self.DEC,
+            "rf": self.freq,
+            "bandwidth_hz": (1.0e9)*float(self.settings["bandwidth"]),
+            "t_int": self.settings["t_int"],
+            "t_rest": self.settings["t_rest"],
+            "t_start": self.settings["t_start"],
+            "t_stop": self.settings["t_start"] + self.settings["dt"],
+            "mjd": self.mjd,
+        }
+        self.obs_empty, obs_empty = observation_geometry.observation_template(
+            self.obs_empty,
+            self.arr,
+            geometry_context,
+            el_min=el_min,
+            el_max=el_max,
+        )
 
         # observe the source
         source_context = {
