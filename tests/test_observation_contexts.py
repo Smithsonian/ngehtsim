@@ -26,6 +26,7 @@ def test_geometry_context_contains_observation_template_inputs():
 
     context = obsgen.geometry_context()
 
+    assert context["sites"] == tuple(obsgen.sites)
     assert context["ra"] == obsgen.RA
     assert context["dec"] == obsgen.DEC
     assert context["rf"] == obsgen.freq

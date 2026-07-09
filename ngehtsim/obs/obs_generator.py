@@ -198,6 +198,7 @@ class obs_generator(object):
         # other settings
 
         self.obs_empty = None
+        self.obs_empty_key = None
 
     ###################################################
     # initialization functions
@@ -577,6 +578,7 @@ class obs_generator(object):
     # build context for empty observation construction
     def geometry_context(self):
         return {
+            "sites": tuple(self.sites),
             "ra": self.RA,
             "dec": self.DEC,
             "rf": self.freq,
@@ -638,8 +640,9 @@ class obs_generator(object):
             print('WARNING: data generated in a non-circular polarization basis does not have properly-stored metadata info.')
 
         # generate and elevation-limit an empty observation template
-        self.obs_empty, obs_empty = observation_geometry.observation_template(
+        self.obs_empty, self.obs_empty_key, obs_empty = observation_geometry.observation_template(
             self.obs_empty,
+            self.obs_empty_key,
             self.arr,
             self.geometry_context(),
             el_min=el_min,
