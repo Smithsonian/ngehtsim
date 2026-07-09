@@ -607,6 +607,55 @@ class obs_generator(object):
     ###################################################
     # functions for generating observations
 
+    # build context for station/weather/noise calculations
+    def station_context(self):
+        receiver_temperature = {}
+        sideband_ratio = {}
+        bandwidth_hz = {}
+        effective_area = {}
+        mount_type = {}
+        feed_angle = {}
+        polarization_basis = {}
+
+        for site in self.sites:
+            band = self.bands[site]
+
+            if band is None:
+                receiver_temperature[site] = 0.0
+                sideband_ratio[site] = 0.0
+                bandwidth_hz[site] = None
+            else:
+                receiver_temperature[site] = self.receivers[site][band]["T_R"]
+                sideband_ratio[site] = self.receivers[site][band]["SSR"]
+                if band in self.bandwidth_setup[site]:
+                    bandwidth_hz[site] = self.bandwidth_setup[site][band]*(1.0e9)
+                else:
+                    bandwidth_hz[site] = None
+
+            effective_area[site] = (np.pi/4.0)*self.eta_dict[site]*((self.D_dict[site])**2)
+            mount_type[site] = const.known_mount_types.get(site, const.mount_type)
+            feed_angle[site] = const.known_feed_angles.get(site, const.feed_angle)
+            polarization_basis[site] = const.known_polbases.get(site)
+
+        return {
+            "sites": tuple(self.sites),
+            "tau": self.tau_dict,
+            "Tatm": self.Tatm_dict,
+            "Tgnd": self.Tgnd_dict,
+            "windspeed": self.windspeed_dict,
+            "bands": self.bands,
+            "wind_loading": self.wind_loading_dict,
+            "solar_avoidance": self.solar_avoidance_dict,
+            "station_uptimes": self.station_uptimes,
+            "receiver_temperature": receiver_temperature,
+            "sideband_ratio": sideband_ratio,
+            "bandwidth_hz": bandwidth_hz,
+            "effective_area": effective_area,
+            "mount_type": mount_type,
+            "feed_angle": feed_angle,
+            "polarization_basis": polarization_basis,
+        }
+
     # generate a raw observation
     def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
                 opacitycal=True, addFR=True, addleakage=False,
@@ -666,6 +715,7 @@ class obs_generator(object):
         par2 = pars['par_ang2']
         times = obs.data['time']
         tuniq = np.unique(times)
+        station_context = self.station_context()
 
         # initialize various arrays
         tau1 = np.zeros_like(el1)
@@ -706,17 +756,16 @@ class obs_generator(object):
         uptime_mask = np.ones(len(obs.data),dtype=bool)
         for isite, site in enumerate(sites_obs):
 
-            # zenith opacity, atmospheric temperature, ground temperature, and windspeed
-            tau_z = self.tau_dict[site]
-            Tatm = self.Tatm_dict[site]
-            Tgnd = self.Tgnd_dict[site]
-            ws = self.windspeed_dict[site]
-
-            # determine effective collecting area
-            Aeff = (np.pi/4.0)*self.eta_dict[site]*((self.D_dict[site])**2)
+            # zenith opacity, atmospheric temperature, ground temperature, windspeed, and effective collecting area
+            tau_z = station_context["tau"][site]
+            Tatm = station_context["Tatm"][site]
+            Tgnd = station_context["Tgnd"][site]
+            ws = station_context["windspeed"][site]
+            Aeff = station_context["effective_area"][site]
+            wind_loading = station_context["wind_loading"][site]
 
             # if the windspeed exceeds the shutdown threshold, mark the site as to be flagged
-            if (ws > self.wind_loading_dict[site]['shutdown']):
+            if (ws > wind_loading['shutdown']):
                 if flagwind:
                     flagsites.append(site)
                     if self.verbosity > 0:
@@ -745,15 +794,15 @@ class obs_generator(object):
 
             # impose solar avoidance, if desired
             if flagsun:
-                if self.solar_angle < self.solar_avoidance_dict[site]:
+                if self.solar_angle < station_context["solar_avoidance"][site]:
                     flagsites.append(site)
                     if self.verbosity > 0:
                         print(site + ' cannot observe because the source is too close to the Sun.')
 
             # flag the times that fall outside of the specified station uptime window
-            if site in list(self.station_uptimes.keys()):
-                ind_too_early = (((t1 == site) | (t2 == site)) & (times < self.station_uptimes[site][0]))
-                ind_too_late = (((t1 == site) | (t2 == site)) & (times > self.station_uptimes[site][1]))
+            if site in station_context["station_uptimes"]:
+                ind_too_early = (((t1 == site) | (t2 == site)) & (times < station_context["station_uptimes"][site][0]))
+                ind_too_late = (((t1 == site) | (t2 == site)) & (times > station_context["station_uptimes"][site][1]))
                 uptime_mask[ind_too_early] = False
                 uptime_mask[ind_too_late] = False
 
@@ -816,16 +865,10 @@ class obs_generator(object):
                 Tb1[ind1] = const.T_CMB + Tsource
                 Tb2[ind2] = const.T_CMB + Tsource
 
-            # if this site does not have an appropriate receiver, temporarily assign it some values
-            band = self.bands[site]
-            if band is None:
-                T_R = 0.0
-                sideband_ratio = 0.0
-
-            # otherwise, retrieve the receiver temperature and sideband separation ratio
-            else:
-                T_R = self.receivers[site][band]['T_R']
-                sideband_ratio = self.receivers[site][band]['SSR']
+            # receiver, receiver temperature, and sideband separation ratio
+            band = station_context["bands"][site]
+            T_R = station_context["receiver_temperature"][site]
+            sideband_ratio = station_context["sideband_ratio"][site]
 
             # determine system temperatures
             Tsys1[ind1] = (T_R + (const.eta_ff*Tb1[ind1]) + ((1.0 - const.eta_ff)*Tgnd))*(1.0 + sideband_ratio)
@@ -838,8 +881,8 @@ class obs_generator(object):
             # modify SEFDs to account for wind
             if flagwind:
                 SEFD_factor = windspeed_SEFD_modification(ws,
-                                                          self.wind_loading_dict[site]['v0'],
-                                                          self.wind_loading_dict[site]['w'])
+                                                          wind_loading['v0'],
+                                                          wind_loading['w'])
                 SEFD1[ind1] *= SEFD_factor
                 SEFD2[ind2] *= SEFD_factor
 
@@ -854,22 +897,15 @@ class obs_generator(object):
             self.arr.tarr['sefdl'] = sefdl_arr
 
             # determine bandwidth
-            if band in list(self.bandwidth_setup[site].keys()):
-                valhere = self.bandwidth_setup[site][band]*(1.0e9)
-            else:
+            valhere = station_context["bandwidth_hz"][site]
+            if valhere is None:
                 valhere = obs.bw
             bw1[ind1] = valhere
             bw2[ind2] = valhere
 
             # determine various angles relevant for feed rotations
-            if site in list(const.known_mount_types.keys()):
-                mttyp = const.known_mount_types[site]
-            else:
-                mttyp = const.mount_type
-            if site in list(const.known_feed_angles.keys()):
-                fdang = const.known_feed_angles[site]
-            else:
-                fdang = const.feed_angle
+            mttyp = station_context["mount_type"][site]
+            fdang = station_context["feed_angle"][site]
             f_el1[ind1] = const.mount_type_dict[mttyp]['f_el']
             f_el2[ind2] = const.mount_type_dict[mttyp]['f_el']
             f_par1[ind1] = const.mount_type_dict[mttyp]['f_par']
