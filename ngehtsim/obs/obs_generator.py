@@ -574,6 +574,33 @@ class obs_generator(object):
             print("Beginning of last integration: {0}".format(t_last))
             print('Scan start times: {0}'.format(self.t_seg_times))
 
+    # build context for empty observation construction
+    def geometry_context(self):
+        return {
+            "ra": self.RA,
+            "dec": self.DEC,
+            "rf": self.freq,
+            "bandwidth_hz": (1.0e9)*float(self.settings["bandwidth"]),
+            "t_int": self.settings["t_int"],
+            "t_rest": self.settings["t_rest"],
+            "t_start": self.settings["t_start"],
+            "t_stop": self.settings["t_start"] + self.settings["dt"],
+            "mjd": self.mjd,
+        }
+
+    # build context for source-model adapters
+    def source_context(self):
+        return {
+            "ra": self.RA,
+            "dec": self.DEC,
+            "mjd": self.mjd,
+            "source": self.settings["source"],
+            "rf": self.freq,
+            "ttype": self.settings["ttype"],
+            "fft_pad_factor": self.settings["fft_pad_factor"],
+            "verbosity": self.verbosity,
+        }
+
     ###################################################
     # functions for generating observations
 
@@ -611,37 +638,16 @@ class obs_generator(object):
             print('WARNING: data generated in a non-circular polarization basis does not have properly-stored metadata info.')
 
         # generate and elevation-limit an empty observation template
-        geometry_context = {
-            "ra": self.RA,
-            "dec": self.DEC,
-            "rf": self.freq,
-            "bandwidth_hz": (1.0e9)*float(self.settings["bandwidth"]),
-            "t_int": self.settings["t_int"],
-            "t_rest": self.settings["t_rest"],
-            "t_start": self.settings["t_start"],
-            "t_stop": self.settings["t_start"] + self.settings["dt"],
-            "mjd": self.mjd,
-        }
         self.obs_empty, obs_empty = observation_geometry.observation_template(
             self.obs_empty,
             self.arr,
-            geometry_context,
+            self.geometry_context(),
             el_min=el_min,
             el_max=el_max,
         )
 
         # observe the source
-        source_context = {
-            "ra": self.RA,
-            "dec": self.DEC,
-            "mjd": self.mjd,
-            "source": self.settings["source"],
-            "rf": self.freq,
-            "ttype": self.settings["ttype"],
-            "fft_pad_factor": self.settings["fft_pad_factor"],
-            "verbosity": self.verbosity,
-        }
-        obs, F0 = source_models.observe_source(input_model, obs_empty, source_context, p=p)
+        obs, F0 = source_models.observe_source(input_model, obs_empty, self.source_context(), p=p)
 
         # extract relevant information
         t1 = obs.data['t1']
