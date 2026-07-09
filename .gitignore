@@ -1,16 +1,23 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 *.egg-info/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .tox/
 .coverage*
 coverage.json
 htmlcov/
 build/
 dist/
-*.uvfits
-tests/data_generation/*.png
-tests/data_generation_flagging/*.png
-tests/data_generation_flagging/*.uvfits
-tests/weather_plots/
+
+# OS/editor
 .DS_Store
+*.swp
+
+# Generated test/example outputs
+*.uvfits
+tests/**/*.png
+tests/weather_plots/
