@@ -22,3 +22,6 @@ dist/
 *.uvfits
 tests/**/*.png
 tests/weather_plots/
+
+# Benchmark outputs
+benchmarks/results/
