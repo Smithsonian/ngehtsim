@@ -18,6 +18,7 @@ import warnings
 try:
     import ngEHTforecast.fisher as fp
 except ImportError:
+    fp = None
     print('Warning: ngEHTforecast not installed! Cannot use FisherForecast functionality.')
 
 import ngehtsim.const_def as const
@@ -70,16 +71,33 @@ class obs_generator(object):
     """
 
     # initialize class instantiation
-    def __init__(self, settings={}, settings_file=None, verbosity=0, weight=0, D_overrides={},
-                 surf_rms_overrides={}, receiver_configuration_overrides={}, bandwidth_overrides={},
-                 T_R_overrides={}, sideband_ratio_overrides={}, lo_freq_overrides={}, hi_freq_overrides={},
-                 ap_eff_overrides={}, wind_loading_overrides={}, custom_receivers={}, station_uptimes={},
+    def __init__(self, settings=None, settings_file=None, verbosity=0, weight=0, D_overrides=None,
+                 surf_rms_overrides=None, receiver_configuration_overrides=None, bandwidth_overrides=None,
+                 T_R_overrides=None, sideband_ratio_overrides=None, lo_freq_overrides=None, hi_freq_overrides=None,
+                 ap_eff_overrides=None, wind_loading_overrides=None, custom_receivers=None, station_uptimes=None,
                  array=None, ephem='ephemeris/space'):
 
         #############################
         # astropy cache
 
         _ensure_iers_cached()
+
+        #############################
+        # initialize inputs
+
+        settings = {} if settings is None else settings
+        D_overrides = {} if D_overrides is None else D_overrides
+        surf_rms_overrides = {} if surf_rms_overrides is None else surf_rms_overrides
+        receiver_configuration_overrides = {} if receiver_configuration_overrides is None else receiver_configuration_overrides
+        bandwidth_overrides = {} if bandwidth_overrides is None else bandwidth_overrides
+        T_R_overrides = {} if T_R_overrides is None else T_R_overrides
+        sideband_ratio_overrides = {} if sideband_ratio_overrides is None else sideband_ratio_overrides
+        lo_freq_overrides = {} if lo_freq_overrides is None else lo_freq_overrides
+        hi_freq_overrides = {} if hi_freq_overrides is None else hi_freq_overrides
+        ap_eff_overrides = {} if ap_eff_overrides is None else ap_eff_overrides
+        wind_loading_overrides = {} if wind_loading_overrides is None else wind_loading_overrides
+        custom_receivers = {} if custom_receivers is None else custom_receivers
+        station_uptimes = {} if station_uptimes is None else station_uptimes
 
         #############################
         # parse inputs
@@ -618,7 +636,8 @@ class obs_generator(object):
         els = self.obs_empty.unpack(['el1', 'el2'])
         mask = (self.obs_empty.data['t1'] == 'space') | ((els['el1'] > el_min) & (els['el1'] < el_max))
         mask &= (self.obs_empty.data['t2'] == 'space') | ((els['el2'] > el_min) & (els['el2'] < el_max))
-        self.obs_empty.data = self.obs_empty.data[mask]
+        obs_empty = self.obs_empty.copy()
+        obs_empty.data = obs_empty.data[mask]
 
         # observe the source
         if isinstance(input_model, eh.image.Image):
@@ -629,9 +648,9 @@ class obs_generator(object):
             input_model.rf = self.freq
             if self.verbosity <= 0:
                 with eh.parloop.HiddenPrints():
-                    obs = input_model.observe_same_nonoise(self.obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
+                    obs = input_model.observe_same_nonoise(obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
             else:
-                obs = input_model.observe_same_nonoise(self.obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
+                obs = input_model.observe_same_nonoise(obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'])
             F0 = input_model.total_flux()
         elif isinstance(input_model, eh.movie.Movie):
             input_model.ra = self.RA
@@ -641,9 +660,9 @@ class obs_generator(object):
             input_model.rf = self.freq
             if self.verbosity <= 0:
                 with eh.parloop.HiddenPrints():
-                    obs = input_model.observe_same_nonoise(self.obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'], repeat=True)
+                    obs = input_model.observe_same_nonoise(obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'], repeat=True)
             else:
-                obs = input_model.observe_same_nonoise(self.obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'], repeat=True)
+                obs = input_model.observe_same_nonoise(obs_empty, ttype=self.settings['ttype'], fft_pad_factor=self.settings['fft_pad_factor'], repeat=True)
             F0 = np.mean(input_model.lightcurve)
         elif isinstance(input_model, eh.model.Model):
             input_model.ra = self.RA
@@ -653,14 +672,14 @@ class obs_generator(object):
             input_model.rf = self.freq
             if self.verbosity <= 0:
                 with eh.parloop.HiddenPrints():
-                    obs = input_model.observe_same_nonoise(self.obs_empty)
+                    obs = input_model.observe_same_nonoise(obs_empty)
             else:
-                obs = input_model.observe_same_nonoise(self.obs_empty)
+                obs = input_model.observe_same_nonoise(obs_empty)
             F0 = np.abs(input_model.sample_uv(0.0, 0.0))
-        elif isinstance(input_model, fp.FisherForecast):
+        elif (fp is not None) and isinstance(input_model, fp.FisherForecast):
             if p is None:
                 raise Exception('When observing an ngEHTforecast model, the parameter vector keyword argument p must be specified!')
-            obs = self.obs_empty.copy()
+            obs = obs_empty.copy()
             obs.source = self.settings['source']
             if (input_model.stokes == 'I'):
                 Ivis = input_model.visibilities(obs, p, verbosity=self.verbosity)
@@ -674,12 +693,14 @@ class obs_generator(object):
                 obs.data['llvis'] = LLvis
                 obs.data['rlvis'] = RLvis
                 obs.data['lrvis'] = LRvis
-            dumobs = self.obs_empty.copy()
+            dumobs = obs_empty.copy()
             dumdatatable = dumobs.data[0]
             dumdatatable['u'] = 0.0
             dumdatatable['v'] = 0.0
             dumobs.data = dumdatatable
             F0 = np.abs(input_model.visibilities(dumobs, p))
+        else:
+            raise TypeError('input_model must be an ehtim Image, Movie, Model, or ngEHTforecast FisherForecast object.')
 
         # extract relevant information
         t1 = obs.data['t1']
