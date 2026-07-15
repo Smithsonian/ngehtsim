@@ -68,6 +68,26 @@ def weather_dataset(tmp_path):
 
 
 def _write_weather_records(group, include_time_index):
+    if include_time_index:
+        time_index = np.tile(np.arange(8, dtype=np.int8), 2)
+        sample_index = np.arange(len(time_index), dtype=float)
+        group.create_array("year", data=np.full(len(time_index), 2017, dtype=np.int16))
+        group.create_array("day", data=np.repeat([11, 12], 8).astype(np.int8))
+        group.create_array(
+            "tau_coefficients",
+            data=np.column_stack((sample_index, np.zeros(len(sample_index)))).astype(np.float16),
+        )
+        group.create_array(
+            "tb_coefficients",
+            data=np.column_stack((sample_index, np.zeros(len(sample_index)))).astype(np.float16),
+        )
+        group.create_array("pwv_mm", data=1.0 + sample_index)
+        group.create_array("wind_speed_m_s", data=3.0 + sample_index)
+        group.create_array("surface_pressure_mbar", data=500.0 + sample_index)
+        group.create_array("surface_temperature_k", data=250.0 + sample_index)
+        group.create_array("time_index", data=time_index)
+        return
+
     group.create_array("year", data=np.array([2017, 2017], dtype=np.int16))
     group.create_array("day", data=np.array([11, 12], dtype=np.int8))
     group.create_array(
@@ -80,5 +100,3 @@ def _write_weather_records(group, include_time_index):
     group.create_array("wind_speed_m_s", data=np.array([3.0, 4.0]))
     group.create_array("surface_pressure_mbar", data=np.array([500.0, 501.0]))
     group.create_array("surface_temperature_k", data=np.array([250.0, 251.0]))
-    if include_time_index:
-        group.create_array("time_index", data=np.array([0, 1], dtype=np.int8))
