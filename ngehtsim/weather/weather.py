@@ -1,28 +1,21 @@
 ###################################################
 # imports
 
-import numpy as np
-import ngehtsim.const_def as const
+from functools import lru_cache
 import os
 import struct
 
-###################################################
-# load eigenspectra
+import numpy as np
 
-meanspec_tau = np.loadtxt(const.path_to_eigenspectra+'/spectrum_mean.txt',unpack=True)
-meanspec_Tb = np.loadtxt(const.path_to_eigenspectra+'_Tb/spectrum_mean.txt',unpack=True)
-tau_spectra = list()
-Tb_spectra = list()
-for i in range(const.number_of_components):
-    spechere = np.loadtxt(const.path_to_eigenspectra+'/spectrum_'+str(i).zfill(4)+'.txt',unpack=True)
-    spechere_Tb = np.loadtxt(const.path_to_eigenspectra+'_Tb/spectrum_'+str(i).zfill(4)+'.txt',unpack=True)
-    tau_spectra.append(spechere)
-    Tb_spectra.append(spechere_Tb)
+import ngehtsim.const_def as const
+from ngehtsim.weather.zarr_store import ZarrWeatherStore
+
 
 ###################################################
 # function definitions
 
-def read_binary_atm(filename,Ncomps=const.number_of_components):
+
+def read_binary_atm(filename, Ncomps=const.number_of_components):
     """
     Read a stored weather data file containing either opacity or brightness temperature info.
 
@@ -34,36 +27,37 @@ def read_binary_atm(filename,Ncomps=const.number_of_components):
       (numpy.ndarray): Several arrays containing the dates/times and PCA component coefficients
     """
 
-    with open(filename, 'rb') as binary_file:
+    with open(filename, "rb") as binary_file:
         contents = bytearray(binary_file.read())
 
     linelength = int(contents[0:2][0])
-    prelength = linelength - (2*Ncomps)
-    Nlines = int((len(contents) - 2) / linelength)
+    prelength = linelength - (2 * Ncomps)
+    nlines = int((len(contents) - 2) / linelength)
 
-    years = np.zeros(Nlines)
-    months = np.zeros(Nlines)
-    days = np.zeros(Nlines)
+    years = np.zeros(nlines)
+    months = np.zeros(nlines)
+    days = np.zeros(nlines)
     if prelength > 4:
-        times = np.zeros(Nlines)
-    coeffs = np.zeros((Nlines,Ncomps))
-    for i in range(Nlines):
+        times = np.zeros(nlines)
+    coeffs = np.zeros((nlines, Ncomps))
+    for index in range(nlines):
+        start = 2 + (linelength * index)
+        stop = start + linelength
+        line = contents[start:stop]
 
-        istart = 2 + (linelength*i)
-        iend = istart + linelength
-        linehere = contents[istart:iend]
-
-        years[i] = int(struct.unpack('<h', linehere[0:2])[0])
-        months[i] = int(struct.unpack('b', linehere[2:3])[0])
-        days[i] = int(struct.unpack('b', linehere[3:4])[0])
+        years[index] = int(struct.unpack("<h", line[0:2])[0])
+        months[index] = int(struct.unpack("b", line[2:3])[0])
+        days[index] = int(struct.unpack("b", line[3:4])[0])
         if prelength > 4:
-            times[i] = int(struct.unpack('b', linehere[4:5])[0])
-        coeffs[i,:] = np.array(struct.unpack('<'+'e'*Ncomps, linehere[prelength:])).astype(float)
+            times[index] = int(struct.unpack("b", line[4:5])[0])
+        coeffs[index, :] = np.array(
+            struct.unpack("<" + "e" * Ncomps, line[prelength:])
+        ).astype(float)
 
     if prelength > 4:
         return years, months, days, times, coeffs
-    else:
-        return years, months, days, coeffs
+    return years, months, days, coeffs
+
 
 def read_binary_weather(filename):
     """
@@ -76,35 +70,58 @@ def read_binary_weather(filename):
       (numpy.ndarray): Several arrays containing the dates/times and weather values read from the file
     """
 
-    with open(filename, 'rb') as binary_file:
+    with open(filename, "rb") as binary_file:
         contents = bytearray(binary_file.read())
 
     linelength = int(contents[0:2][0])
     prelength = linelength - 8
-    Nlines = int((len(contents) - 2) / linelength)
+    nlines = int((len(contents) - 2) / linelength)
 
-    years = np.zeros(Nlines)
-    months = np.zeros(Nlines)
-    days = np.zeros(Nlines)
+    years = np.zeros(nlines)
+    months = np.zeros(nlines)
+    days = np.zeros(nlines)
     if prelength > 4:
-        times = np.zeros(Nlines)
-    vals = np.zeros(Nlines)
-    for i in range(Nlines):
-        istart = 2 + (linelength*i)
-        iend = istart + linelength
-        linehere = contents[istart:iend]
+        times = np.zeros(nlines)
+    values = np.zeros(nlines)
+    for index in range(nlines):
+        start = 2 + (linelength * index)
+        stop = start + linelength
+        line = contents[start:stop]
 
-        years[i] = int(struct.unpack('<h', linehere[0:2])[0])
-        months[i] = int(struct.unpack('b', linehere[2:3])[0])
-        days[i] = int(struct.unpack('b', linehere[3:4])[0])
+        years[index] = int(struct.unpack("<h", line[0:2])[0])
+        months[index] = int(struct.unpack("b", line[2:3])[0])
+        days[index] = int(struct.unpack("b", line[3:4])[0])
         if prelength > 4:
-            times[i] = int(struct.unpack('b', linehere[4:5])[0])
-        vals[i] = float(struct.unpack('<d', linehere[prelength:])[0])
+            times[index] = int(struct.unpack("b", line[4:5])[0])
+        values[index] = float(struct.unpack("<d", line[prelength:])[0])
 
     if prelength > 4:
-        return years, months, days, times, vals
-    else:
-        return years, months, days, vals
+        return years, months, days, times, values
+    return years, months, days, values
+
+
+@lru_cache(maxsize=1)
+def _legacy_pca_bases():
+    """Load binary-weather PCA bases only when the legacy backend is used."""
+
+    mean_tau = np.loadtxt(const.path_to_eigenspectra + "/spectrum_mean.txt", unpack=True)
+    mean_tb = np.loadtxt(const.path_to_eigenspectra + "_Tb/spectrum_mean.txt", unpack=True)
+    tau_components = tuple(
+        np.loadtxt(
+            const.path_to_eigenspectra + "/spectrum_" + str(index).zfill(4) + ".txt",
+            unpack=True,
+        )
+        for index in range(const.number_of_components)
+    )
+    tb_components = tuple(
+        np.loadtxt(
+            const.path_to_eigenspectra + "_Tb/spectrum_" + str(index).zfill(4) + ".txt",
+            unpack=True,
+        )
+        for index in range(const.number_of_components)
+    )
+    return mean_tau, mean_tb, tau_components, tb_components
+
 
 def reconstruct_spectrum_tau(coeffs):
     """
@@ -117,12 +134,12 @@ def reconstruct_spectrum_tau(coeffs):
       (numpy.ndarray): Array containing the opacity spectrum
     """
 
-    reconstructed_spectrum = np.zeros(const.length_of_spectrum)
-    for ispec, eigenspec in enumerate(tau_spectra):
-        reconstructed_spectrum += coeffs[ispec]*eigenspec
-    reconstructed_spectrum += meanspec_tau
-    reconstructed_spectrum = 10.0**reconstructed_spectrum
-    return reconstructed_spectrum
+    mean_tau, _, tau_components, _ = _legacy_pca_bases()
+    reconstructed_spectrum = np.array(mean_tau, dtype=float, copy=True)
+    for coefficient, eigenspectrum in zip(coeffs, tau_components):
+        reconstructed_spectrum += coefficient * eigenspectrum
+    return 10.0**reconstructed_spectrum
+
 
 def reconstruct_spectrum_Tb(coeffs):
     """
@@ -135,457 +152,268 @@ def reconstruct_spectrum_Tb(coeffs):
       (numpy.ndarray): Array containing the brightness temperature spectrum
     """
 
-    reconstructed_spectrum = np.zeros(const.length_of_spectrum)
-    for ispec, eigenspec in enumerate(Tb_spectra):
-        reconstructed_spectrum += coeffs[ispec]*eigenspec
-    reconstructed_spectrum += meanspec_Tb
+    _, mean_tb, _, tb_components = _legacy_pca_bases()
+    reconstructed_spectrum = np.array(mean_tb, dtype=float, copy=True)
+    for coefficient, eigenspectrum in zip(coeffs, tb_components):
+        reconstructed_spectrum += coefficient * eigenspectrum
     return reconstructed_spectrum
 
+
 def _parse_month(month):
-    monthnums = np.array(['01','02','03','04','05','06','07','08','09','10','11','12'])
-    monthnams = np.array(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'])
+    monthnums = ("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")
+    monthnams = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
     if month in monthnams:
-        monthnum = monthnums[monthnams == month][0]
-        monthnam = month
-    elif str(month).zfill(2) in monthnums:
-        monthnum = str(month).zfill(2)
-        monthnam = monthnams[monthnums == monthnum][0]
+        return monthnums[monthnams.index(month)], month
+    monthnum = str(month).zfill(2)
+    if monthnum in monthnums:
+        return monthnum, monthnams[monthnums.index(monthnum)]
+    raise ValueError(
+        "Specified month not recognized; please use either a three-letter abbreviation "
+        "(e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10)."
+    )
+
+
+def _remove_false_february_entries(years, days, values, monthnam):
+    if monthnam != "Feb":
+        return years, days, values
+
+    keep = np.ones(len(days), dtype=bool)
+    for index in range(1, len(days)):
+        if days[index] == days[index - 1]:
+            keep[index] = False
+    return years[keep], days[keep], values[keep]
+
+
+def _legacy_records(site, monthnum, monthnam, quantity, path_to_weather):
+    filenames = {
+        "tau": "tau.txt",
+        "tb": "Tb.txt",
+        "pressure": "Pbase.txt",
+        "temperature": "Tbase.txt",
+        "pwv": "PWV.txt",
+        "windspeed": "windspeed.txt",
+    }
+    filename = os.path.join(str(path_to_weather), site, monthnum + monthnam, filenames[quantity])
+
+    if quantity in ("tau", "tb"):
+        years, _, days, coefficients = read_binary_atm(filename)
+        reconstruct = reconstruct_spectrum_tau if quantity == "tau" else reconstruct_spectrum_Tb
+        values = np.array([reconstruct(coefficients[index]) for index in range(len(coefficients))])
     else:
-        raise ValueError('Specified month not recognized; please use either a three-letter abbreviation (e.g., Jan, Apr) or else a two-digit number (e.g., 03, 10).')
+        years, _, days, values = read_binary_weather(filename)
 
-    return monthnum, monthnam
+    return _remove_false_february_entries(years, days, values, monthnam)
 
-def opacity_spectrum(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
-    """
-    Retrieve the zenith opacity information for a specified site as a function of frequency.
 
-    Args:
-      site (str): The name of the site
-      form (str): The form of value to report; can be 'mean', 'median', 'good', 'bad', exact', or 'all'
-      month (str or int): The month for which to report weather
-      day (str or int): The day of the month for which to report weather; only used for form = 'exact'
-      year (str or int): The year for which to report weather; only used for form = 'exact'
-      path_to_weather (str): The file path for the top-level weather data directory
-
-    Returns:
-      (numpy.ndarray): The requested opacity values; if form = 'all', then returns a 2D array
-    """
-
-    # extract month number
-    monthnum, monthnam = _parse_month(month)
-
-    # determine which table to read
-    pathhere = path_to_weather + '/'
-    pathhere += site + '/'
-    pathhere += monthnum + monthnam + '/'
-    pathhere += 'tau.txt'
-
-    # read in the table
-    years, months, days, coeffs = read_binary_atm(pathhere)
-
-    # remove false Feb 29 entries
-    if (monthnam == 'Feb'):
-        indlist = np.ones(len(days),dtype=bool)
-        for i in range(1,len(days)):
-            if (days[i] == days[i-1]):
-                indlist[i] = False
-        years = years[indlist]
-        months = months[indlist]
-        days = days[indlist]
-        coeffs = coeffs[indlist,:]
-
-    # retrieve the requested opacity values
-    if (form == 'exact'):
-        ind = ((years == int(year)) & (days == int(day)))
-        if (np.array(ind).sum() == 0):
-            raise Exception('No weather on file for the selected date.')
-        tauspec = reconstruct_spectrum_tau(coeffs[ind][0])
-
+def _zarr_records(store, site, month, quantity):
+    partition = store.read_partition(site, month, cadence="daily")
+    if quantity == "tau":
+        values = store.reconstruct_tau_spectra(partition)
+    elif quantity == "tb":
+        values = store.reconstruct_tb_spectra(partition)
     else:
-        tauspec_arr = np.zeros((len(coeffs),const.length_of_spectrum))
-        for i in range(len(coeffs)):
-            tauspec_arr[i,:] = reconstruct_spectrum_tau(coeffs[i])
-        if (form == 'mean'):
-            tauspec = np.nanmean(tauspec_arr,axis=0)
-        elif (form == 'median'):
-            tauspec = np.nanmedian(tauspec_arr,axis=0)
-        elif (form == 'good'):
-            tauspec = np.nanpercentile(tauspec_arr,15.87,axis=0)
-        elif (form == 'bad'):
-            tauspec = np.nanpercentile(tauspec_arr,84.13,axis=0)
-        elif (form == 'all'):
-            tauspec = tauspec_arr
+        field_names = {
+            "pressure": "surface_pressure_mbar",
+            "temperature": "surface_temperature_k",
+            "pwv": "pwv_mm",
+            "windspeed": "wind_speed_m_s",
+        }
+        values = getattr(partition, field_names[quantity])
+    return partition.year, partition.day, values
 
-    return tauspec
 
-def opacity(site, form='exact', month='Apr', day=15, year=2015, freq=230.0, path_to_weather=const.path_to_weather):
-    """
-    Retrieve the zenith opacity information for a specified site at a specified frequency.
+def _weather_records(site, month, quantity, path_to_weather, weather_store):
+    if weather_store is None:
+        monthnum, monthnam = _parse_month(month)
+        return _legacy_records(site, monthnum, monthnam, quantity, path_to_weather)
+    if not isinstance(weather_store, ZarrWeatherStore):
+        raise TypeError("weather_store must be a ZarrWeatherStore instance or None.")
+    return _zarr_records(weather_store, site, month, quantity)
 
-    Args:
-      site (str): The name of the site
-      form (str): The form of value to report; can be 'mean', 'median', 'good', 'bad', exact', or 'all'
-      month (str or int): The month for which to report weather
-      day (str or int): The day of the month for which to report weather; only used for form = 'exact'
-      year (str or int): The year for which to report weather; only used for form = 'exact'
-      freq (float): The observing frequency, in GHz
-      path_to_weather (str): The file path for the top-level weather data directory
 
-    Returns:
-      (float): The requested opacity value(s); if form = 'all', then returns a numpy.ndarray
-    """
+def _select_weather_values(values, years, days, form, day, year):
+    if form == "exact":
+        matches = (years == int(year)) & (days == int(day))
+        if not np.any(matches):
+            raise Exception("No weather on file for the selected date.")
+        return values[matches][0]
+    if form == "all":
+        return values
+    if form == "mean":
+        return np.nanmean(values, axis=0)
+    if form == "median":
+        return np.nanmedian(values, axis=0)
+    if form == "good":
+        return np.nanpercentile(values, 15.87, axis=0)
+    if form == "bad":
+        return np.nanpercentile(values, 84.13, axis=0)
+    raise ValueError("Weather form must be exact, mean, median, good, bad, or all.")
 
-    # check frequency
-    if ((freq < 0.0) | (freq > 2000.0)):
-        raise Exception('Specified frequency is outside of the acceptable range (0, 2000) GHz.')
 
-    # get full spectrum
-    tauspec = opacity_spectrum(site, form=form, month=month, day=day, year=year, path_to_weather=path_to_weather)
+def _spectrum(site, form, month, day, year, path_to_weather, weather_store, quantity):
+    years, days, spectra = _weather_records(
+        site, month, quantity, path_to_weather, weather_store
+    )
+    return _select_weather_values(spectra, years, days, form, day, year)
 
-    # isolate the specified frequency
-    if (form != 'all'):
-        tau = np.interp(freq,const.spectrum_frequency,tauspec)
-    else:
-        tau = np.zeros(len(tauspec))
-        for i in range(len(tauspec)):
-            tau[i] = np.interp(freq,const.spectrum_frequency,tauspec[i])
 
-    return tau
+def _spectrum_frequency(weather_store):
+    if weather_store is None:
+        return const.spectrum_frequency
+    return weather_store.frequency_ghz
 
-def brightness_temperature_spectrum(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
-    """
-    Retrieve the zenith brightness temperature information for a specified site as a function of frequency.
 
-    Args:
-      site (str): The name of the site
-      form (str): The form of value to report; can be 'mean', 'median', 'good', 'bad', exact', or 'all'
-      month (str or int): The month for which to report weather
-      day (str or int): The day of the month for which to report weather; only used for form = 'exact'
-      year (str or int): The year for which to report weather; only used for form = 'exact'
-      path_to_weather (str): The file path for the top-level weather data directory
+def _scalar(site, form, month, day, year, path_to_weather, weather_store, quantity):
+    years, days, values = _weather_records(
+        site, month, quantity, path_to_weather, weather_store
+    )
+    return _select_weather_values(values, years, days, form, day, year)
 
-    Returns:
-      (numpy.ndarray): The requested brightness temperature values; if form = 'all', then returns a 2D array
-    """
 
-    # extract month number
-    monthnum, monthnam = _parse_month(month)
+def opacity_spectrum(
+    site,
+    form="exact",
+    month="Apr",
+    day=15,
+    year=2015,
+    path_to_weather=const.path_to_weather,
+    weather_store=None,
+):
+    """Retrieve zenith opacity as a function of frequency.
 
-    # determine which table to read
-    pathhere = path_to_weather + '/'
-    pathhere += site + '/'
-    pathhere += monthnum + monthnam + '/'
-    pathhere += 'Tb.txt'
-
-    # read in the table
-    years, months, days, coeffs = read_binary_atm(pathhere)
-
-    # remove false Feb 29 entries
-    if (monthnam == 'Feb'):
-        indlist = np.ones(len(days),dtype=bool)
-        for i in range(1,len(days)):
-            if (days[i] == days[i-1]):
-                indlist[i] = False
-        years = years[indlist]
-        months = months[indlist]
-        days = days[indlist]
-        coeffs = coeffs[indlist,:]
-
-    # retrieve the requested brightness temperature values
-    if (form == 'exact'):
-        ind = ((years == int(year)) & (days == int(day)))
-        if (np.array(ind).sum() == 0):
-            raise Exception('No weather on file for the selected date.')
-        Tbspec = reconstruct_spectrum_Tb(coeffs[ind][0])
-
-    else:
-        Tbspec_arr = np.zeros((len(coeffs),const.length_of_spectrum))
-        for i in range(len(coeffs)):
-            Tbspec_arr[i,:] = reconstruct_spectrum_Tb(coeffs[i])
-        if (form == 'mean'):
-            Tbspec = np.nanmean(Tbspec_arr,axis=0)
-        elif (form == 'median'):
-            Tbspec = np.nanmedian(Tbspec_arr,axis=0)
-        elif (form == 'good'):
-            Tbspec = np.nanpercentile(Tbspec_arr,15.87,axis=0)
-        elif (form == 'bad'):
-            Tbspec = np.nanpercentile(Tbspec_arr,84.13,axis=0)
-        elif (form == 'all'):
-            Tbspec = Tbspec_arr
-    
-    return Tbspec
-
-def brightness_temperature(site, form='exact', month='Apr', day=15, year=2015, freq=230.0, path_to_weather=const.path_to_weather):
-    """
-    Retrieve the zenith brightness temperature information for a specified site at a specified frequency.
-
-    Args:
-      site (str): The name of the site
-      form (str): The form of value to report; can be 'mean', 'median', 'good', 'bad', exact', or 'all'
-      month (str or int): The month for which to report weather
-      day (str or int): The day of the month for which to report weather; only used for form = 'exact'
-      year (str or int): The year for which to report weather; only used for form = 'exact'
-      freq (float): The observing frequency, in GHz
-      path_to_weather (str): The file path for the top-level weather data directory
-
-    Returns:
-      (float): The requested brightness temperature value(s), in K; if form = 'all', then returns a numpy.ndarray
+    ``weather_store`` may be a :class:`ZarrWeatherStore`; when it is omitted,
+    this function reads the packaged legacy binary weather data.
     """
 
-    # check frequency
-    if ((freq < 0.0) | (freq > 2000.0)):
-        raise Exception('Specified frequency is outside of the acceptable range (0, 2000) GHz.')
+    return _spectrum(site, form, month, day, year, path_to_weather, weather_store, "tau")
 
-    # get full spectrum
-    Tbspec = brightness_temperature_spectrum(site, form=form, month=month, day=day, year=year, path_to_weather=path_to_weather)
 
-    # isolate the specified frequency
-    if (form != 'all'):
-        Tb = np.interp(freq,const.spectrum_frequency,Tbspec)
-    else:
-        Tb = np.zeros(len(Tbspec))
-        for i in range(len(Tbspec)):
-            Tb[i] = np.interp(freq,const.spectrum_frequency,Tbspec[i])
+def opacity(
+    site,
+    form="exact",
+    month="Apr",
+    day=15,
+    year=2015,
+    freq=230.0,
+    path_to_weather=const.path_to_weather,
+    weather_store=None,
+):
+    """Retrieve zenith opacity at ``freq`` GHz."""
 
-    return Tb
+    if (freq < 0.0) | (freq > 2000.0):
+        raise Exception("Specified frequency is outside of the acceptable range (0, 2000) GHz.")
 
-def pressure(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
-    """
-    Retrieve the surface pressure information for a specified site.
+    spectrum = opacity_spectrum(
+        site,
+        form=form,
+        month=month,
+        day=day,
+        year=year,
+        path_to_weather=path_to_weather,
+        weather_store=weather_store,
+    )
+    frequency_ghz = _spectrum_frequency(weather_store)
+    if form != "all":
+        return np.interp(freq, frequency_ghz, spectrum)
+    return np.array([np.interp(freq, frequency_ghz, values) for values in spectrum])
 
-    Args:
-      site (str): The name of the site
-      form (str): The form of value to report; can be 'mean', 'median', 'good', 'bad', exact', or 'all'
-      month (str or int): The month for which to report weather
-      day (str or int): The day of the month for which to report weather; only used for form = 'exact'
-      year (str or int): The year for which to report weather; only used for form = 'exact'
-      path_to_weather (str): The file path for the top-level weather data directory
 
-    Returns:
-      (float): The requested pressure value(s), in mbar; if form = 'all', then returns a numpy.ndarray
-    """
+def brightness_temperature_spectrum(
+    site,
+    form="exact",
+    month="Apr",
+    day=15,
+    year=2015,
+    path_to_weather=const.path_to_weather,
+    weather_store=None,
+):
+    """Retrieve zenith brightness temperature as a function of frequency."""
 
-    # extract month number
-    monthnum, monthnam = _parse_month(month)
+    return _spectrum(site, form, month, day, year, path_to_weather, weather_store, "tb")
 
-    # determine which table to read
-    pathhere = path_to_weather + '/'
-    pathhere += site + '/'
-    pathhere += monthnum + monthnam + '/'
-    pathhere += 'Pbase.txt'
 
-    # read in the table
-    years, months, days, vals = read_binary_weather(pathhere)
+def brightness_temperature(
+    site,
+    form="exact",
+    month="Apr",
+    day=15,
+    year=2015,
+    freq=230.0,
+    path_to_weather=const.path_to_weather,
+    weather_store=None,
+):
+    """Retrieve zenith brightness temperature at ``freq`` GHz."""
 
-    # remove false Feb 29 entries
-    if (monthnam == 'Feb'):
-        indlist = np.ones(len(days),dtype=bool)
-        for i in range(1,len(days)):
-            if (days[i] == days[i-1]):
-                indlist[i] = False
-        years = years[indlist]
-        months = months[indlist]
-        days = days[indlist]
-        vals = vals[indlist]
+    if (freq < 0.0) | (freq > 2000.0):
+        raise Exception("Specified frequency is outside of the acceptable range (0, 2000) GHz.")
 
-    # retrieve the requested pressure value(s)
-    if (form == 'exact'):
-        ind = ((years == int(year)) & (days == int(day)))
-        if (np.array(ind).sum() == 0):
-            raise Exception('No weather on file for the selected date.')
-        P = vals[ind][0]
+    spectrum = brightness_temperature_spectrum(
+        site,
+        form=form,
+        month=month,
+        day=day,
+        year=year,
+        path_to_weather=path_to_weather,
+        weather_store=weather_store,
+    )
+    frequency_ghz = _spectrum_frequency(weather_store)
+    if form != "all":
+        return np.interp(freq, frequency_ghz, spectrum)
+    return np.array([np.interp(freq, frequency_ghz, values) for values in spectrum])
 
-    else:
-        if (form == 'mean'):
-            P = np.nanmean(vals)
-        elif (form == 'median'):
-            P = np.nanmedian(vals)
-        elif (form == 'good'):
-            P = np.nanpercentile(vals,15.87,axis=0)
-        elif (form == 'bad'):
-            P = np.nanpercentile(vals,84.13,axis=0)
-        elif (form == 'all'):
-            P = vals
 
-    return P
+def pressure(
+    site,
+    form="exact",
+    month="Apr",
+    day=15,
+    year=2015,
+    path_to_weather=const.path_to_weather,
+    weather_store=None,
+):
+    """Retrieve surface pressure in mbar."""
 
-def temperature(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
-    """
-    Retrieve the surface temperature information for a specified site.
+    return _scalar(site, form, month, day, year, path_to_weather, weather_store, "pressure")
 
-    Args:
-      site (str): The name of the site
-      form (str): The form of value to report; can be 'mean', 'median', 'good', 'bad', exact', or 'all'
-      month (str or int): The month for which to report weather
-      day (str or int): The day of the month for which to report weather; only used for form = 'exact'
-      year (str or int): The year for which to report weather; only used for form = 'exact'
-      path_to_weather (str): The file path for the top-level weather data directory
 
-    Returns:
-      (float): The requested temperature value(s), in K; if form = 'all', then returns a numpy.ndarray
-    """
+def temperature(
+    site,
+    form="exact",
+    month="Apr",
+    day=15,
+    year=2015,
+    path_to_weather=const.path_to_weather,
+    weather_store=None,
+):
+    """Retrieve surface temperature in K."""
 
-    # extract month number
-    monthnum, monthnam = _parse_month(month)
+    return _scalar(site, form, month, day, year, path_to_weather, weather_store, "temperature")
 
-    # determine which table to read
-    pathhere = path_to_weather + '/'
-    pathhere += site + '/'
-    pathhere += monthnum + monthnam + '/'
-    pathhere += 'Tbase.txt'
 
-    # read in the table
-    years, months, days, vals = read_binary_weather(pathhere)
+def PWV(
+    site,
+    form="exact",
+    month="Apr",
+    day=15,
+    year=2015,
+    path_to_weather=const.path_to_weather,
+    weather_store=None,
+):
+    """Retrieve precipitable water vapor in mm."""
 
-    # remove false Feb 29 entries
-    if (monthnam == 'Feb'):
-        indlist = np.ones(len(days),dtype=bool)
-        for i in range(1,len(days)):
-            if (days[i] == days[i-1]):
-                indlist[i] = False
-        years = years[indlist]
-        months = months[indlist]
-        days = days[indlist]
-        vals = vals[indlist]
+    return _scalar(site, form, month, day, year, path_to_weather, weather_store, "pwv")
 
-    # retrieve the requested temperature value(s)
-    if (form == 'exact'):
-        ind = ((years == int(year)) & (days == int(day)))
-        if (np.array(ind).sum() == 0):
-            raise Exception('No weather on file for the selected date.')
-        T = vals[ind][0]
 
-    else:
-        if (form == 'mean'):
-            T = np.nanmean(vals)
-        elif (form == 'median'):
-            T = np.nanmedian(vals)
-        elif (form == 'good'):
-            T = np.nanpercentile(vals,15.87,axis=0)
-        elif (form == 'bad'):
-            T = np.nanpercentile(vals,84.13,axis=0)
-        elif (form == 'all'):
-            T = vals
+def windspeed(
+    site,
+    form="exact",
+    month="Apr",
+    day=15,
+    year=2015,
+    path_to_weather=const.path_to_weather,
+    weather_store=None,
+):
+    """Retrieve wind speed in m/s."""
 
-    return T
-
-def PWV(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
-    """
-    Retrieve the precipitable water vapor (PWV) information for a specified site.
-
-    Args:
-      site (str): The name of the site
-      form (str): The form of value to report; can be 'mean', 'median', 'good', 'bad', exact', or 'all'
-      month (str or int): The month for which to report weather
-      day (str or int): The day of the month for which to report weather; only used for form = 'exact'
-      year (str or int): The year for which to report weather; only used for form = 'exact'
-      path_to_weather (str): The file path for the top-level weather data directory
-
-    Returns:
-      (float): The requested PWV value(s), in mm; if form = 'all', then returns a numpy.ndarray
-    """
-
-    # extract month number
-    monthnum, monthnam = _parse_month(month)
-
-    # determine which table to read
-    pathhere = path_to_weather + '/'
-    pathhere += site + '/'
-    pathhere += monthnum + monthnam + '/'
-    pathhere += 'PWV.txt'
-
-    # read in the table
-    years, months, days, vals = read_binary_weather(pathhere)
-
-    # remove false Feb 29 entries
-    if (monthnam == 'Feb'):
-        indlist = np.ones(len(days),dtype=bool)
-        for i in range(1,len(days)):
-            if (days[i] == days[i-1]):
-                indlist[i] = False
-        years = years[indlist]
-        months = months[indlist]
-        days = days[indlist]
-        vals = vals[indlist]
-
-    # retrieve the requested temperature value(s)
-    if (form == 'exact'):
-        ind = ((years == int(year)) & (days == int(day)))
-        if (np.array(ind).sum() == 0):
-            raise Exception('No weather on file for the selected date.')
-        pwv = vals[ind][0]
-
-    else:
-        if (form == 'mean'):
-            pwv = np.nanmean(vals)
-        elif (form == 'median'):
-            pwv = np.nanmedian(vals)
-        elif (form == 'good'):
-            pwv = np.nanpercentile(vals,15.87,axis=0)
-        elif (form == 'bad'):
-            pwv = np.nanpercentile(vals,84.13,axis=0)
-        elif (form == 'all'):
-            pwv = vals
-
-    return pwv
-
-def windspeed(site, form='exact', month='Apr', day=15, year=2015, path_to_weather=const.path_to_weather):
-    """
-    Retrieve the windspeed information for a specified site.
-
-    Args:
-      site (str): The name of the site
-      form (str): The form of value to report; can be 'mean', 'median', 'good', 'bad', exact', or 'all'
-      month (str or int): The month for which to report weather
-      day (str or int): The day of the month for which to report weather; only used for form = 'exact'
-      year (str or int): The year for which to report weather; only used for form = 'exact'
-      path_to_weather (str): The file path for the top-level weather data directory
-
-    Returns:
-      (float): The requested windspeed value(s), in m/s; if form = 'all', then returns a numpy.ndarray
-    """
-
-    # extract month number
-    monthnum, monthnam = _parse_month(month)
-
-    # determine which table to read
-    pathhere = path_to_weather + '/'
-    pathhere += site + '/'
-    pathhere += monthnum + monthnam + '/'
-    pathhere += 'windspeed.txt'
-
-    # read in the table
-    years, months, days, vals = read_binary_weather(pathhere)
-
-    # remove false Feb 29 entries
-    if (monthnam == 'Feb'):
-        indlist = np.ones(len(days),dtype=bool)
-        for i in range(1,len(days)):
-            if (days[i] == days[i-1]):
-                indlist[i] = False
-        years = years[indlist]
-        months = months[indlist]
-        days = days[indlist]
-        vals = vals[indlist]
-
-    # retrieve the requested temperature value(s)
-    if (form == 'exact'):
-        ind = ((years == int(year)) & (days == int(day)))
-        if (np.array(ind).sum() == 0):
-            raise Exception('No weather on file for the selected date.')
-        ws = vals[ind][0]
-
-    else:
-        if (form == 'mean'):
-            ws = np.nanmean(vals)
-        elif (form == 'median'):
-            ws = np.nanmedian(vals)
-        elif (form == 'good'):
-            ws = np.nanpercentile(vals,15.87,axis=0)
-        elif (form == 'bad'):
-            ws = np.nanpercentile(vals,84.13,axis=0)
-        elif (form == 'all'):
-            ws = vals
-
-    return ws
+    return _scalar(site, form, month, day, year, path_to_weather, weather_store, "windspeed")

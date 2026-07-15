@@ -8,6 +8,7 @@ an explicit local filesystem path to :class:`ZarrWeatherStore`.
 from __future__ import annotations
 
 import calendar
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -29,6 +30,7 @@ _SCALAR_ARRAYS = (
     "surface_pressure_mbar",
     "surface_temperature_k",
 )
+_PARTITION_CACHE_SIZE = 64
 
 
 class WeatherStoreError(ValueError):
@@ -88,6 +90,9 @@ class ZarrWeatherStore:
 
         self._root = zarr.open_group(self.path, mode="r")
         self._pca_bases: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+        self._partition_cache: OrderedDict[
+            tuple[str, int, Cadence], WeatherPartition
+        ] = OrderedDict()
         self._validate_root()
 
     @property
@@ -106,7 +111,7 @@ class ZarrWeatherStore:
     def sites(self) -> tuple[str, ...]:
         """Return all weather site identifiers in deterministic order."""
 
-        return tuple(sorted(self._root["sites"].group_keys()))
+        return self._sites
 
     @property
     def frequency_ghz(self) -> np.ndarray:
@@ -130,6 +135,21 @@ class ZarrWeatherStore:
             raise ValueError(f"Unsupported weather cadence {cadence!r}; use {allowed}.")
         if site not in self.sites:
             raise KeyError(f"Weather dataset does not contain site {site!r}.")
+
+        key = (site, month_number, cadence)
+        try:
+            partition = self._partition_cache.pop(key)
+        except KeyError:
+            partition = self._read_partition(site, month_number, cadence)
+            if len(self._partition_cache) >= _PARTITION_CACHE_SIZE:
+                self._partition_cache.popitem(last=False)
+        self._partition_cache[key] = partition
+        return partition
+
+    def _read_partition(
+        self, site: str, month_number: int, cadence: Cadence
+    ) -> WeatherPartition:
+        """Read and validate one immutable Zarr partition."""
 
         prefix = f"sites/{site}/months/{month_number:02d}/{cadence}"
         if prefix not in self._root:
@@ -207,6 +227,9 @@ class ZarrWeatherStore:
             raise WeatherStoreError(
                 "Zarr weather dataset is missing required paths: " + ", ".join(missing)
             )
+        self._sites = tuple(sorted(self._root["sites"].group_keys()))
+        if not self._sites:
+            raise WeatherStoreError("Zarr weather dataset does not contain any sites.")
 
         frequency = self._read_array("frequency_ghz")
         if frequency.ndim != 1 or not len(frequency) or not np.all(np.isfinite(frequency)):
