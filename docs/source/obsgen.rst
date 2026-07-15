@@ -1,4 +1,4 @@
-.. module:: obs
+.. module:: ngehtsim.obs
 
 Observation utilities
 =========================
@@ -8,7 +8,7 @@ Observation generation
 
 Definition of the obs_generator interface.
 
-.. automodule:: obs.obs_generator
+.. automodule:: ngehtsim.obs.obs_generator
    :members:
 
 Observation plotting
@@ -16,5 +16,5 @@ Observation plotting
 
 Definition of the obs_plotter interface.
 
-.. automodule:: obs.obs_plotter
+.. automodule:: ngehtsim.obs.obs_plotter
    :members:

@@ -2,7 +2,7 @@
 
 [![Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://smithsonian.github.io/ngehtsim/)
 [![Build status](https://github.com/Smithsonian/ngehtsim/actions/workflows/run_unit_tests.yml/badge.svg)](https://github.com/Smithsonian/ngehtsim/actions)
-[![Python versions](https://img.shields.io/badge/python-3.8|3.9|3.10|3.11|3.12-blue.svg)](https://github.com/Smithsonian/ngehtsim)
+[![Python versions](https://img.shields.io/badge/python-3.11|3.12-blue.svg)](https://github.com/Smithsonian/ngehtsim)
 [![Code coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/dpesce/de229c48256d967a1cb8b29dbf575602/raw/covbadge.json)](https://github.com/Smithsonian/ngehtsim/actions)
 
 A set of tools for generating synthetic data for the Event Horizon Telescope ([EHT](https://eventhorizontelescope.org/)), the next-generation Event Horizon Telescope ([ngEHT](https://www.ngeht.org)), and other very long baseline interferometric arrays of radio telescopes.
@@ -15,7 +15,7 @@ Note that ngehtsim currently only runs on Unix-based systems (e.g., macOS, Linux
 
 ## Setting up the environment
 
-ngehtsim is only tested on Python 3.8 and higher, and it may break for earlier versions.  It is recommended that you install ngehtsim using a virtual environment, e.g.:
+ngehtsim requires Python 3.11 or later. It is recommended that you install ngehtsim using a virtual environment, e.g.:
 
 ```
     $ git clone https://github.com/Smithsonian/ngehtsim
@@ -29,6 +29,12 @@ There is an optional calibration functionality that requires some additional dep
 
 ```
     (.venv) $ pip install ./ngehtsim[calib]
+```
+
+The external versioned weather datasets use Zarr and can be read with:
+
+```
+    (.venv) $ pip install ./ngehtsim[weather-zarr]
 ```
 
 ## Checking that it works
@@ -47,4 +53,3 @@ For this repository, we attempt to adhere to the `major.minor.patch` [Semantic V
 # Licensing
 
 See the [LICENSE](./LICENSE) file for details on the licensing of this software.
-

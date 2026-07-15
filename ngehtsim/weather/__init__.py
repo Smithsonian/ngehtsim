@@ -4,5 +4,5 @@ Tools for accessing weather info.
 
 __author__ = "Dom Pesce"
 
-__all__ = ['weather']
+__all__ = ['weather', 'zarr_store']
 from . import *

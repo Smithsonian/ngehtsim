@@ -1,9 +1,9 @@
-.. module:: calibration
+.. module:: ngehtsim.calibration
 
 Calibration utilities
 =========================
 
 Definition of the calibration interface.
 
-.. automodule:: calibration.calibration
+.. automodule:: ngehtsim.calibration.calibration
    :members:
