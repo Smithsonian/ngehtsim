@@ -2,6 +2,7 @@
 
 import os
 
+import ehtim as eh
 import numpy as np
 import pytest
 
@@ -85,6 +86,32 @@ def test_obs_generator_zarr_weather_matches_packaged_daily_weather(external_stor
 
     for attribute in ("tau_dict", "Tatm_dict", "Tb_dict", "windspeed_dict", "Tgnd_dict"):
         assert np.isclose(getattr(zarr, attribute)["ALMA"], getattr(legacy, attribute)["ALMA"])
+
+
+@pytest.mark.external_weather
+def test_obs_generator_uses_native_weather_for_observation_terms(external_store):
+    settings = dict(OBS_GENERATOR_SETTINGS)
+    settings.pop("sites")
+    settings["array"] = "EHT2017"
+    model = eh.model.Model().add_circ_gauss(F0=1.0, FWHM=40.0 * eh.RADPERUAS)
+    obsgen = obs_generator_module.obs_generator(
+        settings=settings,
+        weather_store=external_store,
+        weather_cadence="native",
+        weight=1,
+    )
+
+    obs = obsgen.make_obs(
+        model,
+        addnoise=False,
+        addgains=False,
+        flagwind=False,
+        flagsun=False,
+    )
+
+    assert len(obs.data) > 0
+    assert np.all(np.isfinite(obsgen.tau1))
+    assert np.all(np.isfinite(obsgen.SEFD1))
 
 
 @pytest.mark.external_weather

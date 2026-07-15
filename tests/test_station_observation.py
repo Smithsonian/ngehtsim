@@ -64,6 +64,18 @@ def _station_terms(obsgen, obs, F0, **kwargs):
         **station_kwargs,
     )
 
+
+def _time_varying_weather_context(obsgen, obs):
+    context = obsgen.station_context()
+    count = len(obs.data)
+    context = dict(context)
+    for quantity in ("tau", "Tatm", "Tgnd", "windspeed"):
+        context[quantity] = {
+            site: np.full(count, value, dtype=float)
+            for site, value in context[quantity].items()
+        }
+    return context
+
 #######################################################
 # tests
 
@@ -149,6 +161,71 @@ def test_station_terms_populates_weather_arrays_without_corruptions():
     assert np.all(terms["bw2"] > 0.0)
     assert "gainamp1R" not in terms
     assert "leak1R" not in terms
+
+
+def test_station_terms_accepts_per_observation_weather_values():
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    obs, F0 = _source_observation(obsgen)
+    context = _time_varying_weather_context(obsgen, obs)
+    context["tau"]["ALMA"] = np.linspace(0.1, 0.2, len(obs.data))
+    context["Tatm"]["ALMA"] = np.linspace(240.0, 260.0, len(obs.data))
+    context["Tgnd"]["ALMA"] = np.linspace(250.0, 270.0, len(obs.data))
+
+    terms = station_observation.station_terms(
+        obs,
+        F0,
+        context,
+        obsgen.arr,
+        obsgen.rng,
+        addgains=False,
+        addleakage=False,
+        flagwind=False,
+        flagday=False,
+        flagsun=False,
+        solar_angle=obsgen.solar_angle,
+        windspeed_sefd_modifier=og.windspeed_SEFD_modification,
+    )
+
+    ind1 = terms["t1"] == "ALMA"
+    ind2 = terms["t2"] == "ALMA"
+    assert np.allclose(
+        terms["tau1"][ind1] * np.cos((np.pi/2.0) - terms["el1"][ind1]),
+        context["tau"]["ALMA"][ind1],
+    )
+    assert np.allclose(
+        terms["tau2"][ind2] * np.cos((np.pi/2.0) - terms["el2"][ind2]),
+        context["tau"]["ALMA"][ind2],
+    )
+
+
+def test_station_terms_flags_time_varying_wind_per_timestamp():
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    obs, F0 = _source_observation(obsgen)
+    context = _time_varying_weather_context(obsgen, obs)
+    high_wind_time = np.max(obs.data["time"])
+    context["windspeed"]["ALMA"][obs.data["time"] == high_wind_time] = 30.0
+
+    terms = station_observation.station_terms(
+        obs,
+        F0,
+        context,
+        obsgen.arr,
+        obsgen.rng,
+        addgains=False,
+        addleakage=False,
+        flagwind=True,
+        flagday=False,
+        flagsun=False,
+        solar_angle=obsgen.solar_angle,
+        windspeed_sefd_modifier=og.windspeed_SEFD_modification,
+    )
+
+    expected_flags = (
+        ((terms["t1"] == "ALMA") | (terms["t2"] == "ALMA"))
+        & (terms["times"] == high_wind_time)
+    )
+    assert terms["flagsites"] == []
+    assert np.array_equal(~terms["uptime_mask"], expected_flags)
 
 
 def test_station_terms_populates_gain_and_leakage_arrays_when_enabled():
