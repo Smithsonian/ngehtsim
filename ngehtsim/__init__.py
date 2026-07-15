@@ -16,7 +16,22 @@ __bibtex__ = r"""@Article{TBD,
 }"""
 
 __all__ = ['obs', 'metrics', 'const_def', 'weather', 'calibration']
-from . import *
+
+
+def __getattr__(name):
+    """Import public subpackages only when they are requested."""
+
+    if name in __all__:
+        import importlib
+
+        module = importlib.import_module(f"{__name__}.{name}")
+        globals()[name] = module
+        return module
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
 
 
 from . import _version
