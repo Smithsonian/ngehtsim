@@ -17,6 +17,7 @@ import warnings
 
 import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
+from ngehtsim.weather.zarr_store import ZarrWeatherStore
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.station_observation as station_observation
@@ -65,6 +66,8 @@ class obs_generator(object):
       station_uptimes (dict): A dictionary of station names and associated uptime ranges, in UT
       array (str): Provide the name of a known array to load the corresponding sites and configuration
       ephem (str): path to the ephemeris for a space station
+      weather_store (ngehtsim.weather.zarr_store.ZarrWeatherStore): Optional local Zarr weather dataset.
+                                                                    If None, use the packaged binary weather data.
     """
 
     # initialize class instantiation
@@ -72,7 +75,7 @@ class obs_generator(object):
                  surf_rms_overrides=None, receiver_configuration_overrides=None, bandwidth_overrides=None,
                  T_R_overrides=None, sideband_ratio_overrides=None, lo_freq_overrides=None, hi_freq_overrides=None,
                  ap_eff_overrides=None, wind_loading_overrides=None, custom_receivers=None, station_uptimes=None,
-                 array=None, ephem='ephemeris/space'):
+                 array=None, ephem='ephemeris/space', weather_store=None):
 
         #############################
         # astropy cache
@@ -95,6 +98,8 @@ class obs_generator(object):
         wind_loading_overrides = {} if wind_loading_overrides is None else wind_loading_overrides
         custom_receivers = {} if custom_receivers is None else custom_receivers
         station_uptimes = {} if station_uptimes is None else station_uptimes
+        if weather_store is not None and not isinstance(weather_store, ZarrWeatherStore):
+            raise TypeError("weather_store must be a ZarrWeatherStore instance or None.")
 
         #############################
         # parse inputs
@@ -116,6 +121,7 @@ class obs_generator(object):
         self.station_uptimes = copy.deepcopy(station_uptimes)
         self.array = array
         self.ephem = ephem
+        self.weather_store = weather_store
 
         #############################
         # load settings
@@ -487,10 +493,16 @@ class obs_generator(object):
                 elif ((self.weather == 'bad') | (self.weather == 'poor')):
                     form = 'bad'
 
-                tau_here = nw.opacity(site, form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year, freq=self.freq/(1.0e9))
-                Tb_here = nw.brightness_temperature(site, form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year, freq=self.freq/(1.0e9))
-                ws_here = nw.windspeed(site, form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year)
-                Tgnd_here = nw.temperature(site, form=form, month=self.settings['month'], day=self.weather_day, year=self.weather_year)
+                tau_here = nw.opacity(site, form=form, month=self.settings['month'], day=self.weather_day,
+                                       year=self.weather_year, freq=self.freq/(1.0e9),
+                                       weather_store=self.weather_store)
+                Tb_here = nw.brightness_temperature(site, form=form, month=self.settings['month'],
+                                                     day=self.weather_day, year=self.weather_year,
+                                                     freq=self.freq/(1.0e9), weather_store=self.weather_store)
+                ws_here = nw.windspeed(site, form=form, month=self.settings['month'], day=self.weather_day,
+                                        year=self.weather_year, weather_store=self.weather_store)
+                Tgnd_here = nw.temperature(site, form=form, month=self.settings['month'], day=self.weather_day,
+                                           year=self.weather_year, weather_store=self.weather_store)
 
                 # divide out the opacity term to get the effective atmospheric temperature
                 Tatm_here = (Tb_here - (const.T_CMB*np.exp(-tau_here))) / (1.0 - np.exp(-tau_here))
@@ -1178,7 +1190,8 @@ class obs_generator(object):
                                             custom_receivers=copy.deepcopy(self.custom_receivers),
                                             station_uptimes=copy.deepcopy(self.station_uptimes),
                                             array=self.array,
-                                            ephem=self.ephem)
+                                            ephem=self.ephem,
+                                            weather_store=self.weather_store)
 
                 if ((model_target is not None) & (not isinstance(model_target, str))):
                     obsgen_here.im = model_target
@@ -1760,7 +1773,8 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
                                wind_loading_overrides=new_wind_loading_overrides,
                                custom_receivers=new_custom_receivers,
                                station_uptimes=new_station_uptimes,
-                               ephem=ephem)
+                               ephem=ephem,
+                               weather_store=obsgen.weather_store)
     if ((model_ref is not None) & (not isinstance(model_ref, str))):
         obsgen_ref.im = model_ref
 
@@ -1914,15 +1928,18 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
                 strhere += str(np.round(obsgen.receivers[site][band]['T_R'], 2)).ljust(11)
 
                 # add PWV, in mm
-                PWV = nw.PWV(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
+                PWV = nw.PWV(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day,
+                             year=obsgen.weather_year, weather_store=obsgen.weather_store)
                 strhere += str(np.round(PWV, 4)).ljust(9)
 
                 # add surface pressure, in mbar
-                pres = nw.pressure(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
+                pres = nw.pressure(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day,
+                                   year=obsgen.weather_year, weather_store=obsgen.weather_store)
                 strhere += str(np.round(pres, 2)).ljust(12)
 
                 # add surface temperature, in K
-                temp = nw.temperature(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day, year=obsgen.weather_year)
+                temp = nw.temperature(site, form=form, month=obsgen.settings['month'], day=obsgen.weather_day,
+                                      year=obsgen.weather_year, weather_store=obsgen.weather_store)
                 strhere += str(np.round(temp, 2)).ljust(10)
 
                 # add coherence time, in seconds
