@@ -5,6 +5,7 @@ import os
 import numpy as np
 import pytest
 
+import ngehtsim.obs.obs_generator as obs_generator_module
 import ngehtsim.weather.weather as weather
 from ngehtsim.weather.zarr_store import SCHEMA_VERSION, ZarrWeatherStore
 
@@ -19,6 +20,23 @@ WEATHER_FUNCTIONS = (
     (weather.PWV, {}),
     (weather.windspeed, {}),
 )
+
+OBS_GENERATOR_SETTINGS = {
+    "source": "M87",
+    "sites": ["ALMA"],
+    "weather": "exact",
+    "month": "Apr",
+    "day": 11,
+    "year": 2017,
+    "weather_day": 11,
+    "weather_year": 2017,
+    "frequency": 230.0,
+    "t_start": 0.0,
+    "dt": 3.0,
+    "t_int": 600.0,
+    "t_rest": 1200.0,
+    "random_seed": 1,
+}
 
 
 @pytest.fixture(scope="module")
@@ -56,3 +74,14 @@ def test_zarr_weather_api_matches_packaged_daily_weather(
     zarr = weather_function("ALMA", weather_store=external_store, **kwargs)
 
     assert np.allclose(zarr, legacy, equal_nan=True)
+
+
+@pytest.mark.external_weather
+def test_obs_generator_zarr_weather_matches_packaged_daily_weather(external_store):
+    legacy = obs_generator_module.obs_generator(settings=OBS_GENERATOR_SETTINGS)
+    zarr = obs_generator_module.obs_generator(
+        settings=OBS_GENERATOR_SETTINGS, weather_store=external_store
+    )
+
+    for attribute in ("tau_dict", "Tatm_dict", "Tb_dict", "windspeed_dict", "Tgnd_dict"):
+        assert np.isclose(getattr(zarr, attribute)["ALMA"], getattr(legacy, attribute)["ALMA"])
