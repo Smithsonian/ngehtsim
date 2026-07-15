@@ -10,6 +10,7 @@ from __future__ import annotations
 import calendar
 from collections import OrderedDict
 from dataclasses import dataclass
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Literal
 
@@ -18,6 +19,7 @@ import numpy as np
 
 SCHEMA_VERSION = "0.1.0"
 Cadence = Literal["daily", "native"]
+NativeWeatherForm = Literal["exact", "mean", "median", "good", "bad"]
 
 _MONTH_NAMES = (
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -31,6 +33,8 @@ _SCALAR_ARRAYS = (
     "surface_temperature_k",
 )
 _PARTITION_CACHE_SIZE = 64
+_NATIVE_SUMMARY_CACHE_SIZE = 64
+_NATIVE_SUMMARY_FORMS = ("mean", "median", "good", "bad")
 
 
 class WeatherStoreError(ValueError):
@@ -59,6 +63,23 @@ class WeatherPartition:
         """Return the number of weather records in this partition."""
 
         return len(self.year)
+
+
+@dataclass(frozen=True)
+class NativeWeatherSamples:
+    """Linearly sampled weather values at one or more UTC-hour offsets.
+
+    All fields have a leading dimension matching ``utc_hours``. The spectral
+    fields have a second dimension matching :attr:`ZarrWeatherStore.frequency_ghz`.
+    """
+
+    utc_hours: np.ndarray
+    opacity: np.ndarray
+    brightness_temperature: np.ndarray
+    pwv_mm: np.ndarray
+    wind_speed_m_s: np.ndarray
+    surface_pressure_mbar: np.ndarray
+    surface_temperature_k: np.ndarray
 
 
 class ZarrWeatherStore:
@@ -92,6 +113,9 @@ class ZarrWeatherStore:
         self._pca_bases: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         self._partition_cache: OrderedDict[
             tuple[str, int, Cadence], WeatherPartition
+        ] = OrderedDict()
+        self._native_summary_cache: OrderedDict[
+            tuple[str, int, NativeWeatherForm], dict[str, np.ndarray]
         ] = OrderedDict()
         self._validate_root()
 
@@ -204,6 +228,225 @@ class ZarrWeatherStore:
 
         return self._reconstruct("tb", partition.tb_coefficients)
 
+    def sample_native(
+        self,
+        site: str,
+        *,
+        year: int,
+        month: str | int,
+        day: int,
+        utc_hours: float | np.ndarray,
+        form: NativeWeatherForm = "exact",
+    ) -> NativeWeatherSamples:
+        """Linearly sample three-hourly weather at UTC-hour offsets.
+
+        Args:
+            site: Weather site identifier.
+            year: Year of the base weather date.
+            month: Three-letter or numeric base month.
+            day: Day of the base month.
+            utc_hours: One or more UTC-hour offsets from the base date. Values
+                may cross calendar-day and calendar-month boundaries.
+            form: ``"exact"`` samples the selected historical date. Summary
+                forms build a month-specific three-hourly climatology before
+                interpolation.
+
+        Returns:
+            A :class:`NativeWeatherSamples` instance. Results always retain a
+            leading sample dimension, including when ``utc_hours`` is scalar.
+
+        Raises:
+            WeatherStoreError: If either interpolation endpoint is unavailable.
+            ValueError: If an unsupported weather form or invalid date is used.
+        """
+
+        if site not in self.sites:
+            raise KeyError(f"Weather dataset does not contain site {site!r}.")
+        if form != "exact" and form not in _NATIVE_SUMMARY_FORMS:
+            allowed = ", ".join(("exact", *_NATIVE_SUMMARY_FORMS))
+            raise ValueError(f"Unsupported native weather form {form!r}; use {allowed}.")
+
+        month_number = _parse_month(month)
+        try:
+            base_date = date(int(year), month_number, int(day))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Native weather sampling requires a valid calendar date.") from exc
+
+        hours = np.asarray(utc_hours, dtype=float)
+        if hours.ndim == 0:
+            hours = hours.reshape(1)
+        if hours.ndim != 1 or not np.all(np.isfinite(hours)):
+            raise ValueError("utc_hours must be a finite scalar or one-dimensional array.")
+
+        dates, day_hours, absolute_hours = _resolve_utc_hours(base_date, hours)
+        if form == "exact":
+            sample_hours, values = self._native_exact_values(site, dates, day_hours)
+        else:
+            sample_hours, values = self._native_summary_values(site, dates, form)
+
+        interpolated = {
+            name: _linear_interpolate(
+                sample_hours, value, absolute_hours, self._native_time_step_hours
+            )
+            for name, value in values.items()
+        }
+        return NativeWeatherSamples(
+            utc_hours=_readonly_copy(hours),
+            opacity=_readonly_copy(interpolated["opacity"]),
+            brightness_temperature=_readonly_copy(interpolated["brightness_temperature"]),
+            pwv_mm=_readonly_copy(interpolated["pwv_mm"]),
+            wind_speed_m_s=_readonly_copy(interpolated["wind_speed_m_s"]),
+            surface_pressure_mbar=_readonly_copy(interpolated["surface_pressure_mbar"]),
+            surface_temperature_k=_readonly_copy(interpolated["surface_temperature_k"]),
+        )
+
+    def _native_exact_values(
+        self, site: str, dates: tuple[date, ...], day_hours: np.ndarray
+    ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        endpoint_dates = set(dates)
+        endpoint_dates.update(
+            item + timedelta(days=1)
+            for item, hour in zip(dates, day_hours)
+            if hour > 21.0
+        )
+        partitions = [
+            self.read_partition(site, month, cadence="native")
+            for month in {item.month for item in endpoint_dates}
+        ]
+        return self._native_partition_values(partitions, endpoint_dates)
+
+    def _native_summary_values(
+        self,
+        site: str,
+        dates: tuple[date, ...],
+        form: NativeWeatherForm,
+    ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        sample_hours = []
+        samples: dict[str, list[np.ndarray]] = {
+            "opacity": [],
+            "brightness_temperature": [],
+            "pwv_mm": [],
+            "wind_speed_m_s": [],
+            "surface_pressure_mbar": [],
+            "surface_temperature_k": [],
+        }
+        unique_dates = sorted(set(dates))
+        for sample_date in unique_dates:
+            current = self._native_month_summary(site, sample_date.month, form)
+            next_day = sample_date + timedelta(days=1)
+            next_summary = self._native_month_summary(site, next_day.month, form)
+            offsets = np.arange(self._native_samples_per_day + 1, dtype=float)
+            offsets *= self._native_time_step_hours
+            sample_hours.append((_absolute_hour(sample_date) + offsets))
+            for name in samples:
+                samples[name].append(
+                    np.concatenate((current[name], next_summary[name][:1]), axis=0)
+                )
+
+        hours = np.concatenate(sample_hours)
+        values = {name: np.concatenate(items) for name, items in samples.items()}
+        order = np.argsort(hours)
+        hours = hours[order]
+        values = {name: value[order] for name, value in values.items()}
+        unique_hours, indices = np.unique(hours, return_index=True)
+        return unique_hours, {name: value[indices] for name, value in values.items()}
+
+    def _native_month_summary(
+        self, site: str, month: int, form: NativeWeatherForm
+    ) -> dict[str, np.ndarray]:
+        key = (site, month, form)
+        try:
+            values = self._native_summary_cache.pop(key)
+        except KeyError:
+            partition = self.read_partition(site, month, cadence="native")
+            values = self._summarize_native_partition(partition, form)
+            if len(self._native_summary_cache) >= _NATIVE_SUMMARY_CACHE_SIZE:
+                self._native_summary_cache.popitem(last=False)
+        self._native_summary_cache[key] = values
+        return values
+
+    def _summarize_native_partition(
+        self, partition: WeatherPartition, form: NativeWeatherForm
+    ) -> dict[str, np.ndarray]:
+        if partition.time_index is None:
+            raise WeatherStoreError("Native weather partitions require time_index data.")
+
+        values = {
+            "opacity": self.reconstruct_tau_spectra(partition),
+            "brightness_temperature": self.reconstruct_tb_spectra(partition),
+            "pwv_mm": partition.pwv_mm,
+            "wind_speed_m_s": partition.wind_speed_m_s,
+            "surface_pressure_mbar": partition.surface_pressure_mbar,
+            "surface_temperature_k": partition.surface_temperature_k,
+        }
+        reducer = _native_reducer(form)
+        summary = {name: [] for name in values}
+        for time_index in range(self._native_samples_per_day):
+            mask = partition.time_index == time_index
+            if not np.any(mask):
+                raise WeatherStoreError(
+                    f"Native weather partition for {partition.site!r}, month "
+                    f"{partition.month:02d} is missing time index {time_index}."
+                )
+            for name, value in values.items():
+                summary[name].append(reducer(value[mask], axis=0))
+        return {name: np.asarray(items) for name, items in summary.items()}
+
+    def _native_partition_values(
+        self, partitions: list[WeatherPartition], endpoint_dates: set[date]
+    ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        coordinates = []
+        tau_coefficients = []
+        tb_coefficients = []
+        scalar_values = {name: [] for name in _SCALAR_ARRAYS}
+        for partition in partitions:
+            if partition.time_index is None:
+                raise WeatherStoreError("Native weather partitions require time_index data.")
+            mask = np.zeros(partition.record_count, dtype=bool)
+            for endpoint_date in endpoint_dates:
+                if endpoint_date.month == partition.month:
+                    mask |= (
+                        (partition.year == endpoint_date.year)
+                        & (partition.day == endpoint_date.day)
+                    )
+            if not np.any(mask):
+                continue
+            coordinates.append(
+                np.fromiter(
+                    (
+                        _absolute_hour(date(int(year), partition.month, int(day)))
+                        + (self._native_time_step_hours * int(time_index))
+                        for year, day, time_index in zip(
+                            partition.year[mask],
+                            partition.day[mask],
+                            partition.time_index[mask],
+                        )
+                    ),
+                    dtype=float,
+                    count=int(mask.sum()),
+                )
+            )
+            tau_coefficients.append(partition.tau_coefficients[mask])
+            tb_coefficients.append(partition.tb_coefficients[mask])
+            for name in scalar_values:
+                scalar_values[name].append(getattr(partition, name)[mask])
+
+        if not coordinates:
+            raise WeatherStoreError("Native weather interpolation endpoints are unavailable.")
+
+        sample_hours = np.concatenate(coordinates)
+        values = {
+            "opacity": np.power(10.0, self._reconstruct("tau", np.concatenate(tau_coefficients))),
+            "brightness_temperature": self._reconstruct("tb", np.concatenate(tb_coefficients)),
+            "pwv_mm": np.concatenate(scalar_values["pwv_mm"]),
+            "wind_speed_m_s": np.concatenate(scalar_values["wind_speed_m_s"]),
+            "surface_pressure_mbar": np.concatenate(scalar_values["surface_pressure_mbar"]),
+            "surface_temperature_k": np.concatenate(scalar_values["surface_temperature_k"]),
+        }
+        order = np.argsort(sample_hours)
+        sample_hours = sample_hours[order]
+        return sample_hours, {name: value[order] for name, value in values.items()}
+
     def _validate_root(self) -> None:
         attributes = self._root.attrs
         if attributes.get("schema_version") != SCHEMA_VERSION:
@@ -244,6 +487,16 @@ class ZarrWeatherStore:
                 "Zarr weather dataset has no valid native_samples_per_day attribute."
             )
         self._native_samples_per_day = samples_per_day
+        time_step_hours = attributes.get("native_time_step_hours")
+        if not isinstance(time_step_hours, int) or time_step_hours <= 0:
+            raise WeatherStoreError(
+                "Zarr weather dataset has no valid native_time_step_hours attribute."
+            )
+        if samples_per_day * time_step_hours != 24:
+            raise WeatherStoreError(
+                "Zarr weather native sampling does not cover one 24-hour UTC day."
+            )
+        self._native_time_step_hours = time_step_hours
 
         for quantity in ("tau", "tb"):
             mean = self._read_array(f"pca/{quantity}/mean")
@@ -344,3 +597,77 @@ def _parse_month(month: str | int) -> int:
         "Specified month not recognized; use a three-letter abbreviation "
         "(for example Jan or Apr) or a number from 1 to 12."
     )
+
+
+def _resolve_utc_hours(
+    base_date: date, utc_hours: np.ndarray
+) -> tuple[tuple[date, ...], np.ndarray, np.ndarray]:
+    day_offsets = np.floor(utc_hours / 24.0).astype(int)
+    day_hours = utc_hours - (24.0 * day_offsets)
+    dates = tuple(base_date + timedelta(days=int(offset)) for offset in day_offsets)
+    absolute_hours = np.asarray(
+        [_absolute_hour(item) + hour for item, hour in zip(dates, day_hours)], dtype=float
+    )
+    return dates, day_hours, absolute_hours
+
+
+def _absolute_hour(value: date) -> float:
+    return float(value.toordinal() * 24)
+
+
+def _linear_interpolate(
+    sample_hours: np.ndarray,
+    values: np.ndarray,
+    target_hours: np.ndarray,
+    time_step_hours: int,
+) -> np.ndarray:
+    if np.any(target_hours < sample_hours[0]) or np.any(target_hours > sample_hours[-1]):
+        raise WeatherStoreError("Native weather interpolation endpoints are unavailable.")
+
+    right = np.searchsorted(sample_hours, target_hours, side="left")
+    exact = np.zeros(len(target_hours), dtype=bool)
+    in_range = right < len(sample_hours)
+    exact[in_range] = sample_hours[right[in_range]] == target_hours[in_range]
+    result = np.empty((len(target_hours), *values.shape[1:]), dtype=float)
+    result[exact] = values[right[exact]]
+
+    interpolate = ~exact
+    if not np.any(interpolate):
+        return result
+    if len(sample_hours) < 2:
+        raise WeatherStoreError("Native weather interpolation requires at least two samples.")
+
+    interpolation_right = right[interpolate]
+    interpolation_left = interpolation_right - 1
+    if np.any(interpolation_left < 0) or np.any(interpolation_right >= len(sample_hours)):
+        raise WeatherStoreError("Native weather interpolation endpoints are unavailable.")
+
+    interval = sample_hours[interpolation_right] - sample_hours[interpolation_left]
+    if np.any(interval <= 0.0) or np.any(interval > time_step_hours):
+        raise WeatherStoreError("Native weather interpolation would cross missing records.")
+
+    weight = (target_hours[interpolate] - sample_hours[interpolation_left]) / interval
+    if values.ndim > 1:
+        weight = weight.reshape((len(weight),) + (1,) * (values.ndim - 1))
+    result[interpolate] = values[interpolation_left] + (
+        weight * (values[interpolation_right] - values[interpolation_left])
+    )
+    return result
+
+
+def _native_reducer(form: NativeWeatherForm):
+    if form == "mean":
+        return np.nanmean
+    if form == "median":
+        return np.nanmedian
+    if form == "good":
+        return lambda values, axis: np.nanpercentile(values, 15.87, axis=axis)
+    if form == "bad":
+        return lambda values, axis: np.nanpercentile(values, 84.13, axis=axis)
+    raise ValueError(f"Unsupported native weather summary form {form!r}.")
+
+
+def _readonly_copy(values: np.ndarray) -> np.ndarray:
+    result = np.array(values, dtype=float, copy=True)
+    result.setflags(write=False)
+    return result

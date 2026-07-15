@@ -35,7 +35,7 @@ def test_store_reads_native_partition(weather_dataset):
         "ALMA", "Apr", cadence="native"
     )
 
-    assert np.array_equal(partition.time_index, [0, 1])
+    assert np.array_equal(partition.time_index, np.tile(np.arange(8), 2))
 
 
 def test_store_caches_validated_partitions(weather_dataset):
@@ -56,6 +56,78 @@ def test_store_reconstructs_tau_and_tb_spectra(weather_dataset):
         store.reconstruct_tb_spectra(partition),
         [[11.0, 22.0, 33.0], [14.0, 25.0, 36.0]],
     )
+
+
+def test_store_linearly_samples_exact_native_weather(weather_dataset):
+    samples = ZarrWeatherStore(weather_dataset).sample_native(
+        "ALMA", year=2017, month="Apr", day=11, utc_hours=[0.0, 1.5, 3.0]
+    )
+
+    assert np.allclose(samples.surface_pressure_mbar, [500.0, 500.5, 501.0])
+    assert np.allclose(samples.surface_temperature_k, [250.0, 250.5, 251.0])
+    assert np.allclose(samples.wind_speed_m_s, [3.0, 3.5, 4.0])
+    assert np.allclose(samples.pwv_mm, [1.0, 1.5, 2.0])
+    assert np.allclose(samples.opacity[:, 0], [1.0, 5.5, 10.0])
+    assert np.allclose(samples.brightness_temperature[:, 0], [10.0, 10.5, 11.0])
+    assert not samples.opacity.flags.writeable
+
+
+def test_store_linearly_samples_across_native_day_boundary(weather_dataset):
+    samples = ZarrWeatherStore(weather_dataset).sample_native(
+        "ALMA", year=2017, month=4, day=11, utc_hours=[21.0, 22.5, 24.0]
+    )
+
+    assert np.allclose(samples.surface_pressure_mbar, [507.0, 507.5, 508.0])
+
+
+@pytest.mark.parametrize(
+    "form,reducer",
+    [
+        ("mean", np.nanmean),
+        ("median", np.nanmedian),
+        ("good", lambda values: np.nanpercentile(values, 15.87)),
+        ("bad", lambda values: np.nanpercentile(values, 84.13)),
+    ],
+)
+def test_store_summarizes_native_weather_by_utc_time(weather_dataset, form, reducer):
+    samples = ZarrWeatherStore(weather_dataset).sample_native(
+        "ALMA", year=2017, month="Apr", day=11, utc_hours=1.5, form=form
+    )
+
+    assert samples.surface_pressure_mbar.shape == (1,)
+    expected = (reducer([500.0, 508.0]) + reducer([501.0, 509.0])) / 2.0
+    assert np.allclose(samples.surface_pressure_mbar, [expected])
+
+
+@pytest.mark.parametrize("form", ["all", "random", "unknown"])
+def test_store_rejects_unsupported_native_weather_forms(weather_dataset, form):
+    with pytest.raises(ValueError, match="Unsupported native weather form"):
+        ZarrWeatherStore(weather_dataset).sample_native(
+            "ALMA", year=2017, month="Apr", day=11, utc_hours=0.0, form=form
+        )
+
+
+def test_store_rejects_native_interpolation_across_missing_records(weather_dataset):
+    with pytest.raises(WeatherStoreError, match="interpolation endpoints are unavailable"):
+        ZarrWeatherStore(weather_dataset).sample_native(
+            "ALMA", year=2017, month="Apr", day=11, utc_hours=48.0
+        )
+
+
+def test_store_returns_exact_native_samples_without_adjacent_records(weather_dataset):
+    root = zarr.open_group(weather_dataset, mode="r+")
+    native = root["sites/ALMA/months/04/native"]
+    native["time_index"][6] = 7
+    native["day"][6] = 13
+
+    store = ZarrWeatherStore(weather_dataset)
+    samples = store.sample_native(
+        "ALMA", year=2017, month="Apr", day=11, utc_hours=21.0
+    )
+
+    assert np.allclose(samples.surface_pressure_mbar, [507.0])
+    with pytest.raises(WeatherStoreError, match="would cross missing records"):
+        store.sample_native("ALMA", year=2017, month="Apr", day=11, utc_hours=19.5)
 
 
 @pytest.mark.parametrize("month", [0, 13, "Foo", "", None])

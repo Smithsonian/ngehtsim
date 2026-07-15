@@ -85,3 +85,22 @@ def test_obs_generator_zarr_weather_matches_packaged_daily_weather(external_stor
 
     for attribute in ("tau_dict", "Tatm_dict", "Tb_dict", "windspeed_dict", "Tgnd_dict"):
         assert np.isclose(getattr(zarr, attribute)["ALMA"], getattr(legacy, attribute)["ALMA"])
+
+
+@pytest.mark.external_weather
+def test_native_sampling_interpolates_across_month_boundary(external_store):
+    april = external_store.read_partition("ALMA", "Apr", cadence="native")
+    may = external_store.read_partition("ALMA", "May", cadence="native")
+    april_mask = (april.year == 2017) & (april.day == 30) & (april.time_index == 7)
+    may_mask = (may.year == 2017) & (may.day == 1) & (may.time_index == 0)
+    april_tau = external_store.reconstruct_tau_spectra(april)[april_mask][0]
+    may_tau = external_store.reconstruct_tau_spectra(may)[may_mask][0]
+
+    samples = external_store.sample_native(
+        "ALMA", year=2017, month="Apr", day=30, utc_hours=[21.0, 22.5, 24.0]
+    )
+
+    assert np.allclose(samples.opacity[0], april_tau)
+    assert np.allclose(samples.opacity[1], (april_tau + may_tau) / 2.0)
+    assert np.allclose(samples.opacity[2], may_tau)
+    assert np.all(np.isfinite(samples.surface_pressure_mbar))
