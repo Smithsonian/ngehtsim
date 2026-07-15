@@ -52,6 +52,7 @@ def test_obs_generator_uses_zarr_weather_store(store):
     ) / (1.0 - np.exp(-tau))
 
     assert obsgen.weather_store is store
+    assert obsgen.weather_cadence == "daily"
     assert np.isclose(obsgen.tau_dict["ALMA"], tau)
     assert np.isclose(obsgen.Tb_dict["ALMA"], tb)
     assert np.isclose(obsgen.windspeed_dict["ALMA"], windspeed)
@@ -59,11 +60,66 @@ def test_obs_generator_uses_zarr_weather_store(store):
     assert np.isclose(obsgen.Tatm_dict["ALMA"], atmospheric_temperature)
 
 
+def test_obs_generator_samples_native_weather_at_observation_times(store):
+    obsgen = obs_generator_module.obs_generator(
+        settings=ZARR_OBS_SETTINGS,
+        weather_store=store,
+        weather_cadence="native",
+    )
+    times = np.array([0.0, 1.5, 3.0])
+    context = obsgen.station_context(times)
+    samples = store.sample_native(
+        "ALMA", year=2017, month="Apr", day=11, utc_hours=times
+    )
+    expected_tau = np.array([
+        np.interp(230.0, store.frequency_ghz, spectrum)
+        for spectrum in samples.opacity
+    ])
+    expected_tb = np.array([
+        np.interp(230.0, store.frequency_ghz, spectrum)
+        for spectrum in samples.brightness_temperature
+    ])
+    expected_tatm = (
+        expected_tb - (const.T_CMB * np.exp(-expected_tau))
+    ) / (1.0 - np.exp(-expected_tau))
+
+    assert np.allclose(context["tau"]["ALMA"], expected_tau)
+    assert np.allclose(context["Tatm"]["ALMA"], expected_tatm)
+    assert np.allclose(context["Tgnd"]["ALMA"], [250.0, 250.5, 251.0])
+    assert np.allclose(context["windspeed"]["ALMA"], [3.0, 3.5, 4.0])
+
+
 def test_obs_generator_rejects_invalid_weather_store():
     with pytest.raises(TypeError, match="weather_store must be a ZarrWeatherStore"):
         obs_generator_module.obs_generator(
             settings=ZARR_OBS_SETTINGS, weather_store="weather.zarr"
         )
+
+
+@pytest.mark.parametrize("weather_cadence", ["hourly", "three-hourly", None])
+def test_obs_generator_rejects_invalid_weather_cadence(weather_cadence):
+    with pytest.raises(ValueError, match="weather_cadence"):
+        obs_generator_module.obs_generator(
+            settings=ZARR_OBS_SETTINGS, weather_cadence=weather_cadence
+        )
+
+
+def test_native_weather_cadence_requires_zarr_store():
+    with pytest.raises(ValueError, match="requires a Zarr weather_store"):
+        obs_generator_module.obs_generator(
+            settings=ZARR_OBS_SETTINGS, weather_cadence="native"
+        )
+
+
+def test_native_weather_station_context_requires_observation_times(store):
+    obsgen = obs_generator_module.obs_generator(
+        settings=ZARR_OBS_SETTINGS,
+        weather_store=store,
+        weather_cadence="native",
+    )
+
+    with pytest.raises(ValueError, match="require observation times"):
+        obsgen.station_context()
 
 
 def test_symba_export_uses_obs_generator_weather_store(store, tmp_path):
@@ -81,3 +137,16 @@ def test_symba_export_uses_obs_generator_weather_store(store, tmp_path):
     assert np.isclose(float(fields[2]), 1.0)
     assert np.isclose(float(fields[3]), 500.0)
     assert np.isclose(float(fields[4]), 250.0)
+
+
+def test_symba_export_rejects_native_weather_cadence(store, tmp_path):
+    obsgen = obs_generator_module.obs_generator(
+        settings=ZARR_OBS_SETTINGS,
+        weather_store=store,
+        weather_cadence="native",
+    )
+
+    with pytest.raises(ValueError, match="do not support native time-varying weather"):
+        obs_generator_module.export_SYMBA_antennas(
+            obsgen, output_filename=tmp_path / "obsgen.antennas"
+        )

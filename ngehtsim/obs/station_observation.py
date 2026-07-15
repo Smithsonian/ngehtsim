@@ -23,6 +23,17 @@ def _cache_value(value):
     return value
 
 
+def _station_weather_values(value, count, name):
+    values = np.asarray(value, dtype=float)
+    if values.ndim == 0:
+        return np.full(count, values, dtype=float), True
+    if values.shape != (count,):
+        raise ValueError(
+            'Station {0} weather must be a scalar or one value per observation row.'.format(name)
+        )
+    return values, False
+
+
 def station_metadata_cache_key(obs, station_context):
     sites = tuple(station_context["sites"])
     station_key = tuple(
@@ -173,18 +184,32 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
     flagsites = list()
     uptime_mask = np.ones(len(obs.data), dtype=bool)
     for site in sites_obs:
-        tau_z = station_context["tau"][site]
-        Tatm = station_context["Tatm"][site]
-        Tgnd = station_context["Tgnd"][site]
-        ws = station_context["windspeed"][site]
+        tau_z, _ = _station_weather_values(
+            station_context["tau"][site], len(obs.data), 'opacity'
+        )
+        Tatm, _ = _station_weather_values(
+            station_context["Tatm"][site], len(obs.data), 'atmospheric temperature'
+        )
+        Tgnd, _ = _station_weather_values(
+            station_context["Tgnd"][site], len(obs.data), 'ground temperature'
+        )
+        ws, windspeed_is_scalar = _station_weather_values(
+            station_context["windspeed"][site], len(obs.data), 'wind speed'
+        )
         Aeff = station_context["effective_area"][site]
         wind_loading = station_context["wind_loading"][site]
 
-        if (ws > wind_loading["shutdown"]):
-            if flagwind:
+        if flagwind:
+            site_rows = ((t1 == site) | (t2 == site))
+            high_wind = site_rows & (ws > wind_loading["shutdown"])
+            if np.any(high_wind) and windspeed_is_scalar:
                 flagsites.append(site)
                 if verbosity > 0:
                     print(site + " cannot observe because of high wind.")
+            elif np.any(high_wind):
+                uptime_mask[high_wind] = False
+                if verbosity > 0:
+                    print(site + " cannot observe at some timestamps because of high wind.")
 
         if flagday:
             if site != "space":
@@ -246,8 +271,8 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
                 obs.data["llvis"][ind2] = coh_mat_tformed2[:, 1, 1]
 
         if site != "space":
-            tau1[ind1] = tau_z / np.cos((np.pi/2.0) - el1[ind1])
-            tau2[ind2] = tau_z / np.cos((np.pi/2.0) - el2[ind2])
+            tau1[ind1] = tau_z[ind1] / np.cos((np.pi/2.0) - el1[ind1])
+            tau2[ind2] = tau_z[ind2] / np.cos((np.pi/2.0) - el2[ind2])
         else:
             tau1[ind1] = 0.0
             tau2[ind2] = 0.0
@@ -255,8 +280,8 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
         Tsource = (F0*Aeff)/(2.0*const.k)
 
         if site != "space":
-            Tb1[ind1] = ((const.T_CMB + Tsource)*np.exp(-tau1[ind1])) + (Tatm*(1.0 - np.exp(-tau1[ind1])))
-            Tb2[ind2] = ((const.T_CMB + Tsource)*np.exp(-tau2[ind2])) + (Tatm*(1.0 - np.exp(-tau2[ind2])))
+            Tb1[ind1] = ((const.T_CMB + Tsource)*np.exp(-tau1[ind1])) + (Tatm[ind1]*(1.0 - np.exp(-tau1[ind1])))
+            Tb2[ind2] = ((const.T_CMB + Tsource)*np.exp(-tau2[ind2])) + (Tatm[ind2]*(1.0 - np.exp(-tau2[ind2])))
         else:
             Tb1[ind1] = const.T_CMB + Tsource
             Tb2[ind2] = const.T_CMB + Tsource
@@ -264,16 +289,19 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
         T_R = station_context["receiver_temperature"][site]
         sideband_ratio = station_context["sideband_ratio"][site]
 
-        Tsys1[ind1] = (T_R + (const.eta_ff*Tb1[ind1]) + ((1.0 - const.eta_ff)*Tgnd))*(1.0 + sideband_ratio)
-        Tsys2[ind2] = (T_R + (const.eta_ff*Tb2[ind2]) + ((1.0 - const.eta_ff)*Tgnd))*(1.0 + sideband_ratio)
+        Tsys1[ind1] = (T_R + (const.eta_ff*Tb1[ind1]) + ((1.0 - const.eta_ff)*Tgnd[ind1]))*(1.0 + sideband_ratio)
+        Tsys2[ind2] = (T_R + (const.eta_ff*Tb2[ind2]) + ((1.0 - const.eta_ff)*Tgnd[ind2]))*(1.0 + sideband_ratio)
 
         SEFD1[ind1] = (2.0*const.k*Tsys1[ind1])/Aeff
         SEFD2[ind2] = (2.0*const.k*Tsys2[ind2])/Aeff
 
         if flagwind:
-            SEFD_factor = windspeed_sefd_modifier(ws, wind_loading["v0"], wind_loading["w"])
-            SEFD1[ind1] *= SEFD_factor
-            SEFD2[ind2] *= SEFD_factor
+            SEFD1[ind1] *= windspeed_sefd_modifier(
+                ws[ind1], wind_loading["v0"], wind_loading["w"]
+            )
+            SEFD2[ind2] *= windspeed_sefd_modifier(
+                ws[ind2], wind_loading["v0"], wind_loading["w"]
+            )
 
         sefdind = (array.tarr["site"] == site)
         sefdr_arr = np.copy(array.tarr["sefdr"])

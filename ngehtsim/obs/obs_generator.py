@@ -37,6 +37,31 @@ def _ensure_iers_cached():
     finally:
         iers_conf.auto_download = auto_download
 
+
+def _weather_form(weather):
+    forms = {
+        'random': 'exact',
+        'exact': 'exact',
+        'mean': 'mean',
+        'average': 'mean',
+        'typical': 'median',
+        'median': 'median',
+        'good': 'good',
+        'bad': 'bad',
+        'poor': 'bad',
+    }
+    try:
+        return forms[weather]
+    except KeyError as exc:
+        raise ValueError('Unknown weather form: {0}'.format(weather)) from exc
+
+
+def _interpolate_spectra(frequency_ghz, spectra, target_frequency_ghz):
+    return np.asarray([
+        np.interp(target_frequency_ghz, frequency_ghz, spectrum)
+        for spectrum in spectra
+    ])
+
 ###################################################
 # class definition
 
@@ -68,6 +93,8 @@ class obs_generator(object):
       ephem (str): path to the ephemeris for a space station
       weather_store (ngehtsim.weather.zarr_store.ZarrWeatherStore): Optional local Zarr weather dataset.
                                                                     If None, use the packaged binary weather data.
+      weather_cadence (str): ``"daily"`` for the established scalar weather behavior or ``"native"``
+                             for linearly interpolated three-hour Zarr weather during observation generation.
     """
 
     # initialize class instantiation
@@ -75,7 +102,7 @@ class obs_generator(object):
                  surf_rms_overrides=None, receiver_configuration_overrides=None, bandwidth_overrides=None,
                  T_R_overrides=None, sideband_ratio_overrides=None, lo_freq_overrides=None, hi_freq_overrides=None,
                  ap_eff_overrides=None, wind_loading_overrides=None, custom_receivers=None, station_uptimes=None,
-                 array=None, ephem='ephemeris/space', weather_store=None):
+                 array=None, ephem='ephemeris/space', weather_store=None, weather_cadence='daily'):
 
         #############################
         # astropy cache
@@ -100,6 +127,10 @@ class obs_generator(object):
         station_uptimes = {} if station_uptimes is None else station_uptimes
         if weather_store is not None and not isinstance(weather_store, ZarrWeatherStore):
             raise TypeError("weather_store must be a ZarrWeatherStore instance or None.")
+        if weather_cadence not in ('daily', 'native'):
+            raise ValueError("weather_cadence must be either 'daily' or 'native'.")
+        if weather_cadence == 'native' and weather_store is None:
+            raise ValueError("Native weather cadence requires a Zarr weather_store.")
 
         #############################
         # parse inputs
@@ -122,6 +153,7 @@ class obs_generator(object):
         self.array = array
         self.ephem = ephem
         self.weather_store = weather_store
+        self.weather_cadence = weather_cadence
 
         #############################
         # load settings
@@ -477,21 +509,12 @@ class obs_generator(object):
             if self.weather_day is None:
                 self.weather_day = int(self.settings['day'])
 
+        form = _weather_form(self.weather)
+
         # read in the weather info and store it
         for isite, site in enumerate(self.sites):
 
             if site != 'space':
-
-                if ((self.weather == 'random') | (self.weather == 'exact')):
-                    form = 'exact'
-                elif ((self.weather == 'mean') | (self.weather == 'average')):
-                    form = 'mean'
-                elif ((self.weather == 'typical') | (self.weather == 'median')):
-                    form = 'median'
-                elif (self.weather == 'good'):
-                    form = 'good'
-                elif ((self.weather == 'bad') | (self.weather == 'poor')):
-                    form = 'bad'
 
                 tau_here = nw.opacity(site, form=form, month=self.settings['month'], day=self.weather_day,
                                        year=self.weather_year, freq=self.freq/(1.0e9),
@@ -531,6 +554,60 @@ class obs_generator(object):
         self.Tb_dict = Tb_dict
         self.windspeed_dict = windspeed_dict
         self.Tgnd_dict = Tgnd_dict
+
+    def _native_weather_terms(self, times):
+        times = np.asarray(times, dtype=float)
+        if times.ndim != 1 or not np.all(np.isfinite(times)):
+            raise ValueError('Native weather sampling requires finite one-dimensional observation times.')
+
+        unique_times, inverse = np.unique(times, return_inverse=True)
+        tau = {}
+        Tatm = {}
+        Tgnd = {}
+        windspeed = {}
+        form = _weather_form(self.weather)
+
+        for site in self.sites:
+            if site == 'space':
+                tau[site] = np.zeros(len(times))
+                Tatm[site] = np.zeros(len(times))
+                Tgnd[site] = np.full(len(times), const.T_CMB)
+                windspeed[site] = np.zeros(len(times))
+                continue
+
+            samples = self.weather_store.sample_native(
+                site,
+                year=int(self.weather_year),
+                month=self.settings['month'],
+                day=int(self.weather_day),
+                utc_hours=unique_times,
+                form=form,
+            )
+            tau_unique = _interpolate_spectra(
+                self.weather_store.frequency_ghz,
+                samples.opacity,
+                self.freq/(1.0e9),
+            )
+            Tb_unique = _interpolate_spectra(
+                self.weather_store.frequency_ghz,
+                samples.brightness_temperature,
+                self.freq/(1.0e9),
+            )
+            Tatm_unique = (
+                Tb_unique - (const.T_CMB*np.exp(-tau_unique))
+            ) / (1.0 - np.exp(-tau_unique))
+
+            tau[site] = tau_unique[inverse]
+            Tatm[site] = Tatm_unique[inverse]
+            Tgnd[site] = samples.surface_temperature_k[inverse]
+            windspeed[site] = samples.wind_speed_m_s[inverse]
+
+        return {
+            'tau': tau,
+            'Tatm': Tatm,
+            'Tgnd': Tgnd,
+            'windspeed': windspeed,
+        }
 
     # generate dictionaries of telescope properties
     def set_telescope_properties(self):
@@ -622,7 +699,7 @@ class obs_generator(object):
     # functions for generating observations
 
     # build context for station/weather/noise calculations
-    def station_context(self):
+    def station_context(self, times=None):
         receiver_temperature = {}
         sideband_ratio = {}
         bandwidth_hz = {}
@@ -651,12 +728,24 @@ class obs_generator(object):
             feed_angle[site] = const.known_feed_angles.get(site, const.feed_angle)
             polarization_basis[site] = const.known_polbases.get(site)
 
+        if self.weather_cadence == 'native':
+            if times is None:
+                raise ValueError('Native weather station contexts require observation times.')
+            weather_terms = self._native_weather_terms(times)
+        else:
+            weather_terms = {
+                'tau': self.tau_dict,
+                'Tatm': self.Tatm_dict,
+                'Tgnd': self.Tgnd_dict,
+                'windspeed': self.windspeed_dict,
+            }
+
         return {
             "sites": tuple(self.sites),
-            "tau": self.tau_dict,
-            "Tatm": self.Tatm_dict,
-            "Tgnd": self.Tgnd_dict,
-            "windspeed": self.windspeed_dict,
+            "tau": weather_terms['tau'],
+            "Tatm": weather_terms['Tatm'],
+            "Tgnd": weather_terms['Tgnd'],
+            "windspeed": weather_terms['windspeed'],
             "bands": self.bands,
             "wind_loading": self.wind_loading_dict,
             "solar_avoidance": self.solar_avoidance_dict,
@@ -721,7 +810,7 @@ class obs_generator(object):
         station_terms = station_observation.station_terms(
             obs,
             F0,
-            self.station_context(),
+            self.station_context(obs.data['time']),
             self.arr,
             self.rng,
             gainamp=gainamp,
@@ -1191,7 +1280,8 @@ class obs_generator(object):
                                             station_uptimes=copy.deepcopy(self.station_uptimes),
                                             array=self.array,
                                             ephem=self.ephem,
-                                            weather_store=self.weather_store)
+                                            weather_store=self.weather_store,
+                                            weather_cadence=self.weather_cadence)
 
                 if ((model_target is not None) & (not isinstance(model_target, str))):
                     obsgen_here.im = model_target
@@ -1256,6 +1346,9 @@ class obs_generator(object):
         Returns:
           SYMBA-compatible .antennas and master_input.txt files
         """
+
+        if self.weather_cadence == 'native':
+            raise ValueError('SYMBA antenna exports do not support native time-varying weather.')
 
         # create SYMBA working directory
         os.makedirs(symba_workdir, exist_ok=True)
@@ -1774,7 +1867,8 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
                                custom_receivers=new_custom_receivers,
                                station_uptimes=new_station_uptimes,
                                ephem=ephem,
-                               weather_store=obsgen.weather_store)
+                               weather_store=obsgen.weather_store,
+                               weather_cadence=obsgen.weather_cadence)
     if ((model_ref is not None) & (not isinstance(model_ref, str))):
         obsgen_ref.im = model_ref
 
@@ -1870,6 +1964,9 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
       SYMBA-compatible .antennas file containing the observation information
     """
 
+    if obsgen.weather_cadence == 'native':
+        raise ValueError('SYMBA antenna exports do not support native time-varying weather.')
+
     with open(output_filename, 'w') as outfile:
 
         # add file header
@@ -1897,17 +1994,7 @@ def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0,
         header += 'xzy_position_m' + '\n'
         outfile.write(header)
 
-        # determine form of weather return
-        if ((obsgen.weather == 'random') | (obsgen.weather == 'exact')):
-            form = 'exact'
-        elif ((obsgen.weather == 'mean') | (obsgen.weather == 'average')):
-            form = 'mean'
-        elif ((obsgen.weather == 'typical') | (obsgen.weather == 'median')):
-            form = 'median'
-        elif (obsgen.weather == 'good'):
-            form = 'good'
-        elif ((obsgen.weather == 'bad') | (obsgen.weather == 'poor')):
-            form = 'bad'
+        form = _weather_form(obsgen.weather)
 
         for site in obsgen.sites:
 
