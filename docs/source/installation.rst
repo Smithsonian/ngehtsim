@@ -26,7 +26,7 @@ Dependencies
 
 ngehtsim uses the following packages:
 
-* `python <https://www.python.org/downloads>`_ >=3.8
+* `python <https://www.python.org/downloads>`_ >=3.11
 * `ehtim <https://github.com/achael/eht-imaging>`_
 * `numpy <https://numpy.org>`_
 * `matplotlib <https://matplotlib.org>`_
@@ -38,6 +38,11 @@ ngehtsim also has the option to include additional calibration capabilities duri
 
 * `pandas <https://pandas.pydata.org/>`_
 * `eat <https://github.com/sao-eht/eat.git>`_
+
+The externally distributed versioned weather datasets can be read with the
+optional ``weather-zarr`` dependency group, which adds:
+
+* `zarr <https://zarr.readthedocs.io/>`_
 
 Dependencies are specified in setup.py and will be handled via the pip install process. Generating a local version of the documentation for ngehtsim requires:
 
