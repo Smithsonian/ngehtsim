@@ -34,5 +34,9 @@ def __dir__():
     return sorted(set(globals()) | set(__all__))
 
 
-from . import _version
-__version__ = _version.get_versions()['version']
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("ngehtsim")
+except PackageNotFoundError:
+    __version__ = "0+unknown"

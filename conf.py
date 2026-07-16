@@ -14,7 +14,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('./ngehtsim/'))
-import versioneer
+from importlib.metadata import PackageNotFoundError, version as distribution_version
 
 # -- Project information -----------------------------------------------------
 
@@ -23,7 +23,10 @@ copyright = '2022, Dom Pesce'
 author = 'Dom Pesce'
 
 # The full version, including alpha/beta/rc tags
-version = versioneer.get_version()
+try:
+    version = distribution_version('ngehtsim')
+except PackageNotFoundError:
+    version = '0+unknown'
 release = version
 show_authors = False
 
