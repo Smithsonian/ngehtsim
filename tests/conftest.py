@@ -67,6 +67,55 @@ def weather_dataset(tmp_path):
     return path
 
 
+@pytest.fixture
+def weather_dataset_v02(weather_dataset):
+    """Add schema-v0.2 physical native-summary products to the test release."""
+
+    root = pytest.importorskip("zarr").open_group(weather_dataset, mode="r+")
+    root.attrs.update(
+        {
+            "schema_version": "0.2.0",
+            "dataset_id": "test-weather-v0.2.0",
+            "native_summary_forms": ["mean", "median", "good", "bad"],
+        }
+    )
+    native = root["sites/ALMA/months/04/native"]
+    tau_coefficients = np.asarray(native["tau_coefficients"][:], dtype=float)
+    tb_coefficients = np.asarray(native["tb_coefficients"][:], dtype=float)
+    values = {
+        "opacity": np.power(
+            10.0,
+            np.asarray(root["pca/tau/mean"][:])
+            + tau_coefficients @ np.asarray(root["pca/tau/components"][:]),
+        ),
+        "brightness_temperature": (
+            np.asarray(root["pca/tb/mean"][:])
+            + tb_coefficients @ np.asarray(root["pca/tb/components"][:])
+        ),
+        "pwv_mm": np.asarray(native["pwv_mm"][:]),
+        "wind_speed_m_s": np.asarray(native["wind_speed_m_s"][:]),
+        "surface_pressure_mbar": np.asarray(native["surface_pressure_mbar"][:]),
+        "surface_temperature_k": np.asarray(native["surface_temperature_k"][:]),
+    }
+    reducers = {
+        "mean": np.nanmean,
+        "median": np.nanmedian,
+        "good": lambda source, axis: np.nanpercentile(source, 15.87, axis=axis),
+        "bad": lambda source, axis: np.nanpercentile(source, 84.13, axis=axis),
+    }
+    time_index = np.asarray(native["time_index"][:])
+    for form, reducer in reducers.items():
+        group = root.create_group("sites/ALMA/months/04/native_summary/{0}".format(form))
+        for name, source in values.items():
+            group.create_array(
+                name,
+                data=np.asarray(
+                    [reducer(source[time_index == index], axis=0) for index in range(8)]
+                ),
+            )
+    return weather_dataset
+
+
 def _write_weather_records(group, include_time_index):
     if include_time_index:
         time_index = np.tile(np.arange(8, dtype=np.int8), 2)

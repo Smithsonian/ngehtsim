@@ -17,7 +17,8 @@ from typing import Literal
 import numpy as np
 
 
-SCHEMA_VERSION = "0.1.0"
+CURRENT_SCHEMA_VERSION = "0.2.0"
+SUPPORTED_SCHEMA_VERSIONS = ("0.1.0", CURRENT_SCHEMA_VERSION)
 Cadence = Literal["daily", "native"]
 NativeWeatherForm = Literal["exact", "mean", "median", "good", "bad"]
 
@@ -35,6 +36,11 @@ _SCALAR_ARRAYS = (
 _PARTITION_CACHE_SIZE = 64
 _NATIVE_SUMMARY_CACHE_SIZE = 64
 _NATIVE_SUMMARY_FORMS = ("mean", "median", "good", "bad")
+_NATIVE_SUMMARY_ARRAYS = (
+    "opacity",
+    "brightness_temperature",
+    *_SCALAR_ARRAYS,
+)
 
 
 class WeatherStoreError(ValueError):
@@ -358,11 +364,56 @@ class ZarrWeatherStore:
         try:
             values = self._native_summary_cache.pop(key)
         except KeyError:
-            partition = self.read_partition(site, month, cadence="native")
-            values = self._summarize_native_partition(partition, form)
+            if self._schema_version == CURRENT_SCHEMA_VERSION:
+                values = self._read_native_month_summary(site, month, form)
+            else:
+                partition = self.read_partition(site, month, cadence="native")
+                values = self._summarize_native_partition(partition, form)
             if len(self._native_summary_cache) >= _NATIVE_SUMMARY_CACHE_SIZE:
                 self._native_summary_cache.popitem(last=False)
         self._native_summary_cache[key] = values
+        return values
+
+    def _read_native_month_summary(
+        self, site: str, month: int, form: NativeWeatherForm
+    ) -> dict[str, np.ndarray]:
+        """Read validated physical native-summary products from schema v0.2."""
+
+        prefix = f"sites/{site}/months/{month:02d}/native_summary/{form}"
+        if prefix not in self._root:
+            raise WeatherStoreError(
+                f"Zarr weather dataset is missing the native summary for {site!r}, "
+                f"month {month:02d}, form {form!r}."
+            )
+
+        group = self._root[prefix]
+        missing = [name for name in _NATIVE_SUMMARY_ARRAYS if name not in group]
+        if missing:
+            raise WeatherStoreError(
+                f"Native weather summary {prefix!r} is missing arrays: {', '.join(missing)}."
+            )
+
+        values = {
+            name: self._read_array(f"{prefix}/{name}")
+            for name in _NATIVE_SUMMARY_ARRAYS
+        }
+        expected_spectral_shape = (self._native_samples_per_day, len(self.frequency_ghz))
+        expected_scalar_shape = (self._native_samples_per_day,)
+        for name, value in values.items():
+            expected_shape = (
+                expected_spectral_shape
+                if name in ("opacity", "brightness_temperature")
+                else expected_scalar_shape
+            )
+            if value.shape != expected_shape:
+                raise WeatherStoreError(
+                    f"Native weather summary {prefix!r} has an incompatible shape for "
+                    f"{name!r}."
+                )
+            if not np.all(np.isfinite(value)):
+                raise WeatherStoreError(
+                    f"Native weather summary {prefix!r} contains non-finite values."
+                )
         return values
 
     def _summarize_native_partition(
@@ -449,11 +500,14 @@ class ZarrWeatherStore:
 
     def _validate_root(self) -> None:
         attributes = self._root.attrs
-        if attributes.get("schema_version") != SCHEMA_VERSION:
+        schema_version = attributes.get("schema_version")
+        if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+            allowed = ", ".join(repr(value) for value in SUPPORTED_SCHEMA_VERSIONS)
             raise WeatherStoreError(
                 "Unsupported Zarr weather schema version "
-                f"{attributes.get('schema_version')!r}; expected {SCHEMA_VERSION!r}."
+                f"{schema_version!r}; supported versions are {allowed}."
             )
+        self._schema_version = schema_version
         if not isinstance(attributes.get("dataset_id"), str) or not attributes["dataset_id"]:
             raise WeatherStoreError("Zarr weather dataset has no valid dataset_id attribute.")
 
@@ -497,6 +551,13 @@ class ZarrWeatherStore:
                 "Zarr weather native sampling does not cover one 24-hour UTC day."
             )
         self._native_time_step_hours = time_step_hours
+
+        if self._schema_version == CURRENT_SCHEMA_VERSION:
+            if tuple(attributes.get("native_summary_forms", ())) != _NATIVE_SUMMARY_FORMS:
+                raise WeatherStoreError(
+                    "Zarr weather schema v0.2 requires the native summary forms "
+                    f"{', '.join(_NATIVE_SUMMARY_FORMS)}."
+                )
 
         for quantity in ("tau", "tb"):
             mean = self._read_array(f"pca/{quantity}/mean")
