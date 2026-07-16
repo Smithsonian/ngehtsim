@@ -16,6 +16,13 @@ def test_store_exposes_validated_metadata(weather_dataset):
     assert not store.frequency_ghz.flags.writeable
 
 
+def test_store_accepts_schema_v02_metadata(weather_dataset_v02):
+    store = ZarrWeatherStore(weather_dataset_v02)
+
+    assert store.dataset_id == "test-weather-v0.2.0"
+    assert store.attributes["schema_version"] == "0.2.0"
+
+
 @pytest.mark.parametrize("month", ["Apr", "04", "4", 4])
 def test_store_reads_daily_partition_for_month_aliases(weather_dataset, month):
     partition = ZarrWeatherStore(weather_dataset).read_partition("ALMA", month)
@@ -97,6 +104,50 @@ def test_store_summarizes_native_weather_by_utc_time(weather_dataset, form, redu
     assert samples.surface_pressure_mbar.shape == (1,)
     expected = (reducer([500.0, 508.0]) + reducer([501.0, 509.0])) / 2.0
     assert np.allclose(samples.surface_pressure_mbar, [expected])
+
+
+@pytest.mark.parametrize("form", ["mean", "median", "good", "bad"])
+def test_store_uses_precomputed_native_summary_products(weather_dataset_v02, monkeypatch, form):
+    store = ZarrWeatherStore(weather_dataset_v02)
+
+    def fail_if_raw_native_records_are_read(*args, **kwargs):
+        raise AssertionError("Schema v0.2 summary sampling must not read raw native records.")
+
+    monkeypatch.setattr(store, "read_partition", fail_if_raw_native_records_are_read)
+    samples = store.sample_native(
+        "ALMA", year=2017, month="Apr", day=11, utc_hours=1.5, form=form
+    )
+
+    summary = zarr.open_group(weather_dataset_v02, mode="r")[
+        "sites/ALMA/months/04/native_summary/{0}".format(form)
+    ]
+    expected = {
+        name: (np.asarray(summary[name][0]) + np.asarray(summary[name][1])) / 2.0
+        for name in (
+            "opacity",
+            "brightness_temperature",
+            "pwv_mm",
+            "wind_speed_m_s",
+            "surface_pressure_mbar",
+            "surface_temperature_k",
+        )
+    }
+    assert np.allclose(samples.opacity[0], expected["opacity"])
+    assert np.allclose(samples.brightness_temperature[0], expected["brightness_temperature"])
+    assert np.allclose(samples.pwv_mm, [expected["pwv_mm"]])
+    assert np.allclose(samples.wind_speed_m_s, [expected["wind_speed_m_s"]])
+    assert np.allclose(samples.surface_pressure_mbar, [expected["surface_pressure_mbar"]])
+    assert np.allclose(samples.surface_temperature_k, [expected["surface_temperature_k"]])
+
+
+def test_store_rejects_nonfinite_precomputed_native_summary(weather_dataset_v02):
+    root = zarr.open_group(weather_dataset_v02, mode="r+")
+    root["sites/ALMA/months/04/native_summary/median/opacity"][0, 0] = np.nan
+
+    with pytest.raises(WeatherStoreError, match="Native weather summary.*non-finite"):
+        ZarrWeatherStore(weather_dataset_v02).sample_native(
+            "ALMA", year=2017, month="Apr", day=11, utc_hours=0.0, form="median"
+        )
 
 
 @pytest.mark.parametrize("form", ["all", "random", "unknown"])

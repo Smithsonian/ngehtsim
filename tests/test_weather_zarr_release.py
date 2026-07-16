@@ -8,7 +8,7 @@ import pytest
 
 import ngehtsim.obs.obs_generator as obs_generator_module
 import ngehtsim.weather.weather as weather
-from ngehtsim.weather.zarr_store import SCHEMA_VERSION, ZarrWeatherStore
+from ngehtsim.weather.zarr_store import SUPPORTED_SCHEMA_VERSIONS, ZarrWeatherStore
 
 
 WEATHER_FUNCTIONS = (
@@ -50,7 +50,7 @@ def external_store():
 
 @pytest.mark.external_weather
 def test_local_weather_release_has_expected_schema_and_alma_coverage(external_store):
-    assert external_store.attributes["schema_version"] == SCHEMA_VERSION
+    assert external_store.attributes["schema_version"] in SUPPORTED_SCHEMA_VERSIONS
     assert external_store.dataset_id == "ngehtsim-weather-merra2-3hour-v0.1.0"
     assert len(external_store.sites) == 141
 
