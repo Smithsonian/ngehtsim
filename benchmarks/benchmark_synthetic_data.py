@@ -9,7 +9,7 @@ import statistics
 import subprocess
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 os.environ.setdefault("MPLBACKEND", "Agg")
@@ -88,6 +88,132 @@ SCENARIOS = [
     },
 ]
 
+WEATHER_BACKENDS = ("legacy", "zarr-daily", "zarr-native")
+
+
+def add_weather_backend_arguments(parser):
+    """Add optional external-weather benchmark arguments to ``parser``."""
+
+    parser.add_argument(
+        "--weather-store",
+        type=Path,
+        default=None,
+        help="Path to a local Zarr weather release.",
+    )
+    parser.add_argument(
+        "--weather-backend",
+        action="append",
+        choices=WEATHER_BACKENDS,
+        default=None,
+        help="Weather backend to benchmark. May be passed more than once.",
+    )
+
+
+def prepare_weather_backends(weather_backends, weather_store_path):
+    """Create independent runtime weather configurations for each backend."""
+
+    backend_names = weather_backends or ["legacy"]
+    backend_names = list(dict.fromkeys(backend_names))
+    zarr_backends = {"zarr-daily", "zarr-native"}
+
+    if not zarr_backends.intersection(backend_names):
+        return [
+            {
+                "name": "legacy",
+                "store": None,
+                "store_path": None,
+                "store_init_seconds": 0.0,
+                "obs_generator_kwargs": {},
+            }
+        ]
+
+    if weather_store_path is None:
+        raise SystemExit("--weather-store is required for Zarr weather backends.")
+
+    weather_store_path = weather_store_path.expanduser().resolve()
+    if not weather_store_path.is_dir():
+        raise SystemExit(
+            "Zarr weather dataset directory does not exist: {0}".format(weather_store_path)
+        )
+
+    try:
+        from ngehtsim.weather.zarr_store import ZarrWeatherStore
+    except ImportError as exc:
+        raise SystemExit(
+            "Zarr weather benchmarks require `pip install \"ngehtsim[weather-zarr]\"`."
+        ) from exc
+
+    backends = []
+    for backend_name in backend_names:
+        if backend_name == "legacy":
+            backends.append(
+                {
+                    "name": backend_name,
+                    "store": None,
+                    "store_path": None,
+                    "store_init_seconds": 0.0,
+                    "obs_generator_kwargs": {},
+                }
+            )
+            continue
+
+        t0 = time.perf_counter()
+        store = ZarrWeatherStore(weather_store_path)
+        store_init_seconds = time.perf_counter() - t0
+        backends.append(
+            {
+                "name": backend_name,
+                "store": store,
+                "store_path": str(weather_store_path),
+                "store_init_seconds": store_init_seconds,
+                "obs_generator_kwargs": {
+                    "weather_store": store,
+                    "weather_cadence": (
+                        "daily" if backend_name == "zarr-daily" else "native"
+                    ),
+                },
+            }
+        )
+
+    return backends
+
+
+def expand_scenarios(scenarios, weather_backends):
+    """Return one executable scenario for every scenario/backend combination."""
+
+    expanded = []
+    for scenario in scenarios:
+        for backend in weather_backends:
+            expanded_scenario = dict(scenario)
+            expanded_scenario["settings"] = dict(scenario["settings"])
+            expanded_scenario["name"] = "{0}__{1}".format(
+                scenario["name"], backend["name"]
+            )
+            expanded_scenario["description"] = "{0} Weather backend: {1}.".format(
+                scenario["description"], backend["name"]
+            )
+            expanded_scenario["weather_backend"] = backend["name"]
+            expanded_scenario["weather_store_path"] = backend["store_path"]
+            expanded_scenario["weather_store_init_seconds"] = backend["store_init_seconds"]
+            expanded_scenario["_obs_generator_kwargs"] = backend["obs_generator_kwargs"]
+            expanded.append(expanded_scenario)
+    return expanded
+
+
+def scenario_definition(scenario):
+    """Return a JSON-serializable benchmark scenario description."""
+
+    return {key: value for key, value in scenario.items() if not key.startswith("_")}
+
+
+def make_obs_generator(scenario):
+    """Construct an observation generator for one benchmark scenario."""
+
+    return og.obs_generator(
+        settings=dict(scenario["settings"]),
+        **scenario["_obs_generator_kwargs"],
+    )
+
 
 def make_source(input_kind):
     model = eh.model.Model()
@@ -124,7 +250,7 @@ def git_value(*args):
 
 def metadata():
     return {
-        "timestamp_utc": datetime.utcnow().isoformat() + "Z",
+        "timestamp_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "python": sys.version.replace("\n", " "),
         "python_executable": sys.executable,
         "platform": platform.platform(),
@@ -140,7 +266,7 @@ def run_fresh_iteration(scenario):
     input_model = make_source(scenario["input_kind"])
 
     t0 = time.perf_counter()
-    obsgen = og.obs_generator(settings=dict(scenario["settings"]))
+    obsgen = make_obs_generator(scenario)
     t1 = time.perf_counter()
     obs = obsgen.make_obs(input_model, **scenario["make_obs_kwargs"])
     t2 = time.perf_counter()
@@ -154,7 +280,7 @@ def run_fresh_iteration(scenario):
 
 def run_reused_generator_iterations(scenario, repeats, warmups=0):
     t0 = time.perf_counter()
-    obsgen = og.obs_generator(settings=dict(scenario["settings"]))
+    obsgen = make_obs_generator(scenario)
     t1 = time.perf_counter()
     obsgen_init_seconds = t1 - t0
 
@@ -200,6 +326,9 @@ def run_scenario(scenario, repeats, warmups):
         "input_kind": scenario["input_kind"],
         "make_obs_kwargs": scenario["make_obs_kwargs"],
         "reuse_generator": scenario["reuse_generator"],
+        "weather_backend": scenario["weather_backend"],
+        "weather_store_path": scenario["weather_store_path"],
+        "weather_store_init_seconds": scenario["weather_store_init_seconds"],
         "rows": rows,
         "obsgen_init_seconds": summarize(init_seconds),
         "make_obs_seconds": summarize(make_obs_seconds),
@@ -241,6 +370,7 @@ def main():
     parser.add_argument("--scenario", action="append", help="Scenario name to run. May be passed more than once.")
     parser.add_argument("--output", type=Path, default=None, help="JSON output path.")
     parser.add_argument("--list-scenarios", action="store_true", help="List available scenarios and exit.")
+    add_weather_backend_arguments(parser)
     args = parser.parse_args()
 
     if args.repeats < 1:
@@ -251,9 +381,11 @@ def main():
     if args.list_scenarios:
         for scenario in SCENARIOS:
             print("{0}: {1}".format(scenario["name"], scenario["description"]))
+        print("Weather backends: {0}".format(", ".join(WEATHER_BACKENDS)))
         return 0
 
-    scenarios = select_scenarios(args.scenario)
+    weather_backends = prepare_weather_backends(args.weather_backend, args.weather_store)
+    scenarios = expand_scenarios(select_scenarios(args.scenario), weather_backends)
     output_path = args.output or default_output_path()
 
     payload = {
@@ -262,8 +394,9 @@ def main():
             "repeats": args.repeats,
             "warmups": args.warmups,
             "scenario_names": [scenario["name"] for scenario in scenarios],
+            "weather_backends": [backend["name"] for backend in weather_backends],
         },
-        "scenario_definitions": scenarios,
+        "scenario_definitions": [scenario_definition(scenario) for scenario in scenarios],
         "scenarios": [run_scenario(scenario, args.repeats, args.warmups) for scenario in scenarios],
     }
 

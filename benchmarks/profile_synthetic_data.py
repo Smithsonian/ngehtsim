@@ -8,7 +8,7 @@ import os
 import pstats
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 os.environ.setdefault("MPLBACKEND", "Agg")
@@ -20,11 +20,10 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "benchmarks"))
 
 import benchmark_synthetic_data as bench
-import ngehtsim.obs.obs_generator as og
 
 
 def default_output_paths(scenario_name, phase):
-    timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     stem = "synthetic_data_profile_{0}_{1}_{2}".format(
         scenario_name,
         phase,
@@ -39,7 +38,7 @@ def warmup_make_obs(scenario, count):
         return
 
     if scenario["reuse_generator"]:
-        obsgen = og.obs_generator(settings=dict(scenario["settings"]))
+        obsgen = bench.make_obs_generator(scenario)
         for _ in range(count):
             input_model = bench.make_source(scenario["input_kind"])
             obsgen.make_obs(input_model, **scenario["make_obs_kwargs"])
@@ -47,7 +46,7 @@ def warmup_make_obs(scenario, count):
 
     for _ in range(count):
         input_model = bench.make_source(scenario["input_kind"])
-        obsgen = og.obs_generator(settings=dict(scenario["settings"]))
+        obsgen = bench.make_obs_generator(scenario)
         obsgen.make_obs(input_model, **scenario["make_obs_kwargs"])
 
 
@@ -55,7 +54,7 @@ def make_init_target(scenario, repeats):
     def target():
         rows = []
         for _ in range(repeats):
-            og.obs_generator(settings=dict(scenario["settings"]))
+            bench.make_obs_generator(scenario)
             rows.append(0)
         return rows
 
@@ -64,7 +63,7 @@ def make_init_target(scenario, repeats):
 
 def make_make_obs_target(scenario, repeats, warmups):
     if scenario["reuse_generator"]:
-        obsgen = og.obs_generator(settings=dict(scenario["settings"]))
+        obsgen = bench.make_obs_generator(scenario)
         for _ in range(warmups):
             input_model = bench.make_source(scenario["input_kind"])
             obsgen.make_obs(input_model, **scenario["make_obs_kwargs"])
@@ -83,7 +82,7 @@ def make_make_obs_target(scenario, repeats, warmups):
     warmup_make_obs(scenario, warmups)
     obs_inputs = [
         (
-            og.obs_generator(settings=dict(scenario["settings"])),
+            bench.make_obs_generator(scenario),
             bench.make_source(scenario["input_kind"]),
         )
         for _ in range(repeats)
@@ -134,6 +133,8 @@ def profile_target(target, sort, limit, profile_output, stats_output, metadata):
     header = [
         "scenario: {0}".format(metadata["scenario"]),
         "phase: {0}".format(metadata["phase"]),
+        "weather_backend: {0}".format(metadata["weather_backend"]),
+        "weather_store_path: {0}".format(metadata["weather_store_path"]),
         "repeats: {0}".format(metadata["repeats"]),
         "warmups: {0}".format(metadata["warmups"]),
         "sort: {0}".format(sort),
@@ -159,6 +160,7 @@ def main():
     parser.add_argument("--profile-output", type=Path, default=None)
     parser.add_argument("--stats-output", type=Path, default=None)
     parser.add_argument("--list-scenarios", action="store_true")
+    bench.add_weather_backend_arguments(parser)
     args = parser.parse_args()
 
     if args.repeats < 1:
@@ -169,9 +171,15 @@ def main():
     if args.list_scenarios:
         for scenario in bench.SCENARIOS:
             print("{0}: {1}".format(scenario["name"], scenario["description"]))
+        print("Weather backends: {0}".format(", ".join(bench.WEATHER_BACKENDS)))
         return 0
 
-    scenario = bench.select_scenarios([args.scenario])[0]
+    if args.weather_backend is not None and len(set(args.weather_backend)) != 1:
+        raise SystemExit("The profiler accepts exactly one --weather-backend at a time.")
+
+    weather_backends = bench.prepare_weather_backends(args.weather_backend, args.weather_store)
+    scenarios = bench.expand_scenarios(bench.select_scenarios([args.scenario]), weather_backends)
+    scenario = scenarios[0]
     profile_output, stats_output = default_output_paths(scenario["name"], args.phase)
     if args.profile_output is not None:
         profile_output = args.profile_output
@@ -194,6 +202,8 @@ def main():
         {
             "scenario": scenario["name"],
             "phase": args.phase,
+            "weather_backend": scenario["weather_backend"],
+            "weather_store_path": scenario["weather_store_path"],
             "repeats": args.repeats,
             "warmups": args.warmups,
         },
