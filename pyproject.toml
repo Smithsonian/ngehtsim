@@ -1,0 +1,6 @@
+[build-system]
+requires = ["setuptools>=80", "setuptools-scm>=10"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+fallback_version = "0+unknown"
