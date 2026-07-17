@@ -154,6 +154,12 @@ class obs_generator(object):
         self.ephem = ephem
         self.weather_store = weather_store
         self.weather_cadence = weather_cadence
+        self._weather_tables_ready = False
+        self._tau_dict = None
+        self._Tatm_dict = None
+        self._Tb_dict = None
+        self._windspeed_dict = None
+        self._Tgnd_dict = None
 
         #############################
         # load settings
@@ -229,7 +235,10 @@ class obs_generator(object):
         self.set_bandwidths()
         self.set_ap_effs()
         self.im = load_image(self.model_file, freq=self.freq, verbosity=self.verbosity)
-        self.tabulate_weather()
+        if self.weather_cadence == 'native':
+            self._select_weather_date()
+        else:
+            self.tabulate_weather()
         self.set_telescope_properties()
         self.get_obs_times()
 
@@ -482,17 +491,8 @@ class obs_generator(object):
 
         self.ap_eff_setup = ap_eff_setup
 
-    # extract and store the relevant weather information
-    def tabulate_weather(self):
-
-        # initialize dictionaries
-        tau_dict = defaultdict(dict)
-        Tatm_dict = defaultdict(dict)
-        Tgnd_dict = defaultdict(dict)
-        Tb_dict = defaultdict(dict)
-        windspeed_dict = defaultdict(dict)
-
-        # get a day and year for the weather parameters
+    # select the date used for weather lookups
+    def _select_weather_date(self):
         if (self.weather == 'random'):
             # pick a random past date from which to pull the weather
             self.weather_year = self.rng.integers(const.year_min, const.year_max, endpoint=True)
@@ -508,6 +508,21 @@ class obs_generator(object):
                 self.weather_year = int(self.settings['year'])
             if self.weather_day is None:
                 self.weather_day = int(self.settings['day'])
+
+    # extract and store the relevant weather information
+    def tabulate_weather(self):
+
+        self._select_weather_date()
+        self._populate_static_weather_tables()
+
+    def _populate_static_weather_tables(self):
+
+        # initialize dictionaries
+        tau_dict = defaultdict(dict)
+        Tatm_dict = defaultdict(dict)
+        Tgnd_dict = defaultdict(dict)
+        Tb_dict = defaultdict(dict)
+        windspeed_dict = defaultdict(dict)
 
         form = _weather_form(self.weather)
 
@@ -549,11 +564,41 @@ class obs_generator(object):
                 Tgnd_dict[site] = const.T_CMB
 
         # store the dictionaries
-        self.tau_dict = tau_dict
-        self.Tatm_dict = Tatm_dict
-        self.Tb_dict = Tb_dict
-        self.windspeed_dict = windspeed_dict
-        self.Tgnd_dict = Tgnd_dict
+        self._tau_dict = tau_dict
+        self._Tatm_dict = Tatm_dict
+        self._Tb_dict = Tb_dict
+        self._windspeed_dict = windspeed_dict
+        self._Tgnd_dict = Tgnd_dict
+        self._weather_tables_ready = True
+
+    def _ensure_static_weather_tables(self):
+        if not self._weather_tables_ready:
+            self._populate_static_weather_tables()
+
+    @property
+    def tau_dict(self):
+        self._ensure_static_weather_tables()
+        return self._tau_dict
+
+    @property
+    def Tatm_dict(self):
+        self._ensure_static_weather_tables()
+        return self._Tatm_dict
+
+    @property
+    def Tb_dict(self):
+        self._ensure_static_weather_tables()
+        return self._Tb_dict
+
+    @property
+    def windspeed_dict(self):
+        self._ensure_static_weather_tables()
+        return self._windspeed_dict
+
+    @property
+    def Tgnd_dict(self):
+        self._ensure_static_weather_tables()
+        return self._Tgnd_dict
 
     def _native_weather_terms(self, times):
         times = np.asarray(times, dtype=float)
