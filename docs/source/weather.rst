@@ -15,11 +15,20 @@ The versioned MERRA-2 weather releases are distributed separately from the
 Python package. After downloading a release to a local directory, install the
 optional Zarr dependency and open it with an explicit path:
 
+The current release is
+`ngehtsim-weather-merra2-3hour-v0.2.0 <https://drive.google.com/drive/folders/18NOmRZrZytD4zmKuOFYsaHzB_e3O-Bk5?usp=drive_link>`_.
+Download the complete ``.zarr`` directory without changing its internal
+layout. Its
+`release manifest <https://drive.google.com/file/d/1rSX4uMIEyW99Yj-BeVworYgg-7r_wPsi/view?usp=drive_link>`_
+records the source inputs, builder revision, schema, and coverage validation.
+All published releases are available from the
+`weather release folder <https://drive.google.com/drive/folders/1ElKYZJPfFoJCKNxzLCAxFXyeNO5f6Jx6?usp=drive_link>`_.
+
 .. code-block:: python
 
    from ngehtsim.weather.zarr_store import ZarrWeatherStore
 
-   store = ZarrWeatherStore("/path/to/ngehtsim-weather-merra2-3hour-v0.1.0.zarr")
+   store = ZarrWeatherStore("/path/to/ngehtsim-weather-merra2-3hour-v0.2.0.zarr")
    april_weather = store.read_partition("ALMA", "Apr", cadence="daily")
 
 The established weather functions can use that store directly. Without the
@@ -38,6 +47,8 @@ Native three-hour weather can be sampled at arbitrary UTC-hour offsets with
 linear interpolation between consecutive stored records. ``form`` accepts
 ``"exact"``, ``"mean"``, ``"median"``, ``"good"``, and ``"bad"``; summary
 forms are evaluated independently at each stored UTC time before interpolation.
+Schema v0.2.0 stores these physical native summary products in the release,
+avoiding the one-time reconstruction of every historical native spectrum.
 The result always has a leading sample dimension, including for one requested
 time:
 

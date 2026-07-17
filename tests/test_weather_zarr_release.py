@@ -11,6 +11,9 @@ import ngehtsim.weather.weather as weather
 from ngehtsim.weather.zarr_store import SUPPORTED_SCHEMA_VERSIONS, ZarrWeatherStore
 
 
+DEFAULT_DATASET_ID = "ngehtsim-weather-merra2-3hour-v0.1.0"
+EXPECTED_DATASET_ID_ENVIRONMENT_VARIABLE = "NGEHTSIM_WEATHER_ZARR_DATASET_ID"
+
 WEATHER_FUNCTIONS = (
     (weather.opacity_spectrum, {}),
     (weather.brightness_temperature_spectrum, {}),
@@ -51,7 +54,11 @@ def external_store():
 @pytest.mark.external_weather
 def test_local_weather_release_has_expected_schema_and_alma_coverage(external_store):
     assert external_store.attributes["schema_version"] in SUPPORTED_SCHEMA_VERSIONS
-    assert external_store.dataset_id == "ngehtsim-weather-merra2-3hour-v0.1.0"
+    expected_dataset_id = os.environ.get(
+        EXPECTED_DATASET_ID_ENVIRONMENT_VARIABLE,
+        DEFAULT_DATASET_ID,
+    )
+    assert external_store.dataset_id == expected_dataset_id
     assert len(external_store.sites) == 141
 
     daily = external_store.read_partition("ALMA", "Apr", cadence="daily")
@@ -59,6 +66,34 @@ def test_local_weather_release_has_expected_schema_and_alma_coverage(external_st
     assert daily.record_count * 8 == native.record_count
     assert np.all(np.isfinite(external_store.reconstruct_tau_spectra(daily)))
     assert np.all(np.isfinite(external_store.reconstruct_tb_spectra(daily)))
+
+
+@pytest.mark.external_weather
+def test_schema_v02_reads_precomputed_native_summaries(external_store, monkeypatch):
+    if external_store.attributes["schema_version"] != "0.2.0":
+        pytest.skip("Precomputed native summaries were introduced in schema v0.2.0.")
+
+    external_store._native_summary_cache.clear()
+
+    def fail_if_legacy_summary_fallback_is_used(*args, **kwargs):
+        raise AssertionError("Schema v0.2.0 must not reconstruct native summary products.")
+
+    monkeypatch.setattr(
+        external_store,
+        "_summarize_native_partition",
+        fail_if_legacy_summary_fallback_is_used,
+    )
+    samples = external_store.sample_native(
+        "ALMA",
+        year=2017,
+        month="Apr",
+        day=11,
+        utc_hours=[0.0, 1.5, 3.0],
+        form="median",
+    )
+
+    assert samples.opacity.shape == (3, len(external_store.frequency_ghz))
+    assert np.all(np.isfinite(samples.opacity))
 
 
 @pytest.mark.external_weather
