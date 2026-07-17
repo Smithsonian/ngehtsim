@@ -17,7 +17,7 @@ explicitly and pass the resulting store to the generator. Omitting
    from ngehtsim.obs import obs_generator
    from ngehtsim.weather.zarr_store import ZarrWeatherStore
 
-   store = ZarrWeatherStore("/path/to/ngehtsim-weather-merra2-3hour-v0.1.0.zarr")
+   store = ZarrWeatherStore("/path/to/ngehtsim-weather-merra2-3hour-v0.2.0.zarr")
    obsgen = obs_generator.obs_generator(settings=settings, weather_store=store)
 
 By default, this continues to use the release's daily weather aggregates. To
