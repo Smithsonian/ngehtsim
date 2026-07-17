@@ -4,5 +4,5 @@ Tools for generating and plotting observations.
 
 __author__ = "Dom Pesce"
 
-__all__ = ['obs_generator','obs_plotter']
+__all__ = ['obs_generator', 'obs_plotter', 'visibility_dataset']
 from . import *
