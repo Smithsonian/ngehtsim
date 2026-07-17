@@ -89,6 +89,42 @@ def test_obs_generator_samples_native_weather_at_observation_times(store):
     assert np.allclose(context["windspeed"]["ALMA"], [3.0, 3.5, 4.0])
 
 
+def test_native_weather_defers_static_weather_tables(store, monkeypatch):
+    def unexpected_static_lookup(*args, **kwargs):
+        raise AssertionError("Native weather initialization must not tabulate static weather.")
+
+    for name in ("opacity", "brightness_temperature", "windspeed", "temperature"):
+        monkeypatch.setattr(obs_generator_module.nw, name, unexpected_static_lookup)
+
+    obsgen = obs_generator_module.obs_generator(
+        settings=ZARR_OBS_SETTINGS,
+        weather_store=store,
+        weather_cadence="native",
+    )
+
+    assert not obsgen._weather_tables_ready
+    context = obsgen.station_context(np.array([0.0, 1.5, 3.0]))
+    assert np.all(np.isfinite(context["tau"]["ALMA"]))
+    assert not obsgen._weather_tables_ready
+
+
+def test_native_weather_static_tables_remain_lazily_compatible(store):
+    daily = obs_generator_module.obs_generator(
+        settings=ZARR_OBS_SETTINGS,
+        weather_store=store,
+    )
+    native = obs_generator_module.obs_generator(
+        settings=ZARR_OBS_SETTINGS,
+        weather_store=store,
+        weather_cadence="native",
+    )
+
+    assert not native._weather_tables_ready
+    for attribute in ("tau_dict", "Tatm_dict", "Tb_dict", "windspeed_dict", "Tgnd_dict"):
+        assert np.isclose(getattr(native, attribute)["ALMA"], getattr(daily, attribute)["ALMA"])
+    assert native._weather_tables_ready
+
+
 def test_obs_generator_rejects_invalid_weather_store():
     with pytest.raises(TypeError, match="weather_store must be a ZarrWeatherStore"):
         obs_generator_module.obs_generator(
