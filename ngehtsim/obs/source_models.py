@@ -79,10 +79,36 @@ class EhtimModelAdapter(object):
     def observe(self, obs_empty, context, p=None):
         _set_ehtim_metadata(self.input_model, context)
 
-        obs = _run_quietly(
-            lambda: self.input_model.observe_same_nonoise(obs_empty),
-            context["verbosity"],
-        )
+        def sample_observation():
+            # This reproduces ehtim.Model.observe_same_nonoise() without
+            # constructing another Obsdata object around a copied data table.
+            obs = obs_empty.copy()
+            u = obs.data["u"]
+            v = obs.data["v"]
+            if obs.polrep == "circ":
+                # Keep ehtim's sampling order so model implementations with
+                # stateful sampling behavior retain the established result.
+                obs.data["rrvis"] = self.input_model.sample_uv(u, v, pol="RR")
+                obs.data["rlvis"] = self.input_model.sample_uv(u, v, pol="RL")
+                obs.data["lrvis"] = self.input_model.sample_uv(u, v, pol="LR")
+                obs.data["llvis"] = self.input_model.sample_uv(u, v, pol="LL")
+            elif obs.polrep == "stokes":
+                obs.data["vis"] = self.input_model.sample_uv(u, v, pol="I")
+                obs.data["qvis"] = self.input_model.sample_uv(u, v, pol="Q")
+                obs.data["uvis"] = self.input_model.sample_uv(u, v, pol="U")
+                obs.data["vvis"] = self.input_model.sample_uv(u, v, pol="V")
+            else:
+                raise ValueError("Unsupported ehtim observation polarization representation: {0}".format(obs.polrep))
+
+            # Match ehtim.Model.observe_same_nonoise() calibration semantics.
+            obs.ampcal = True
+            obs.phasecal = True
+            obs.opacitycal = True
+            obs.dcal = True
+            obs.frcal = True
+            return obs
+
+        obs = _run_quietly(sample_observation, context["verbosity"])
 
         F0 = np.abs(self.input_model.sample_uv(0.0, 0.0))
         return obs, F0
