@@ -378,8 +378,6 @@ class VisibilityDataset:
             raise ValueError("ehtim Obsdata output requires at least one visibility row.")
 
         reference_mjd = int(np.floor(np.min(self.time_mjd)))
-        if np.any(np.floor(self.time_mjd) != reference_mjd):
-            raise ValueError("ehtim Obsdata output cannot represent rows spanning multiple MJD days.")
 
         import ehtim as eh
 

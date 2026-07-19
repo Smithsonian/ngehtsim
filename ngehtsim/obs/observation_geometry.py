@@ -8,6 +8,12 @@ from astropy.constants import c as SPEED_OF_LIGHT
 from astropy.time import Time
 import ehtim as eh
 
+from ngehtsim.obs.visibility_dataset import (
+    CIRCULAR_CORRELATIONS,
+    StationTable,
+    VisibilityDataset,
+)
+
 
 GEOMETRY_CACHE_FIELDS = (
     "sites",
@@ -30,6 +36,7 @@ class GroundGeometry:
     time_hours: np.ndarray
     station1_indices: np.ndarray
     station2_indices: np.ndarray
+    uvw_m: np.ndarray
     u: np.ndarray
     v: np.ndarray
 
@@ -120,8 +127,13 @@ def ground_geometry(array, context):
     projection_u = np.cross(np.array((0.0, 0.0, 1.0)), source_vector)
     projection_u /= np.linalg.norm(projection_u)
     projection_v = -np.cross(projection_u, source_vector)
+    baseline_m = coordinate1 - coordinate2
+    uvw_m = np.column_stack((
+        baseline_m @ projection_u,
+        baseline_m @ projection_v,
+        baseline_m @ source_vector,
+    ))
     wavelength = SPEED_OF_LIGHT.to_value("m / s") / float(context["rf"])
-    baseline = (coordinate1 - coordinate2) / wavelength
 
     elevation1 = np.rad2deg(
         0.5 * np.pi - np.arccos(
@@ -142,53 +154,91 @@ def ground_geometry(array, context):
         time_hours=row_times[visible],
         station1_indices=row_station1[visible],
         station2_indices=row_station2[visible],
-        u=baseline[visible] @ projection_u,
-        v=baseline[visible] @ projection_v,
+        uvw_m=uvw_m[visible],
+        u=uvw_m[visible, 0] / wavelength,
+        v=uvw_m[visible, 1] / wavelength,
     )
 
 
-def _ground_geometry_obsdata(array, context, geometry):
-    """Adapt internal ground geometry to the established ``ehtim.Obsdata`` boundary."""
+def ground_visibility_template(array, context, geometry=None):
+    """Build a native visibility template for a ground-only array.
 
-    data = np.zeros(len(geometry.time_hours), dtype=eh.const_def.DTPOL_CIRC)
-    data["time"] = geometry.time_hours
-    data["tint"] = float(context["t_int"])
-    data["t1"] = array.tarr["site"][geometry.station1_indices]
-    data["t2"] = array.tarr["site"][geometry.station2_indices]
-    data["u"] = geometry.u
-    data["v"] = geometry.v
+    The template carries geometry and thermal weights but contains zero-valued
+    circular visibilities. Source sampling remains at the ``ehtim`` adapter
+    boundary until native source adapters are introduced.
+    """
+
+    if geometry is None:
+        geometry = ground_geometry(array, context)
 
     sefd1r = array.tarr["sefdr"][geometry.station1_indices]
     sefd2r = array.tarr["sefdr"][geometry.station2_indices]
     sefd1l = array.tarr["sefdl"][geometry.station1_indices]
     sefd2l = array.tarr["sefdl"][geometry.station2_indices]
     denominator = 2.0 * float(context["bandwidth_hz"]) * float(context["t_int"])
-    data["rrsigma"] = np.sqrt(sefd1r * sefd2r / denominator) / 0.88
-    data["llsigma"] = np.sqrt(sefd1l * sefd2l / denominator) / 0.88
-    data["rlsigma"] = np.sqrt(sefd1r * sefd2l / denominator) / 0.88
-    data["lrsigma"] = np.sqrt(sefd1l * sefd2r / denominator) / 0.88
+    sigma = np.column_stack((
+        np.sqrt(sefd1r * sefd2r / denominator) / 0.88,
+        np.sqrt(sefd1l * sefd2l / denominator) / 0.88,
+        np.sqrt(sefd1r * sefd2l / denominator) / 0.88,
+        np.sqrt(sefd1l * sefd2r / denominator) / 0.88,
+    ))
 
-    scan_half_width = 0.5 * float(context["t_rest"])
+    scan_half_width_s = 0.5 * float(context["t_rest"])
     scan_times = np.unique(geometry.time_hours)
-    scans = np.column_stack((scan_times - scan_half_width, scan_times + scan_half_width))
-    return eh.obsdata.Obsdata(
-        context["ra"],
-        context["dec"],
-        context["rf"],
-        context["bandwidth_hz"],
-        data,
-        array.tarr,
+    reference_mjd = float(context["mjd"])
+    time_mjd = reference_mjd + (geometry.time_hours / 24.0)
+    scan_start_mjd = reference_mjd + (scan_times / 24.0) - (scan_half_width_s / 86400.0)
+    scan_stop_mjd = reference_mjd + (scan_times / 24.0) + (scan_half_width_s / 86400.0)
+
+    return VisibilityDataset(
+        stations=StationTable.from_ehtim_tarr(array.tarr),
+        time_mjd=time_mjd,
+        integration_time_s=np.full(len(time_mjd), float(context["t_int"])),
+        antenna1=geometry.station1_indices,
+        antenna2=geometry.station2_indices,
+        uvw_m=geometry.uvw_m,
+        tau1=np.zeros(len(time_mjd)),
+        tau2=np.zeros(len(time_mjd)),
+        channel_frequency_hz=np.array((float(context["rf"]),)),
+        channel_bandwidth_hz=np.array((float(context["bandwidth_hz"]),)),
+        spectral_window_id=np.array((0,), dtype=np.intp),
+        correlation_layouts=(CIRCULAR_CORRELATIONS,),
+        row_layout_id=np.zeros(len(time_mjd), dtype=np.intp),
+        visibilities=np.zeros((len(time_mjd), 1, 4), dtype=complex),
+        weights=(1.0 / np.square(sigma))[:, np.newaxis, :],
+        flags=np.zeros((len(time_mjd), 1, 4), dtype=bool),
         source=str(context["ra"]) + ":" + str(context["dec"]),
-        mjd=context["mjd"],
-        timetype="UTC",
-        polrep="circ",
+        ra_hours=float(context["ra"]),
+        dec_degrees=float(context["dec"]),
         ampcal=True,
         phasecal=True,
         opacitycal=True,
         dcal=True,
         frcal=True,
-        scantable=scans,
+        scan_start_mjd=scan_start_mjd,
+        scan_stop_mjd=scan_stop_mjd,
     )
+
+
+def _ground_geometry_obsdata(array, context, geometry):
+    """Adapt the native ground visibility template to the ``ehtim`` boundary."""
+
+    obs = ground_visibility_template(
+        array,
+        context,
+        geometry=geometry,
+    ).to_ehtim_obsdata()
+
+    # ehtim's Array.obsdata() currently uses tadv seconds as if they were
+    # hours when it creates its scan table. Preserve that legacy public output
+    # until scan metadata can be corrected in a dedicated compatibility change.
+    scan_half_width_hours = 0.5 * float(context["t_rest"])
+    scan_times = np.unique(geometry.time_hours)
+    obs.scans = np.column_stack((
+        scan_times - scan_half_width_hours,
+        scan_times + scan_half_width_hours,
+    ))
+    return obs
 
 
 def _legacy_empty_observation(array, context):

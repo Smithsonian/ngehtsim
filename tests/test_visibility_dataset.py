@@ -159,3 +159,21 @@ def test_ehtim_adapter_rejects_unrepresentable_datasets():
     )
     with pytest.raises(ValueError, match="flagged"):
         flagged.to_ehtim_obsdata()
+
+
+def test_ehtim_adapter_preserves_rows_across_mjd_boundaries():
+    original = dataset(
+        channel_frequency_hz=np.array((230.0e9,)),
+        channel_bandwidth_hz=np.array((2.0e9,)),
+        spectral_window_id=np.array((0,)),
+        correlation_layouts=(CIRCULAR_CORRELATIONS,),
+        row_layout_id=np.array((0, 0)),
+        visibilities=np.ones((2, 1, 4), dtype=complex),
+        weights=np.ones((2, 1, 4)),
+        flags=np.zeros((2, 1, 4), dtype=bool),
+        time_mjd=np.array((60000.99, 60001.01)),
+    )
+
+    restored = VisibilityDataset.from_ehtim_obsdata(original.to_ehtim_obsdata())
+
+    assert np.allclose(restored.time_mjd, original.time_mjd)
