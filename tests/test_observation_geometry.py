@@ -7,6 +7,7 @@ from ngehtsim.obs.obs_generator import obs_generator
 import ngehtsim.obs.observation_geometry as observation_geometry
 from ngehtsim.obs.obs_generator import make_array
 import ngehtsim.obs.source_models as source_models
+from ngehtsim.obs.visibility_dataset import CIRCULAR_CORRELATIONS, VisibilityDataset
 
 
 @pytest.fixture
@@ -45,16 +46,66 @@ def test_ground_geometry_matches_legacy_ehtim_template(array_name):
     assert np.allclose(internal.scans, legacy.scans)
 
 
+@pytest.mark.parametrize("array_name", ["EHT2017", "ngEHT"])
+def test_ground_visibility_template_preserves_legacy_visibility_rows(array_name):
+    array = make_array(const.known_arrays[array_name])
+    context = geometry_context(array_name)
+
+    legacy = observation_geometry._legacy_empty_observation(array, context)
+    template = observation_geometry.ground_visibility_template(array, context)
+    adapted = template.to_ehtim_obsdata()
+
+    assert isinstance(template, VisibilityDataset)
+    assert template.channel_count == 1
+    assert template.correlation_layouts == (CIRCULAR_CORRELATIONS,)
+    assert np.allclose(template.time_mjd, legacy.mjd + (legacy.data["time"] / 24.0))
+    geometry = observation_geometry.ground_geometry(array, context)
+    assert np.array_equal(template.antenna1, geometry.station1_indices)
+    assert np.array_equal(template.antenna2, geometry.station2_indices)
+    assert np.allclose(template.uvw_m, geometry.uvw_m)
+    for field in ("time", "tint", "tau1", "tau2", "u", "v", "rrsigma", "llsigma", "rlsigma", "lrsigma"):
+        assert np.allclose(adapted.data[field], legacy.data[field], rtol=1.0e-9, atol=1.0e-12)
+    scan_times = np.unique(geometry.time_hours)
+    expected_scan_half_width_hours = 0.5 * context["t_rest"] / 3600.0
+    assert np.allclose(
+        adapted.scans,
+        np.column_stack((
+            scan_times - expected_scan_half_width_hours,
+            scan_times + expected_scan_half_width_hours,
+        )),
+    )
+
+
+def test_ground_visibility_template_preserves_rows_across_utc_midnight():
+    array = make_array(const.known_arrays["EHT2017"])
+    context = geometry_context("EHT2017")
+    context.update(t_start=22.0, t_stop=2.0)
+
+    template = observation_geometry.ground_visibility_template(array, context)
+    adapted = template.to_ehtim_obsdata()
+
+    assert np.max(template.time_mjd) - np.min(template.time_mjd) > 0.0
+    assert np.any(adapted.data["time"] >= 24.0)
+
+
 def test_ground_geometry_path_does_not_call_legacy_obsdata(array_and_context, monkeypatch):
     array, context = array_and_context
+    original_template = observation_geometry.ground_visibility_template
+    template_calls = []
 
     def unexpected_legacy_path(*args, **kwargs):
         raise AssertionError("Ground arrays must use internal geometry.")
 
+    def capture_template(*args, **kwargs):
+        template_calls.append((args, kwargs))
+        return original_template(*args, **kwargs)
+
     monkeypatch.setattr(observation_geometry, "_legacy_empty_observation", unexpected_legacy_path)
+    monkeypatch.setattr(observation_geometry, "ground_visibility_template", capture_template)
     obs = observation_geometry.make_empty_observation(array, context)
 
     assert len(obs.data) > 0
+    assert len(template_calls) == 1
 
 
 def test_ground_geometry_preserves_ehtim_model_visibilities():
