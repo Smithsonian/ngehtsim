@@ -31,8 +31,16 @@ def geometry_context(array_name):
     }
 
 
+def expected_scans(context, time_hours):
+    scan_half_width_hours = 0.5 * context["t_int"] / 3600.0
+    return np.column_stack((
+        time_hours - scan_half_width_hours,
+        time_hours + scan_half_width_hours,
+    ))
+
+
 @pytest.mark.parametrize("array_name", ["EHT2017", "ngEHT"])
-def test_ground_geometry_matches_legacy_ehtim_template(array_name):
+def test_ground_geometry_preserves_legacy_rows_and_corrects_scan_metadata(array_name):
     array = make_array(const.known_arrays[array_name])
     context = geometry_context(array_name)
 
@@ -43,7 +51,8 @@ def test_ground_geometry_matches_legacy_ehtim_template(array_name):
     assert np.array_equal(internal.data["t2"], legacy.data["t2"])
     for field in ("time", "tint", "tau1", "tau2", "u", "v", "rrsigma", "llsigma", "rlsigma", "lrsigma"):
         assert np.allclose(internal.data[field], legacy.data[field], rtol=1.0e-9, atol=1.0e-12)
-    assert np.allclose(internal.scans, legacy.scans)
+    assert np.allclose(internal.scans, expected_scans(context, np.unique(internal.data["time"])))
+    assert not np.allclose(internal.scans, legacy.scans)
 
 
 @pytest.mark.parametrize("array_name", ["EHT2017", "ngEHT"])
@@ -65,15 +74,49 @@ def test_ground_visibility_template_preserves_legacy_visibility_rows(array_name)
     assert np.allclose(template.uvw_m, geometry.uvw_m)
     for field in ("time", "tint", "tau1", "tau2", "u", "v", "rrsigma", "llsigma", "rlsigma", "lrsigma"):
         assert np.allclose(adapted.data[field], legacy.data[field], rtol=1.0e-9, atol=1.0e-12)
-    scan_times = np.unique(geometry.time_hours)
-    expected_scan_half_width_hours = 0.5 * context["t_rest"] / 3600.0
-    assert np.allclose(
-        adapted.scans,
-        np.column_stack((
-            scan_times - expected_scan_half_width_hours,
-            scan_times + expected_scan_half_width_hours,
-        )),
+    assert np.allclose(adapted.scans, expected_scans(context, np.unique(geometry.time_hours)))
+
+
+def test_ground_geometry_scan_groups_preserve_individual_snapshots():
+    array = make_array(const.known_arrays["EHT2017"])
+    context = geometry_context("EHT2017")
+    obs = observation_geometry.make_empty_observation(array, context)
+
+    scan_groups = obs.tlist(scan_gather=True)
+    scan_averaged = obs.avg_coherent(0.0, scan_avg=True)
+
+    assert len(scan_groups) == len(np.unique(obs.data["time"]))
+    assert len(scan_averaged.data) == len(obs.data)
+
+
+def test_obs_generator_outputs_scan_averaging_ready_data():
+    obsgen = obs_generator(
+        settings={
+            "weather": "exact",
+            "source": "M87",
+            "array": "EHT2017",
+            "dt": 3.0,
+            "t_int": 600.0,
+            "t_rest": 1800.0,
+            "fringe_finder": ["naive", 0.0],
+            "random_seed": 1,
+        }
     )
+    model = eh.model.Model().add_circ_gauss(F0=1.0, FWHM=40.0 * eh.RADPERUAS)
+
+    obs = obsgen.make_obs(
+        model,
+        addnoise=False,
+        addgains=False,
+        flagwind=False,
+        flagday=False,
+        flagsun=False,
+    )
+    scan_averaged = obs.avg_coherent(0.0, scan_avg=True)
+
+    assert len(obs.tlist(scan_gather=True)) == 6
+    assert len(scan_averaged.data) == len(obs.data)
+    assert np.allclose(obs.scans[:, 1] - obs.scans[:, 0], 600.0 / 3600.0)
 
 
 def test_ground_visibility_template_preserves_rows_across_utc_midnight():
@@ -143,15 +186,19 @@ def test_space_station_uses_legacy_geometry_fallback(array_and_context, monkeypa
     array.tarr[0]["x"] = 0.0
     array.tarr[0]["y"] = 0.0
     array.tarr[0]["z"] = 0.0
-    sentinel = object()
+    original_legacy_path = observation_geometry._legacy_empty_observation
+    calls = []
 
-    monkeypatch.setattr(
-        observation_geometry,
-        "_legacy_empty_observation",
-        lambda array, context: sentinel,
-    )
+    def capture_legacy_path(*args, **kwargs):
+        calls.append((args, kwargs))
+        return original_legacy_path(*args, **kwargs)
 
-    assert observation_geometry.make_empty_observation(array, context) is sentinel
+    monkeypatch.setattr(observation_geometry, "_legacy_empty_observation", capture_legacy_path)
+    with np.errstate(invalid="ignore"):
+        obs = observation_geometry.make_empty_observation(array, context)
+
+    assert len(calls) == 1
+    assert np.allclose(obs.scans, expected_scans(context, np.unique(obs.data["time"])))
 
 
 def test_geometry_cache_key_changes_when_geometry_context_changes(array_and_context):

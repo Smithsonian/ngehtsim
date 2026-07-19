@@ -183,7 +183,7 @@ def ground_visibility_template(array, context, geometry=None):
         np.sqrt(sefd1l * sefd2r / denominator) / 0.88,
     ))
 
-    scan_half_width_s = 0.5 * float(context["t_rest"])
+    scan_half_width_s = 0.5 * float(context["t_int"])
     scan_times = np.unique(geometry.time_hours)
     reference_mjd = float(context["mjd"])
     time_mjd = reference_mjd + (geometry.time_hours / 24.0)
@@ -223,22 +223,11 @@ def ground_visibility_template(array, context, geometry=None):
 def _ground_geometry_obsdata(array, context, geometry):
     """Adapt the native ground visibility template to the ``ehtim`` boundary."""
 
-    obs = ground_visibility_template(
+    return ground_visibility_template(
         array,
         context,
         geometry=geometry,
     ).to_ehtim_obsdata()
-
-    # ehtim's Array.obsdata() currently uses tadv seconds as if they were
-    # hours when it creates its scan table. Preserve that legacy public output
-    # until scan metadata can be corrected in a dedicated compatibility change.
-    scan_half_width_hours = 0.5 * float(context["t_rest"])
-    scan_times = np.unique(geometry.time_hours)
-    obs.scans = np.column_stack((
-        scan_times - scan_half_width_hours,
-        scan_times + scan_half_width_hours,
-    ))
-    return obs
 
 
 def _legacy_empty_observation(array, context):
@@ -261,10 +250,24 @@ def _legacy_empty_observation(array, context):
     )
 
 
+def _set_integration_scan_metadata(obs, context):
+    """Set scan intervals centered on integrations with widths in seconds."""
+
+    scan_half_width_hours = 0.5 * float(context["t_int"]) / 3600.0
+    scan_times = np.unique(obs.data["time"])
+    obs.scans = np.column_stack((
+        scan_times - scan_half_width_hours,
+        scan_times + scan_half_width_hours,
+    ))
+    return obs
+
+
 def make_empty_observation(array, context):
     if _has_space_station(array):
-        return _legacy_empty_observation(array, context)
-    return _ground_geometry_obsdata(array, context, ground_geometry(array, context))
+        obs = _legacy_empty_observation(array, context)
+    else:
+        obs = _ground_geometry_obsdata(array, context, ground_geometry(array, context))
+    return _set_integration_scan_metadata(obs, context)
 
 
 def ensure_empty_observation(obs_empty, cached_key, array, context):
