@@ -6,6 +6,7 @@ from astropy.time import Time
 from astropy.coordinates import EarthLocation, AltAz, get_sun
 
 import ngehtsim.const_def as const
+import ngehtsim.obs.observation_geometry as observation_geometry
 
 ###################################################
 # helpers
@@ -69,12 +70,19 @@ def station_metadata(obs, station_context, cache=None):
     t1 = obs.data["t1"]
     t2 = obs.data["t2"]
     sites_obs = np.unique(np.concatenate((t1, t2)))
-    els = obs.unpack(["el1", "el2"], ang_unit="rad")
-    pars = obs.unpack(["par_ang1", "par_ang2"], ang_unit="rad")
-    el1 = els["el1"]
-    el2 = els["el2"]
-    par1 = pars["par_ang1"]
-    par2 = pars["par_ang2"]
+    geometry = observation_geometry.ground_station_geometry(obs)
+    if geometry is None:
+        els = obs.unpack(["el1", "el2"], ang_unit="rad")
+        pars = obs.unpack(["par_ang1", "par_ang2"], ang_unit="rad")
+        el1 = els["el1"]
+        el2 = els["el2"]
+        par1 = pars["par_ang1"]
+        par2 = pars["par_ang2"]
+    else:
+        el1 = geometry.elevation1_rad
+        el2 = geometry.elevation2_rad
+        par1 = geometry.parallactic_angle1_rad
+        par2 = geometry.parallactic_angle2_rad
     times = obs.data["time"]
     tuniq = np.unique(times)
 

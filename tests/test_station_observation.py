@@ -93,6 +93,88 @@ def test_station_metadata_reuses_cached_geometry_terms():
     assert len(cache) == 1
 
 
+def test_station_metadata_ground_path_does_not_call_ehtim_unpack(monkeypatch):
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    obs, _ = _source_observation(obsgen)
+
+    def unexpected_unpack(*args, **kwargs):
+        raise AssertionError("Ground station metadata must use native geometry.")
+
+    monkeypatch.setattr(obs, "unpack", unexpected_unpack)
+    metadata = station_observation.station_metadata(obs, obsgen.station_context())
+
+    assert len(metadata["el1"]) == len(obs.data)
+    assert len(metadata["par1"]) == len(obs.data)
+
+
+def test_native_station_metadata_matches_ehtim_fallback(monkeypatch):
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    obs, _ = _source_observation(obsgen)
+    context = obsgen.station_context()
+
+    native = station_observation.station_metadata(obs, context)
+    monkeypatch.setattr(
+        station_observation.observation_geometry,
+        "ground_station_geometry",
+        lambda obs: None,
+    )
+    legacy = station_observation.station_metadata(obs, context)
+
+    for field in ("el1", "el2", "par1", "par2"):
+        assert np.allclose(native[field], legacy[field], atol=1.0e-10)
+
+
+def test_native_station_geometry_preserves_generated_observations(monkeypatch):
+    settings = dict(COMPACT_OBS_SETTINGS)
+    settings["fringe_finder"] = ["naive", 0.0]
+
+    native_generator = og.obs_generator(settings=settings)
+    native_obs = native_generator.make_obs(
+        _compact_model(),
+        addnoise=False,
+        addgains=False,
+        flagwind=False,
+        flagday=False,
+        flagsun=False,
+        addFR=True,
+    )
+
+    monkeypatch.setattr(
+        station_observation.observation_geometry,
+        "ground_station_geometry",
+        lambda obs: None,
+    )
+    fallback_generator = og.obs_generator(settings=settings)
+    fallback_obs = fallback_generator.make_obs(
+        _compact_model(),
+        addnoise=False,
+        addgains=False,
+        flagwind=False,
+        flagday=False,
+        flagsun=False,
+        addFR=True,
+    )
+
+    assert np.array_equal(native_obs.data["t1"], fallback_obs.data["t1"])
+    assert np.array_equal(native_obs.data["t2"], fallback_obs.data["t2"])
+    for field in (
+        "time",
+        "u",
+        "v",
+        "tau1",
+        "tau2",
+        "rrvis",
+        "llvis",
+        "rlvis",
+        "lrvis",
+        "rrsigma",
+        "llsigma",
+        "rlsigma",
+        "lrsigma",
+    ):
+        assert np.allclose(native_obs.data[field], fallback_obs.data[field], atol=1.0e-10)
+
+
 def test_station_metadata_cache_key_changes_with_station_context():
     obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
     obs, _ = _source_observation(obsgen)

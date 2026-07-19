@@ -89,6 +89,34 @@ def test_ground_geometry_scan_groups_preserve_individual_snapshots():
     assert len(scan_averaged.data) == len(obs.data)
 
 
+@pytest.mark.parametrize("array_name", ["EHT2017", "ngEHT"])
+def test_ground_station_geometry_matches_ehtim_unpack(array_name):
+    array = make_array(const.known_arrays[array_name])
+    context = geometry_context(array_name)
+    obs = observation_geometry.make_empty_observation(array, context)
+
+    geometry = observation_geometry.ground_station_geometry(obs)
+    expected = obs.unpack(
+        ["el1", "el2", "par_ang1", "par_ang2"],
+        ang_unit="rad",
+    )
+
+    assert geometry is not None
+    assert np.allclose(geometry.elevation1_rad, expected["el1"], atol=1.0e-10)
+    assert np.allclose(geometry.elevation2_rad, expected["el2"], atol=1.0e-10)
+    assert np.allclose(
+        geometry.parallactic_angle1_rad,
+        expected["par_ang1"],
+        atol=1.0e-10,
+    )
+    assert np.allclose(
+        geometry.parallactic_angle2_rad,
+        expected["par_ang2"],
+        atol=1.0e-10,
+    )
+    assert not geometry.elevation1_rad.flags.writeable
+
+
 def test_obs_generator_outputs_scan_averaging_ready_data():
     obsgen = obs_generator(
         settings={
@@ -199,6 +227,7 @@ def test_space_station_uses_legacy_geometry_fallback(array_and_context, monkeypa
 
     assert len(calls) == 1
     assert np.allclose(obs.scans, expected_scans(context, np.unique(obs.data["time"])))
+    assert observation_geometry.ground_station_geometry(obs) is None
 
 
 def test_geometry_cache_key_changes_when_geometry_context_changes(array_and_context):

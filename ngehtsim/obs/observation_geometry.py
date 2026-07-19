@@ -41,6 +41,49 @@ class GroundGeometry:
     v: np.ndarray
 
 
+def _readonly_float_array(values):
+    array = np.array(values, dtype=float, copy=True)
+    if array.ndim != 1:
+        raise ValueError("Station geometry values must be one-dimensional.")
+    array.setflags(write=False)
+    return array
+
+
+@dataclass(frozen=True)
+class StationGeometry:
+    """Per-row ground-station elevation and parallactic angles in radians."""
+
+    elevation1_rad: np.ndarray
+    elevation2_rad: np.ndarray
+    parallactic_angle1_rad: np.ndarray
+    parallactic_angle2_rad: np.ndarray
+
+    def __post_init__(self):
+        elevation1_rad = _readonly_float_array(self.elevation1_rad)
+        elevation2_rad = _readonly_float_array(self.elevation2_rad)
+        parallactic_angle1_rad = _readonly_float_array(self.parallactic_angle1_rad)
+        parallactic_angle2_rad = _readonly_float_array(self.parallactic_angle2_rad)
+        shape = elevation1_rad.shape
+        if any(values.shape != shape for values in (
+            elevation2_rad,
+            parallactic_angle1_rad,
+            parallactic_angle2_rad,
+        )):
+            raise ValueError("Station geometry arrays must have matching shapes.")
+        if not all(np.all(np.isfinite(values)) for values in (
+            elevation1_rad,
+            elevation2_rad,
+            parallactic_angle1_rad,
+            parallactic_angle2_rad,
+        )):
+            raise ValueError("Station geometry arrays must contain finite values.")
+
+        object.__setattr__(self, "elevation1_rad", elevation1_rad)
+        object.__setattr__(self, "elevation2_rad", elevation2_rad)
+        object.__setattr__(self, "parallactic_angle1_rad", parallactic_angle1_rad)
+        object.__setattr__(self, "parallactic_angle2_rad", parallactic_angle2_rad)
+
+
 def _cache_value(value):
     if hasattr(value, "tolist"):
         value = value.tolist()
@@ -79,6 +122,87 @@ def _observation_times(context):
     if t_stop < t_start:
         t_stop += 24.0
     return np.arange(t_start, t_stop, float(context["t_rest"]) / 3600.0)
+
+
+def ground_station_geometry(obs):
+    """Calculate station angles for a UTC ground-array ``ehtim.Obsdata``.
+
+    Returns ``None`` for spacecraft-containing arrays or non-UTC observations,
+    which retain the established ``ehtim`` metadata path.
+    """
+
+    if getattr(obs, "timetype", None) != "UTC":
+        return None
+
+    coordinates = np.column_stack((obs.tarr["x"], obs.tarr["y"], obs.tarr["z"]))
+    if np.any(np.all(coordinates == 0.0, axis=1)):
+        return None
+
+    station_index = {str(site): index for index, site in enumerate(obs.tarr["site"])}
+    try:
+        antenna1 = np.fromiter(
+            (station_index[str(site)] for site in obs.data["t1"]),
+            dtype=np.intp,
+            count=len(obs.data),
+        )
+        antenna2 = np.fromiter(
+            (station_index[str(site)] for site in obs.data["t2"]),
+            dtype=np.intp,
+            count=len(obs.data),
+        )
+    except KeyError:
+        return None
+
+    times_sidereal = Time(
+        (np.asarray(obs.data["time"], dtype=float) / 24.0) + np.floor(float(obs.mjd)),
+        format="mjd",
+        scale="utc",
+    ).sidereal_time("mean", "greenwich").hour
+    ra_rad = float(obs.ra) * (np.pi / 12.0)
+    dec_rad = np.deg2rad(float(obs.dec))
+    hour_angle_rotation = np.mod(
+        (times_sidereal - float(obs.ra)) * (np.pi / 12.0),
+        2.0 * np.pi,
+    )
+    source_vector = np.array((np.cos(dec_rad), 0.0, np.sin(dec_rad)))
+
+    def station_angles(antenna):
+        station_coordinates = coordinates[antenna]
+        cosine = np.cos(hour_angle_rotation)
+        sine = np.sin(hour_angle_rotation)
+        rotated_coordinates = np.column_stack((
+            (cosine * station_coordinates[:, 0]) - (sine * station_coordinates[:, 1]),
+            (sine * station_coordinates[:, 0]) + (cosine * station_coordinates[:, 1]),
+            station_coordinates[:, 2],
+        ))
+        elevation = 0.5 * np.pi - np.arccos(
+            np.sum(rotated_coordinates * source_vector, axis=1)
+            / np.linalg.norm(rotated_coordinates, axis=1)
+        )
+        longitude = np.arctan2(station_coordinates[:, 1], station_coordinates[:, 0])
+        latitude = np.arctan2(
+            station_coordinates[:, 2],
+            np.hypot(station_coordinates[:, 0], station_coordinates[:, 1]),
+        )
+        hour_angle = np.mod(
+            (times_sidereal * (np.pi / 12.0)) + longitude - ra_rad,
+            2.0 * np.pi,
+        )
+        parallactic_angle = np.arctan2(
+            np.sin(hour_angle) * np.cos(latitude),
+            (np.sin(latitude) * np.cos(dec_rad))
+            - (np.cos(latitude) * np.sin(dec_rad) * np.cos(hour_angle)),
+        )
+        return elevation, parallactic_angle
+
+    elevation1, parallactic_angle1 = station_angles(antenna1)
+    elevation2, parallactic_angle2 = station_angles(antenna2)
+    return StationGeometry(
+        elevation1_rad=elevation1,
+        elevation2_rad=elevation2,
+        parallactic_angle1_rad=parallactic_angle1,
+        parallactic_angle2_rad=parallactic_angle2,
+    )
 
 
 def ground_geometry(array, context):
