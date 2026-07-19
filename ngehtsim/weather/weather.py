@@ -185,25 +185,62 @@ def _remove_false_february_entries(years, days, values, monthnam):
     return years[keep], days[keep], values[keep]
 
 
-def _legacy_records(site, monthnum, monthnam, quantity, path_to_weather):
-    filenames = {
-        "tau": "tau.txt",
-        "tb": "Tb.txt",
-        "pressure": "Pbase.txt",
-        "temperature": "Tbase.txt",
-        "pwv": "PWV.txt",
-        "windspeed": "windspeed.txt",
-    }
-    filename = os.path.join(str(path_to_weather), site, monthnum + monthnam, filenames[quantity])
+_WEATHER_FILENAMES = {
+    "tau": "tau.txt",
+    "tb": "Tb.txt",
+    "pressure": "Pbase.txt",
+    "temperature": "Tbase.txt",
+    "pwv": "PWV.txt",
+    "windspeed": "windspeed.txt",
+}
 
+
+def _legacy_weather_filename(site, monthnum, monthnam, quantity, path_to_weather):
+    return os.path.join(
+        str(path_to_weather), site, monthnum + monthnam, _WEATHER_FILENAMES[quantity]
+    )
+
+
+def _legacy_atmospheric_records(site, monthnum, monthnam, quantity, path_to_weather):
+    filename = _legacy_weather_filename(
+        site, monthnum, monthnam, quantity, path_to_weather
+    )
+    years, _, days, coefficients = read_binary_atm(filename)
+    return _remove_false_february_entries(years, days, coefficients, monthnam)
+
+
+def _legacy_records(site, monthnum, monthnam, quantity, path_to_weather):
     if quantity in ("tau", "tb"):
-        years, _, days, coefficients = read_binary_atm(filename)
+        years, days, coefficients = _legacy_atmospheric_records(
+            site, monthnum, monthnam, quantity, path_to_weather
+        )
         reconstruct = reconstruct_spectrum_tau if quantity == "tau" else reconstruct_spectrum_Tb
         values = np.array([reconstruct(coefficients[index]) for index in range(len(coefficients))])
     else:
+        filename = _legacy_weather_filename(
+            site, monthnum, monthnam, quantity, path_to_weather
+        )
         years, _, days, values = read_binary_weather(filename)
 
     return _remove_false_february_entries(years, days, values, monthnam)
+
+
+def _legacy_spectrum(site, form, month, day, year, path_to_weather, quantity):
+    monthnum, monthnam = _parse_month(month)
+    years, days, coefficients = _legacy_atmospheric_records(
+        site, monthnum, monthnam, quantity, path_to_weather
+    )
+    reconstruct = reconstruct_spectrum_tau if quantity == "tau" else reconstruct_spectrum_Tb
+
+    if form == "exact":
+        return reconstruct(
+            _select_weather_values(coefficients, years, days, form, day, year)
+        )
+
+    spectra = np.array([
+        reconstruct(coefficients[index]) for index in range(len(coefficients))
+    ])
+    return _select_weather_values(spectra, years, days, form, day, year)
 
 
 def _zarr_records(store, site, month, quantity):
@@ -252,6 +289,11 @@ def _select_weather_values(values, years, days, form, day, year):
 
 
 def _spectrum(site, form, month, day, year, path_to_weather, weather_store, quantity):
+    if weather_store is None:
+        return _legacy_spectrum(
+            site, form, month, day, year, path_to_weather, quantity
+        )
+
     years, days, spectra = _weather_records(
         site, month, quantity, path_to_weather, weather_store
     )

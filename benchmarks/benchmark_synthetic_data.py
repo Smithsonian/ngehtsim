@@ -55,6 +55,14 @@ SCENARIOS = [
         "reuse_generator": False,
     },
     {
+        "name": "eht2017_model_exact_weather",
+        "description": "EHT2017 array, analytic ehtim Model source, exact-date weather, and a fresh generator.",
+        "settings": {**base_settings("EHT2017"), "weather": "exact"},
+        "input_kind": "model",
+        "make_obs_kwargs": {"addnoise": False, "addgains": False},
+        "reuse_generator": False,
+    },
+    {
         "name": "eht2017_model_corruptions",
         "description": "EHT2017 array, analytic ehtim Model source, thermal noise and gain corruptions enabled.",
         "settings": base_settings("EHT2017"),

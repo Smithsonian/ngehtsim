@@ -24,6 +24,10 @@ Run one scenario with more repeats:
 MPLBACKEND=Agg python3 benchmarks/benchmark_synthetic_data.py --repeats 5 --warmups 1 --scenario eht2017_model_clean_reused_generator
 ```
 
+The `eht2017_model_exact_weather` scenario measures fresh-generator
+initialization with exact-date packaged weather. It protects the fast
+select-before-reconstruct path used by repeated timestamp workflows.
+
 ## Compare Weather Backends
 
 The default is the packaged daily weather backend, preserving the original

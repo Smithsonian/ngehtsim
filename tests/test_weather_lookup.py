@@ -51,6 +51,31 @@ def test_exact_spectrum_weather_month_aliases(weather_function, month):
     assert np.allclose(result, reference, equal_nan=True)
 
 
+@pytest.mark.parametrize(
+    ("weather_function", "reconstructor_name"),
+    [
+        (nw.opacity_spectrum, "reconstruct_spectrum_tau"),
+        (nw.brightness_temperature_spectrum, "reconstruct_spectrum_Tb"),
+    ],
+)
+def test_exact_spectrum_reconstructs_only_the_requested_legacy_record(
+    weather_function, reconstructor_name, monkeypatch
+):
+    original_reconstructor = getattr(nw, reconstructor_name)
+    calls = []
+
+    def count_reconstructions(coefficients):
+        calls.append(np.asarray(coefficients))
+        return original_reconstructor(coefficients)
+
+    monkeypatch.setattr(nw, reconstructor_name, count_reconstructions)
+
+    result = weather_function("ALMA", form="exact", month="Apr", day=11, year=2017)
+
+    assert len(calls) == 1
+    assert np.all(np.isfinite(result))
+
+
 @pytest.mark.parametrize("weather_function, extra_kwargs", SCALAR_WEATHER_FUNCTIONS)
 def test_february_scalar_integer_month_matches_named_month(weather_function, extra_kwargs):
     kwargs = dict(site="ALMA", form="median")
