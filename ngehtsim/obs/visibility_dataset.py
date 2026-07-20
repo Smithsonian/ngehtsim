@@ -302,19 +302,29 @@ class VisibilityDataset:
             raise ValueError(
                 "row_mask must be a boolean array with one value per visibility row."
             )
+        return self.take_rows(np.flatnonzero(row_mask))
+
+    def take_rows(self, row_indices):
+        """Return a dataset containing rows selected in the given order."""
+
+        row_indices = np.asarray(row_indices)
+        if row_indices.ndim != 1 or not np.issubdtype(row_indices.dtype, np.integer):
+            raise ValueError("row_indices must be a one-dimensional integer array.")
+        if np.any(row_indices < 0) or np.any(row_indices >= self.row_count):
+            raise ValueError("row_indices contains an out-of-range visibility row.")
         return replace(
             self,
-            time_mjd=self.time_mjd[row_mask],
-            integration_time_s=self.integration_time_s[row_mask],
-            antenna1=self.antenna1[row_mask],
-            antenna2=self.antenna2[row_mask],
-            uvw_m=self.uvw_m[row_mask],
-            tau1=self.tau1[row_mask],
-            tau2=self.tau2[row_mask],
-            row_layout_id=self.row_layout_id[row_mask],
-            visibilities=self.visibilities[row_mask],
-            weights=self.weights[row_mask],
-            flags=self.flags[row_mask],
+            time_mjd=self.time_mjd[row_indices],
+            integration_time_s=self.integration_time_s[row_indices],
+            antenna1=self.antenna1[row_indices],
+            antenna2=self.antenna2[row_indices],
+            uvw_m=self.uvw_m[row_indices],
+            tau1=self.tau1[row_indices],
+            tau2=self.tau2[row_indices],
+            row_layout_id=self.row_layout_id[row_indices],
+            visibilities=self.visibilities[row_indices],
+            weights=self.weights[row_indices],
+            flags=self.flags[row_indices],
         )
 
     @classmethod

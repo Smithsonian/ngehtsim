@@ -12,6 +12,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
+
 os.environ.setdefault("MPLBACKEND", "Agg")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -76,6 +78,30 @@ SCENARIOS = [
         "settings": base_settings("EHT2017"),
         "input_kind": "image",
         "make_obs_kwargs": {"addnoise": False, "addgains": False},
+        "reuse_generator": False,
+    },
+    {
+        "name": "eht2017_image_corruptions",
+        "description": "EHT2017 array, rasterized ehtim Image source, thermal noise and gain corruptions enabled.",
+        "settings": base_settings("EHT2017"),
+        "input_kind": "image",
+        "make_obs_kwargs": {"addnoise": True, "addgains": True},
+        "reuse_generator": False,
+    },
+    {
+        "name": "eht2017_movie_clean",
+        "description": "EHT2017 array, time-varying ehtim Movie source, no thermal noise or gain corruptions.",
+        "settings": base_settings("EHT2017"),
+        "input_kind": "movie",
+        "make_obs_kwargs": {"addnoise": False, "addgains": False},
+        "reuse_generator": False,
+    },
+    {
+        "name": "eht2017_movie_corruptions",
+        "description": "EHT2017 array, time-varying ehtim Movie source, thermal noise and gain corruptions enabled.",
+        "settings": base_settings("EHT2017"),
+        "input_kind": "movie",
+        "make_obs_kwargs": {"addnoise": True, "addgains": True},
         "reuse_generator": False,
     },
     {
@@ -231,6 +257,24 @@ def make_source(input_kind):
         return model
     if input_kind == "image":
         return model.make_image(160.0 * eh.RADPERUAS, 128)
+    if input_kind == "movie":
+        image = model.make_image(160.0 * eh.RADPERUAS, 64)
+        frame_0 = image.imvec.reshape(image.ydim, image.xdim)
+        frame_1 = 1.1 * frame_0
+        movie = eh.movie.Movie(
+            (frame_0, frame_1),
+            times=(0.0, 0.5),
+            psize=image.psize,
+            ra=image.ra,
+            dec=image.dec,
+            rf=image.rf,
+            source=image.source,
+            mjd=image.mjd,
+            bounds_error=True,
+        )
+        for polarization in ("Q", "U", "V"):
+            movie.add_pol_movie((np.zeros_like(frame_0), np.zeros_like(frame_1)), polarization)
+        return movie
 
     raise ValueError("Unknown input_kind: {0}".format(input_kind))
 

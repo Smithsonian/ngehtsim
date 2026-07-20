@@ -23,7 +23,7 @@ obsgen = og.obs_generator(settings)
 
 # generate the observation by passing the FisherForecast object and parameters
 p = [0.2, 20.0]
-obs = obsgen.make_obs(ff, p=p, addnoise=False, addgains=False)
+obs = obsgen.make_obs(ff, p=p, addnoise=False, addgains=False, backend='legacy')
 
 # save it as a uvfits file
 obs.save_uvfits('./example_datafile.uvfits')

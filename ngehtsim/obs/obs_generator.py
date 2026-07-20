@@ -3,6 +3,7 @@
 
 import numpy as np
 import ehtim as eh
+from dataclasses import replace
 from collections import defaultdict
 from astropy.time import Time
 from astropy import units as astrounits
@@ -22,6 +23,7 @@ import ngehtsim.obs.instrumental_corruptions as instrumental_corruptions
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.station_observation as station_observation
+from ngehtsim.obs.simulation_result import SimulationResult
 
 ###################################################
 # helpers
@@ -249,6 +251,9 @@ class obs_generator(object):
         self.obs_empty = None
         self.obs_empty_key = None
         self.obs_template_cache = {}
+        self.native_visibility_template = None
+        self.native_visibility_template_key = None
+        self.native_visibility_template_cache = {}
         self.station_term_cache = {}
 
     ###################################################
@@ -805,8 +810,99 @@ class obs_generator(object):
             "polarization_basis": polarization_basis,
         }
 
-    # generate a raw observation
-    def observe(self, input_model, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
+    def _resolve_input_model(self, input_model, caller):
+        if input_model is not None:
+            return input_model
+        if self.im is None:
+            raise ValueError(
+                "No input model is configured; {0} requires input_model.".format(caller)
+            )
+        if self.verbosity > 0:
+            print("No input model passed to {0}; using the configured model.".format(caller))
+        return self.im
+
+    def simulate(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
+                 leakamp=0.1, opacitycal=True, addFR=True, addleakage=False,
+                 flagwind=True, flagday=False, flagsun=True,
+                 allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max,
+                 p=None):
+        """Simulate a ground-array observation into a native result object.
+
+        This is the primary v2 simulation API. It retains all rows, including
+        rows rejected by station-based flagging, in ``result.dataset.flags``.
+        ``ehtim`` source classes are accepted as input adapters, but no
+        ``ehtim.Obsdata`` is constructed during simulation.
+        """
+
+        del p  # Native Fisher-forecast sampling is intentionally not supported.
+        input_model = self._resolve_input_model(input_model, "simulate")
+        if allow_mixed_basis:
+            raise NotImplementedError(
+                "Mixed-polarization simulation will be added to the native RIME path."
+            )
+        if "space" in self.sites:
+            raise NotImplementedError(
+                "Native spacecraft geometry is not implemented; use observe_legacy() "
+                "or make_obs_legacy() explicitly."
+            )
+        adapter = source_models.adapter_for(input_model)
+        if not hasattr(adapter, "observe_dataset"):
+            raise TypeError(
+                "Native simulation currently supports ehtim Image, Movie, and Model inputs only."
+            )
+
+        (self.native_visibility_template,
+         self.native_visibility_template_key,
+         self.native_visibility_template_cache,
+         template) = observation_geometry.native_visibility_template(
+            self.native_visibility_template,
+            self.native_visibility_template_key,
+            self.native_visibility_template_cache,
+            self.arr,
+            self.geometry_context(),
+            el_min=el_min,
+            el_max=el_max,
+        )
+        if template.row_count == 0:
+            return SimulationResult(template, {})
+
+        sampled, F0 = source_models.observe_source_dataset(
+            input_model,
+            template,
+            self.source_context(),
+        )
+        station_terms, stations = station_observation.station_terms_for_dataset(
+            sampled,
+            F0,
+            self.station_context((sampled.time_mjd - self.mjd) * 24.0),
+            self.rng,
+            gainamp=gainamp,
+            leakamp=leakamp,
+            addgains=addgains,
+            addleakage=addleakage,
+            flagwind=flagwind,
+            flagday=flagday,
+            flagsun=flagsun,
+            solar_angle=self.solar_angle,
+            verbosity=self.verbosity,
+            windspeed_sefd_modifier=windspeed_SEFD_modification,
+            reference_mjd=self.mjd,
+            cache=self.station_term_cache,
+        )
+        corrupted = instrumental_corruptions.apply_circular_corruptions(
+            sampled,
+            station_terms,
+            stations,
+            self.rng,
+            addnoise=addnoise,
+            addgains=addgains,
+            opacitycal=opacitycal,
+            addFR=addFR,
+            addleakage=addleakage,
+        )
+        return SimulationResult(corrupted, station_terms)
+
+    def observe_legacy(self, input_model, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
                 opacitycal=True, addFR=True, addleakage=False,
                 flagwind=True, flagday=False, flagsun=True,
                 allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
@@ -1077,8 +1173,10 @@ class obs_generator(object):
         # return observation object
         return obs
 
-    # generate observation
-    def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
+    # Legacy Obsdata-only observation path. It is retained for capabilities
+    # that have not yet acquired a native implementation, notably FPT and
+    # spacecraft geometry.
+    def make_obs_legacy(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
                  opacitycal=True, addFR=True, addleakage=False,
                  flagwind=True, flagday=False, flagsun=True,
                  allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max, p=None):
@@ -1120,7 +1218,7 @@ class obs_generator(object):
                     print('No input model passed to make_obs; using the model provided in the settings.')
 
         # generate raw observation
-        obs = self.observe(input_model,
+        obs = self.observe_legacy(input_model,
                            addnoise=addnoise,
                            addgains=addgains,
                            gainamp=gainamp,
@@ -1230,6 +1328,198 @@ class obs_generator(object):
 
         # return observation object
         return obs
+
+    def _native_selection_mask(self, dataset):
+        """Return the native row-selection mask for availability and fringe finding."""
+
+        mask = ~np.any(dataset.flags, axis=(1, 2))
+        names = np.asarray(dataset.stations.names)
+        t1 = names[dataset.antenna1]
+        t2 = names[dataset.antenna2]
+
+        unavailable = tuple(site for site in dataset.stations.names if self.bands[site] is None)
+        if unavailable:
+            if self.verbosity > 0:
+                for site in unavailable:
+                    print(site + " cannot observe at " + str(self.freq / 1.0e9) + " GHz.")
+            mask &= ~np.isin(t1, unavailable) & ~np.isin(t2, unavailable)
+
+        unready = get_unready_sites(
+            np.asarray(dataset.stations.names),
+            self.settings["tech_readiness"],
+            rng=self.rng,
+        )
+        if len(unready):
+            if self.verbosity > 0:
+                print("Dropping {0} due to technical (un)readiness.".format(unready))
+            mask &= ~np.isin(t1, unready) & ~np.isin(t2, unready)
+
+        snr_algorithm, snr_args = self.settings["fringe_finder"]
+        snr_algorithm = snr_algorithm.lower()
+        if snr_algorithm == "naive":
+            pseudo_i_amplitude = 0.5 * (
+                np.abs(dataset.visibilities[:, 0, 0])
+                + np.abs(dataset.visibilities[:, 0, 1])
+            )
+            pseudo_i_sigma = 1.0 / np.sqrt(2.0 * dataset.weights[:, 0, 0])
+            mask &= (pseudo_i_amplitude / pseudo_i_sigma) > snr_args
+        elif snr_algorithm == "fringegroups":
+            selected_indices = np.flatnonzero(mask)
+            selected = dataset.take_rows(selected_indices)
+            mask[selected_indices] &= fringegroups_dataset(
+                self,
+                selected,
+                snr_args[0],
+                snr_args[1],
+            )
+        elif snr_algorithm == "fpt":
+            raise NotImplementedError(
+                "Native FPT fringe selection is not implemented; use make_obs_legacy() "
+                "or observe_legacy() explicitly."
+            )
+        else:
+            raise ValueError("Unknown algorithm for fringe_finder.")
+        return mask
+
+    def make_dataset(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
+                     leakamp=0.1, opacitycal=True, addFR=True, addleakage=False,
+                     flagwind=True, flagday=False, flagsun=True,
+                     allow_mixed_basis=False, el_min=const.el_min,
+                     el_max=const.el_max, p=None):
+        """Generate a fully selected native :class:`SimulationResult`.
+
+        Station, availability, technical-readiness, and fringe-selection
+        failures are represented in ``result.dataset.flags`` rather than by
+        deleting rows from the internal data model.
+        """
+
+        result = self.simulate(
+            input_model=input_model,
+            addnoise=addnoise,
+            addgains=addgains,
+            gainamp=gainamp,
+            leakamp=leakamp,
+            opacitycal=opacitycal,
+            addFR=addFR,
+            addleakage=addleakage,
+            flagwind=flagwind,
+            flagday=flagday,
+            flagsun=flagsun,
+            allow_mixed_basis=allow_mixed_basis,
+            el_min=el_min,
+            el_max=el_max,
+            p=p,
+        )
+        if not result.dataset.row_count:
+            return result
+
+        mask = self._native_selection_mask(result.dataset)
+        flags = np.array(result.dataset.flags, copy=True)
+        flags[~mask] = True
+        if self.verbosity > 0:
+            print(
+                "Flagged {0} of {1} data points during fringe-finding emulation.".format(
+                    len(mask) - np.count_nonzero(mask),
+                    len(mask),
+                )
+            )
+        return SimulationResult(replace(result.dataset, flags=flags), result.station_terms)
+
+    def observe(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
+                leakamp=0.1, opacitycal=True, addFR=True, addleakage=False,
+                flagwind=True, flagday=False, flagsun=True,
+                allow_mixed_basis=False, el_min=const.el_min,
+                el_max=const.el_max, p=None, backend="native"):
+        """Generate a raw ``ehtim.Obsdata`` export from the selected backend.
+
+        ``backend="native"`` is the default and constructs no ``Obsdata``
+        until export. ``backend="legacy"`` explicitly selects the retained
+        legacy implementation for capabilities not yet available natively.
+        """
+
+        if backend == "legacy":
+            input_model = self._resolve_input_model(input_model, "observe_legacy")
+            return self.observe_legacy(
+                input_model,
+                addnoise=addnoise,
+                addgains=addgains,
+                gainamp=gainamp,
+                leakamp=leakamp,
+                opacitycal=opacitycal,
+                addFR=addFR,
+                addleakage=addleakage,
+                flagwind=flagwind,
+                flagday=flagday,
+                flagsun=flagsun,
+                allow_mixed_basis=allow_mixed_basis,
+                el_min=el_min,
+                el_max=el_max,
+                p=p,
+            )
+        if backend != "native":
+            raise ValueError("backend must be either 'native' or 'legacy'.")
+        return self.simulate(
+            input_model=input_model,
+            addnoise=addnoise,
+            addgains=addgains,
+            gainamp=gainamp,
+            leakamp=leakamp,
+            opacitycal=opacitycal,
+            addFR=addFR,
+            addleakage=addleakage,
+            flagwind=flagwind,
+            flagday=flagday,
+            flagsun=flagsun,
+            allow_mixed_basis=allow_mixed_basis,
+            el_min=el_min,
+            el_max=el_max,
+            p=p,
+        ).to_ehtim_obsdata()
+
+    def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
+                 leakamp=0.1, opacitycal=True, addFR=True, addleakage=False,
+                 flagwind=True, flagday=False, flagsun=True,
+                 allow_mixed_basis=False, el_min=const.el_min,
+                 el_max=const.el_max, p=None, backend="native"):
+        """Generate an ``ehtim.Obsdata`` export of a selected observation."""
+
+        if backend == "legacy":
+            return self.make_obs_legacy(
+                input_model=input_model,
+                addnoise=addnoise,
+                addgains=addgains,
+                gainamp=gainamp,
+                leakamp=leakamp,
+                opacitycal=opacitycal,
+                addFR=addFR,
+                addleakage=addleakage,
+                flagwind=flagwind,
+                flagday=flagday,
+                flagsun=flagsun,
+                allow_mixed_basis=allow_mixed_basis,
+                el_min=el_min,
+                el_max=el_max,
+                p=p,
+            )
+        if backend != "native":
+            raise ValueError("backend must be either 'native' or 'legacy'.")
+        return self.make_dataset(
+            input_model=input_model,
+            addnoise=addnoise,
+            addgains=addgains,
+            gainamp=gainamp,
+            leakamp=leakamp,
+            opacitycal=opacitycal,
+            addFR=addFR,
+            addleakage=addleakage,
+            flagwind=flagwind,
+            flagday=flagday,
+            flagsun=flagsun,
+            allow_mixed_basis=allow_mixed_basis,
+            el_min=el_min,
+            el_max=el_max,
+            p=p,
+        ).to_ehtim_obsdata()
 
     # generate multifrequency observation, assuming that FPT will be used wherever possible
     def make_obs_mf(self, freqs, input_models, addnoise=True, addgains=True, gainamp=0.04, leakamp=0.1,
@@ -1350,7 +1640,7 @@ class obs_generator(object):
                     obsgen_here.im = model_target
 
                 # generate observation at target frequency
-                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, flagwind=flagwind, flagday=flagday, flagsun=flagsun, p=p_target)
+                obs_here = obsgen_here.make_obs(input_model=obsgen_here.im, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, flagwind=flagwind, flagday=flagday, flagsun=flagsun, p=p_target, backend='legacy')
 
                 # add any new detections to the running datatable
                 if count == 0:
@@ -1870,6 +2160,63 @@ def fringegroups(obsgen, obs, snr_ref, tint_ref):
     return master_index
 
 
+def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref):
+    """Apply the fringe-group proxy directly to a native circular dataset."""
+
+    if dataset.channel_count != 1:
+        raise ValueError("Native fringe groups require exactly one spectral channel.")
+    if dataset.row_count == 0:
+        return np.zeros(0, dtype=bool)
+
+    names = np.asarray(dataset.stations.names)
+    t1 = names[dataset.antenna1]
+    t2 = names[dataset.antenna2]
+    available_sites = {
+        site for site in obsgen.sites if obsgen.bands[site] is not None
+    }
+    master_index = np.zeros(dataset.row_count, dtype=bool)
+
+    for timestamp in np.unique(dataset.time_mjd):
+        indices = np.flatnonzero(dataset.time_mjd == timestamp)
+        rr = dataset.visibilities[indices, 0, 0]
+        ll = dataset.visibilities[indices, 0, 1]
+        rr_sigma = 1.0 / np.sqrt(dataset.weights[indices, 0, 0])
+        snr_scaled = snr_ref * np.sqrt(dataset.integration_time_s[indices] / tint_ref)
+        strong = (
+            (0.5 * (np.abs(rr) + np.abs(ll)) / (rr_sigma / np.sqrt(2.0)))
+            >= snr_scaled
+        )
+        strong &= np.isin(t1[indices], tuple(available_sites))
+        strong &= np.isin(t2[indices], tuple(available_sites))
+
+        groups = []
+        for index in indices[strong]:
+            baseline = {t1[index], t2[index]}
+            merged = set(baseline)
+            remaining = []
+            for group in groups:
+                if baseline & group:
+                    merged |= group
+                else:
+                    remaining.append(group)
+            groups = remaining + [merged]
+
+        site_groups = {
+            station: group_index
+            for group_index, group in enumerate(groups)
+            for station in group
+        }
+        for index in indices:
+            if (
+                t1[index] in site_groups
+                and t2[index] in site_groups
+                and site_groups[t1[index]] == site_groups[t2[index]]
+            ):
+                master_index[index] = True
+
+    return master_index
+
+
 def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemeris/space', **kwargs):
     """
     Function to apply the frequency phase transfer ("FPT") SNR thresholding scheme to an observation.
@@ -1936,7 +2283,7 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
         obsgen_ref.im = model_ref
 
     # generate observation at reference frequency
-    obs_ref = obsgen_ref.observe(obsgen_ref.im, **kwargs)
+    obs_ref = obsgen_ref.observe_legacy(obsgen_ref.im, **kwargs)
 
     # create a running index list of baselines to flag
     master_index = np.zeros(len(obs_ref.data), dtype='bool')

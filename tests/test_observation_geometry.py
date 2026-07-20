@@ -77,6 +77,67 @@ def test_ground_visibility_template_preserves_legacy_visibility_rows(array_name)
     assert np.allclose(adapted.scans, expected_scans(context, np.unique(geometry.time_hours)))
 
 
+@pytest.mark.parametrize("array_name", ["EHT2017", "ngEHT"])
+def test_native_visibility_template_matches_legacy_elevation_selection(array_name):
+    array = make_array(const.known_arrays[array_name])
+    context = geometry_context(array_name)
+    _, _, _, legacy = observation_geometry.observation_template(
+        None,
+        None,
+        {},
+        array,
+        context,
+        el_min=const.el_min,
+        el_max=const.el_max,
+    )
+    _, _, _, native = observation_geometry.native_visibility_template(
+        None,
+        None,
+        {},
+        array,
+        context,
+        el_min=const.el_min,
+        el_max=const.el_max,
+    )
+    names = np.asarray(native.stations.names)
+
+    assert np.array_equal(names[native.antenna1], legacy.data["t1"])
+    assert np.array_equal(names[native.antenna2], legacy.data["t2"])
+    assert np.allclose(
+        (native.time_mjd - legacy.mjd) * 24.0,
+        legacy.data["time"],
+        atol=1.0e-12,
+    )
+    assert np.allclose(native.integration_time_s, legacy.data["tint"], atol=1.0e-12)
+
+
+def test_native_visibility_template_reuses_cached_selection(array_and_context):
+    array, context = array_and_context
+    template, cached_key, template_cache, limited = observation_geometry.native_visibility_template(
+        None,
+        None,
+        {},
+        array,
+        context,
+        el_min=0.0,
+        el_max=90.0,
+    )
+    template_again, cached_key_again, template_cache, limited_again = observation_geometry.native_visibility_template(
+        template,
+        cached_key,
+        template_cache,
+        array,
+        context,
+        el_min=0.0,
+        el_max=90.0,
+    )
+
+    assert template_again is template
+    assert cached_key_again == cached_key
+    assert limited_again is limited
+    assert len(template_cache) == 1
+
+
 def test_ground_geometry_scan_groups_preserve_individual_snapshots():
     array = make_array(const.known_arrays["EHT2017"])
     context = geometry_context("EHT2017")
