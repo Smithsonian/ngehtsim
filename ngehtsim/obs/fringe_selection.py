@@ -96,14 +96,16 @@ def fringe_group_mask(rows, snr_threshold, tint_reference_s, available_sites=Non
 
 def fpt_fringe_group_mask(target_rows, reference_rows, reference_snr_threshold,
                           tint_reference_s, reference_to_target_ratio,
-                          target_available_sites=None, reference_available_sites=None):
+                          target_available_sites=None, reference_available_sites=None,
+                          target_row_available=None, reference_row_available=None):
     """Return target rows detectable through native or FPT-supported fringes.
 
     ``reference_snr_threshold`` is the strong-baseline threshold at the
     reference frequency.  The corresponding target threshold is that value
     multiplied by ``reference_to_target_ratio``.  Reference and target rows
     are intentionally independent: the station graph is keyed by timestamp
-    and never by row position.
+    and never by row position.  Optional row-availability masks exclude
+    station-flagged data before either graph is assembled.
     """
     _validate_thresholds(reference_snr_threshold, tint_reference_s)
     if not np.isfinite(reference_to_target_ratio) or reference_to_target_ratio <= 0.0:
@@ -114,10 +116,20 @@ def fpt_fringe_group_mask(target_rows, reference_rows, reference_snr_threshold,
         target_rows.station2,
         target_available_sites,
     )
+    target_available &= _row_availability_mask(
+        target_row_available,
+        target_rows.row_count,
+        "target_row_available",
+    )
     reference_available = _availability_mask(
         reference_rows.station1,
         reference_rows.station2,
         reference_available_sites,
+    )
+    reference_available &= _row_availability_mask(
+        reference_row_available,
+        reference_rows.row_count,
+        "reference_row_available",
     )
     target_strong = target_available & (
         target_rows.stokes_i_snr
@@ -207,6 +219,15 @@ def _availability_mask(station1, station2, available_sites):
         return np.ones(len(station1), dtype=bool)
     available_sites = tuple(available_sites)
     return np.isin(station1, available_sites) & np.isin(station2, available_sites)
+
+
+def _row_availability_mask(values, count, name):
+    if values is None:
+        return np.ones(count, dtype=bool)
+    values = np.asarray(values, dtype=bool)
+    if values.shape != (count,):
+        raise ValueError("{0} must have one value per row.".format(name))
+    return values
 
 
 def _validate_thresholds(snr_threshold, tint_reference_s):

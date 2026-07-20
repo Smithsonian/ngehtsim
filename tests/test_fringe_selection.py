@@ -222,6 +222,37 @@ def test_fpt_respects_target_and_reference_station_availability_independently():
     assert np.array_equal(reference_unavailable, [False])
 
 
+def test_fpt_excludes_flagged_rows_from_target_and_reference_graphs():
+    target = rows(
+        [("A", "B"), ("B", "C"), ("A", "C")],
+        [0.1, 0.1, 0.1],
+    )
+    reference = rows(
+        [("A", "B"), ("B", "C")],
+        [20.0, 20.0],
+    )
+
+    reference_flagged = fpt_fringe_group_mask(
+        target,
+        reference,
+        reference_snr_threshold=20.0,
+        tint_reference_s=10.0,
+        reference_to_target_ratio=0.25,
+        reference_row_available=[True, False],
+    )
+    target_flagged = fpt_fringe_group_mask(
+        target,
+        reference,
+        reference_snr_threshold=20.0,
+        tint_reference_s=10.0,
+        reference_to_target_ratio=0.25,
+        target_row_available=[True, False, True],
+    )
+
+    assert np.array_equal(reference_flagged, [True, False, False])
+    assert np.array_equal(target_flagged, [True, False, True])
+
+
 def test_fpt_can_select_a_native_target_baseline_without_reference_rows():
     target = rows([("A", "B")], [5.0])
     reference = rows([], [])
