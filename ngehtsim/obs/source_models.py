@@ -1,8 +1,13 @@
 ###################################################
 # imports
 
+from dataclasses import replace
+
 import numpy as np
 import ehtim as eh
+from astropy.constants import c as SPEED_OF_LIGHT
+
+from ngehtsim.obs.visibility_dataset import CIRCULAR_CORRELATIONS, VisibilityDataset
 
 try:
     import ngEHTforecast.fisher as fp
@@ -80,6 +85,56 @@ class EhtimImageAdapter(object):
 
         F0 = self.input_model.total_flux()
         return obs, F0
+
+    def observe_dataset(self, dataset, context):
+        """Sample an image onto a native circular single-channel dataset."""
+
+        _set_ehtim_metadata(self.input_model, context)
+        if not isinstance(dataset, VisibilityDataset):
+            raise TypeError("dataset must be a VisibilityDataset instance.")
+        if dataset.channel_count != 1:
+            raise ValueError("Native image sampling requires exactly one spectral channel.")
+        if any(
+            dataset.correlation_layouts[index] != CIRCULAR_CORRELATIONS
+            for index in dataset.row_layout_id
+        ):
+            raise ValueError(
+                "Native image sampling requires circular RR, LL, RL, LR correlations."
+            )
+
+        def sample_dataset():
+            wavelength = SPEED_OF_LIGHT.to_value("m / s") / dataset.channel_frequency_hz[0]
+            uv = dataset.uvw_m[:, :2] / wavelength
+            sampled = self.input_model.sample_uv(
+                uv,
+                polrep_obs="circ",
+                ttype=context["ttype"],
+                fft_pad_factor=context["fft_pad_factor"],
+                verbose=context["verbosity"] > 0,
+            )
+            visibilities = np.array(dataset.visibilities, copy=True)
+            visibilities[:, 0, 0] = sampled[0]
+            if sampled[1] is not None:
+                visibilities[:, 0, 1] = sampled[1]
+            if sampled[2] is not None:
+                visibilities[:, 0, 2] = sampled[2]
+                visibilities[:, 0, 3] = sampled[3]
+
+            return replace(
+                dataset,
+                visibilities=visibilities,
+                source=self.input_model.source,
+                ra_hours=self.input_model.ra,
+                dec_degrees=self.input_model.dec,
+                ampcal=True,
+                phasecal=True,
+                opacitycal=True,
+                dcal=True,
+                frcal=True,
+            )
+
+        sampled_dataset = _run_quietly(sample_dataset, context["verbosity"])
+        return sampled_dataset, self.input_model.total_flux()
 
 
 class EhtimMovieAdapter(object):
@@ -276,3 +331,13 @@ def adapter_for(input_model):
 
 def observe_source(input_model, obs_empty, context, p=None):
     return adapter_for(input_model).observe(obs_empty, context, p=p)
+
+
+def observe_source_dataset(input_model, dataset, context):
+    """Sample a supported source model onto a native visibility dataset."""
+
+    if not isinstance(input_model, eh.image.Image):
+        raise TypeError(
+            "Native VisibilityDataset sampling currently supports ehtim Image inputs only."
+        )
+    return EhtimImageAdapter(input_model).observe_dataset(dataset, context)
