@@ -268,39 +268,6 @@ def station_metadata_for_dataset(dataset, station_context, reference_mjd=None, c
     return metadata
 
 
-def _apply_mixed_basis(obs, metadata, station_context):
-    for site in metadata["sites_obs"]:
-        if station_context["polarization_basis"][site] != "linear":
-            continue
-        index1, index2 = metadata["site_masks"][site]
-        transform1 = np.zeros((index1.sum(), 2, 2), dtype=complex)
-        transform2 = np.zeros((index2.sum(), 2, 2), dtype=complex)
-        transform1[:] = const.circ_to_lin
-        transform2[:] = np.conj(const.circ_to_lin).T
-
-        coherence1 = np.zeros((index1.sum(), 2, 2), dtype=complex)
-        coherence1[:, 0, 0] = obs.data["rrvis"][index1]
-        coherence1[:, 0, 1] = obs.data["rlvis"][index1]
-        coherence1[:, 1, 0] = obs.data["lrvis"][index1]
-        coherence1[:, 1, 1] = obs.data["llvis"][index1]
-        coherence2 = np.zeros((index2.sum(), 2, 2), dtype=complex)
-        coherence2[:, 0, 0] = obs.data["rrvis"][index2]
-        coherence2[:, 0, 1] = obs.data["rlvis"][index2]
-        coherence2[:, 1, 0] = obs.data["lrvis"][index2]
-        coherence2[:, 1, 1] = obs.data["llvis"][index2]
-
-        transformed1 = np.matmul(transform1, coherence1)
-        transformed2 = np.matmul(coherence2, transform2)
-        obs.data["rrvis"][index1] = transformed1[:, 0, 0]
-        obs.data["rlvis"][index1] = transformed1[:, 0, 1]
-        obs.data["lrvis"][index1] = transformed1[:, 1, 0]
-        obs.data["llvis"][index1] = transformed1[:, 1, 1]
-        obs.data["rrvis"][index2] = transformed2[:, 0, 0]
-        obs.data["rlvis"][index2] = transformed2[:, 0, 1]
-        obs.data["lrvis"][index2] = transformed2[:, 1, 0]
-        obs.data["llvis"][index2] = transformed2[:, 1, 1]
-
-
 def _updated_station_table(stations, sefd_r_jy, sefd_l_jy, leakage_r, leakage_l):
     return StationTable(
         names=stations.names,
@@ -567,9 +534,12 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
                   verbosity=0, windspeed_sefd_modifier=None, cache=None):
     """Calculate legacy Obsdata station terms through the native row kernel."""
 
-    metadata = station_metadata(obs, station_context, cache=cache)
     if allow_mixed_basis:
-        _apply_mixed_basis(obs, metadata, station_context)
+        raise NotImplementedError(
+            "Mixed-polarization station terms require VisibilityDataset support."
+        )
+
+    metadata = station_metadata(obs, station_context, cache=cache)
     terms, stations = _station_terms_from_rows(
         metadata["_rows"],
         metadata,

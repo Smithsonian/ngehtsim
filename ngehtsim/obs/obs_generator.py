@@ -18,6 +18,7 @@ import warnings
 import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
 from ngehtsim.weather.zarr_store import ZarrWeatherStore
+import ngehtsim.obs.instrumental_corruptions as instrumental_corruptions
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.station_observation as station_observation
@@ -771,7 +772,7 @@ class obs_generator(object):
             effective_area[site] = (np.pi/4.0)*self.eta_dict[site]*((self.D_dict[site])**2)
             mount_type[site] = const.known_mount_types.get(site, const.mount_type)
             feed_angle[site] = const.known_feed_angles.get(site, const.feed_angle)
-            polarization_basis[site] = const.known_polbases.get(site)
+            polarization_basis[site] = const.known_polbases.get(site, const.pol_basis)
 
         if self.weather_cadence == 'native':
             if times is None:
@@ -824,7 +825,7 @@ class obs_generator(object):
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
           flagsun (bool): flag for whether to impose a minimum solar avoidance angle
-          allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
+          allow_mixed_basis (bool): currently unsupported; must be False
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
@@ -833,9 +834,11 @@ class obs_generator(object):
           (ehtim.obsdata.Obsdata): eht-imaging Obsdata object containing the generated observation
         """
 
-        # print some warnings
         if allow_mixed_basis:
-            print('WARNING: data generated in a non-circular polarization basis does not have properly-stored metadata info.')
+            raise NotImplementedError(
+                "Mixed-polarization output requires VisibilityDataset support and "
+                "cannot be represented safely as ehtim Obsdata."
+            )
 
         # generate and elevation-limit an empty observation template
         self.obs_empty, self.obs_empty_key, self.obs_template_cache, obs_empty = observation_geometry.observation_template(
@@ -946,14 +949,23 @@ class obs_generator(object):
                 self.station_leakage2R = leak2R
                 self.station_leakage1L = leak1L
                 self.station_leakage2L = leak2L
-            RR = obs.data['rrvis']
-            LL = obs.data['llvis']
-            RL = obs.data['rlvis']
-            LR = obs.data['lrvis']
-            obs.data['rrvis'] = RR + (leak1R*LR) + (np.conj(leak2R)*RL) + (leak1R*np.conj(leak2R)*LL)
-            obs.data['llvis'] = LL + (leak1L*RL) + (np.conj(leak2L)*LR) + (leak1L*np.conj(leak2L)*RR)
-            obs.data['rlvis'] = RL + (leak1R*LL) + (np.conj(leak2L)*RR) + (leak1R*np.conj(leak2L)*LR)
-            obs.data['lrvis'] = LR + (leak1L*RR) + (np.conj(leak2R)*LL) + (leak1L*np.conj(leak2R)*RL)
+            visibilities = np.column_stack((
+                obs.data['rrvis'],
+                obs.data['llvis'],
+                obs.data['rlvis'],
+                obs.data['lrvis'],
+            ))
+            visibilities = instrumental_corruptions.apply_circular_leakage(
+                visibilities,
+                leak1R,
+                leak1L,
+                leak2R,
+                leak2L,
+            )
+            obs.data['rrvis'] = visibilities[:, 0]
+            obs.data['llvis'] = visibilities[:, 1]
+            obs.data['rlvis'] = visibilities[:, 2]
+            obs.data['lrvis'] = visibilities[:, 3]
 
         # store and apply gains
         if addgains:
@@ -1005,10 +1017,10 @@ class obs_generator(object):
 
         # add thermal noise to observations
         if addnoise:
-            obs.data['rrvis'] += sigma*(self.rng.normal(0.0, 1.0, len(obs.data['rrsigma'])) + ((1.0j)*self.rng.normal(0.0, 1.0, len(obs.data['rrsigma']))))
-            obs.data['llvis'] += sigma*(self.rng.normal(0.0, 1.0, len(obs.data['llsigma'])) + ((1.0j)*self.rng.normal(0.0, 1.0, len(obs.data['llsigma']))))
-            obs.data['rlvis'] += sigma*(self.rng.normal(0.0, 1.0, len(obs.data['rlsigma'])) + ((1.0j)*self.rng.normal(0.0, 1.0, len(obs.data['rlsigma']))))
-            obs.data['lrvis'] += sigma*(self.rng.normal(0.0, 1.0, len(obs.data['lrsigma'])) + ((1.0j)*self.rng.normal(0.0, 1.0, len(obs.data['lrsigma']))))
+            obs.data['rrvis'] += obs.data['rrsigma']*(self.rng.normal(0.0, 1.0, len(obs.data['rrsigma'])) + ((1.0j)*self.rng.normal(0.0, 1.0, len(obs.data['rrsigma']))))
+            obs.data['llvis'] += obs.data['llsigma']*(self.rng.normal(0.0, 1.0, len(obs.data['llsigma'])) + ((1.0j)*self.rng.normal(0.0, 1.0, len(obs.data['llsigma']))))
+            obs.data['rlvis'] += obs.data['rlsigma']*(self.rng.normal(0.0, 1.0, len(obs.data['rlsigma'])) + ((1.0j)*self.rng.normal(0.0, 1.0, len(obs.data['rlsigma']))))
+            obs.data['lrvis'] += obs.data['lrsigma']*(self.rng.normal(0.0, 1.0, len(obs.data['lrsigma'])) + ((1.0j)*self.rng.normal(0.0, 1.0, len(obs.data['lrsigma']))))
 
         # create mask and populate it with the sites that should not be flagged
         t1_list = obs.unpack('t1')['t1']
@@ -1080,7 +1092,7 @@ class obs_generator(object):
           flagwind (bool): flag for whether to derate sites with high wind
           flagday (bool): flag for whether to flag sites during the local daytime
           flagsun (bool): flag for whether to impose a minimum solar avoidance angle
-          allow_mixed_basis (bool): flag for whether to apply polarization basis conversions
+          allow_mixed_basis (bool): currently unsupported; must be False
           el_min (float): minimum elevation that a site can observe at, in degrees
           el_max (float): maximum elevation that a site can observe at, in degrees
           p (numpy.ndarray): list of parameters for an input ngEHTforecast.fisher.fisher_forecast.FisherForecast object
