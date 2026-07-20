@@ -7,6 +7,7 @@ import numpy as np
 import ngehtsim.obs.obs_generator as og
 import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.source_models as source_models
+from ngehtsim.obs.visibility_dataset import VisibilityDataset
 
 #######################################################
 # helpers
@@ -243,6 +244,71 @@ def test_ehtim_image_adapter_matches_legacy_full_polarization_sampling():
     assert direct_F0 == pytest.approx(legacy_F0)
     for field in ("rrvis", "rlvis", "lrvis", "llvis"):
         assert np.allclose(direct.data[field], legacy.data[field], atol=1.0e-12)
+
+
+def test_ehtim_image_adapter_samples_native_visibility_dataset():
+    direct_generator = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    legacy_generator = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    direct_image = _polarized_model().make_image(160.0 * eh.RADPERUAS, 64)
+    legacy_image = _polarized_model().make_image(160.0 * eh.RADPERUAS, 64)
+    template = observation_geometry.ground_visibility_template(
+        direct_generator.arr,
+        direct_generator.geometry_context(),
+    )
+
+    direct, direct_F0 = source_models.observe_source_dataset(
+        direct_image,
+        template,
+        direct_generator.source_context(),
+    )
+    legacy, legacy_F0 = _legacy_image_observe(
+        legacy_image,
+        template.to_ehtim_obsdata(),
+        legacy_generator.source_context(),
+    )
+
+    assert direct.source == legacy.source
+    assert direct.ra_hours == legacy.ra
+    assert direct.dec_degrees == legacy.dec
+    assert direct.ampcal is legacy.ampcal is True
+    assert direct.phasecal is legacy.phasecal is True
+    assert direct.opacitycal is legacy.opacitycal is True
+    assert direct.dcal is legacy.dcal is True
+    assert direct.frcal is legacy.frcal is True
+    assert direct_F0 == pytest.approx(legacy_F0)
+    adapted = direct.to_ehtim_obsdata()
+    for field in ("rrvis", "llvis", "rlvis", "lrvis"):
+        assert np.allclose(adapted.data[field], legacy.data[field], atol=1.0e-12)
+
+
+def test_ehtim_image_dataset_sampler_avoids_obsdata_conversion(monkeypatch):
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    image = _polarized_model().make_image(160.0 * eh.RADPERUAS, 64)
+    template = observation_geometry.ground_visibility_template(
+        obsgen.arr,
+        obsgen.geometry_context(),
+    )
+
+    def unexpected_obsdata_conversion(*args, **kwargs):
+        raise AssertionError("Native image sampling must not construct an Obsdata object.")
+
+    def unexpected_legacy_sampler(*args, **kwargs):
+        raise AssertionError("Native image sampling must not call observe_same_nonoise.")
+
+    monkeypatch.setattr(
+        VisibilityDataset,
+        "to_ehtim_obsdata",
+        unexpected_obsdata_conversion,
+    )
+    monkeypatch.setattr(image, "observe_same_nonoise", unexpected_legacy_sampler)
+    sampled, F0 = source_models.observe_source_dataset(
+        image,
+        template,
+        obsgen.source_context(),
+    )
+
+    assert sampled.row_count == template.row_count
+    assert F0 > 0.0
 
 
 def test_ehtim_movie_adapter_does_not_call_observe_same_nonoise(monkeypatch):
