@@ -1068,6 +1068,12 @@ class obs_generator(object):
                 self.station_leakage1L = self.station_leakage1L[mask]
                 self.station_leakage2L = self.station_leakage2L[mask]
 
+        obs.ampcal = not addgains
+        obs.phasecal = not addgains
+        obs.opacitycal = opacitycal
+        obs.dcal = not addleakage
+        obs.frcal = not addFR
+
         # return observation object
         return obs
 

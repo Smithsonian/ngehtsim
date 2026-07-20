@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import numpy as np
 from astropy.constants import c as SPEED_OF_LIGHT
@@ -293,6 +293,29 @@ class VisibilityDataset:
         """Return the number of spectral channels."""
 
         return len(self.channel_frequency_hz)
+
+    def select_rows(self, row_mask):
+        """Return a dataset containing the selected visibility rows."""
+
+        row_mask = np.asarray(row_mask)
+        if row_mask.dtype != bool or row_mask.shape != (self.row_count,):
+            raise ValueError(
+                "row_mask must be a boolean array with one value per visibility row."
+            )
+        return replace(
+            self,
+            time_mjd=self.time_mjd[row_mask],
+            integration_time_s=self.integration_time_s[row_mask],
+            antenna1=self.antenna1[row_mask],
+            antenna2=self.antenna2[row_mask],
+            uvw_m=self.uvw_m[row_mask],
+            tau1=self.tau1[row_mask],
+            tau2=self.tau2[row_mask],
+            row_layout_id=self.row_layout_id[row_mask],
+            visibilities=self.visibilities[row_mask],
+            weights=self.weights[row_mask],
+            flags=self.flags[row_mask],
+        )
 
     @classmethod
     def from_ehtim_obsdata(cls, obs):

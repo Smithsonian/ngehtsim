@@ -64,6 +64,36 @@ def test_dataset_supports_mixed_layouts_and_multiple_channels():
     assert not data.stations.position_itrs_m.flags.writeable
 
 
+def test_dataset_select_rows_preserves_selected_rows_and_metadata():
+    original = dataset()
+
+    selected = original.select_rows(np.array((True, False)))
+
+    assert selected.row_count == 1
+    assert np.array_equal(selected.time_mjd, original.time_mjd[:1])
+    assert np.array_equal(selected.uvw_m, original.uvw_m[:1])
+    assert np.array_equal(selected.visibilities, original.visibilities[:1])
+    assert np.array_equal(selected.weights, original.weights[:1])
+    assert np.array_equal(selected.flags, original.flags[:1])
+    assert selected.stations.names == original.stations.names
+    assert np.array_equal(selected.scan_start_mjd, original.scan_start_mjd)
+    assert np.array_equal(selected.scan_stop_mjd, original.scan_stop_mjd)
+    assert not selected.visibilities.flags.writeable
+
+
+@pytest.mark.parametrize(
+    "row_mask",
+    (
+        np.array((1, 0), dtype=np.intp),
+        np.array((True,)),
+        np.array(((True, False),)),
+    ),
+)
+def test_dataset_select_rows_rejects_invalid_masks(row_mask):
+    with pytest.raises(ValueError, match="row_mask"):
+        dataset().select_rows(row_mask)
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [
