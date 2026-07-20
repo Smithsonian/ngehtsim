@@ -20,6 +20,7 @@ import ngehtsim.const_def as const
 import ngehtsim.weather.weather as nw
 from ngehtsim.weather.zarr_store import ZarrWeatherStore
 import ngehtsim.obs.instrumental_corruptions as instrumental_corruptions
+import ngehtsim.obs.fringe_selection as fringe_selection
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.station_observation as station_observation
@@ -1251,14 +1252,14 @@ class obs_generator(object):
                 master_index &= np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
 
         # identify sites that are randomly deemed to be technically unready
-        sites_to_remove = get_unready_sites(obs.tarr['site'], self.settings['tech_readiness'], rng=self.rng)
-        if len(sites_to_remove) > 0:
+        unready_sites = get_unready_sites(obs.tarr['site'], self.settings['tech_readiness'], rng=self.rng)
+        if len(unready_sites) > 0:
             if self.verbosity > 0:
-                print("Dropping {0} due to technical (un)readiness.".format(sites_to_remove))
+                print("Dropping {0} due to technical (un)readiness.".format(unready_sites))
             if len(obs.data) > 0:
                 t1_list = obs.unpack('t1')['t1']
                 t2_list = obs.unpack('t2')['t2']
-                master_index &= np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
+                master_index &= np.array([t1_list[j] not in unready_sites and t2_list[j] not in unready_sites for j in range(len(t1_list))])
 
         # apply naive SNR thresholding
         if (snr_algo.lower() == 'naive'):
@@ -1286,7 +1287,7 @@ class obs_generator(object):
             model_path_ref = snr_args[3]
 
             # run FPT
-            master_index &= FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, flagsun=flagsun, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p)
+            master_index &= FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, flagsun=flagsun, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p, unready_sites=unready_sites)
 
         # unrecognized SNR thresholding scheme
         else:
@@ -2089,75 +2090,14 @@ def fringegroups(obsgen, obs, snr_ref, tint_ref):
       (numpy.ndarray): An array of kept data indices
     """
 
-    # get the timestamps
-    time = obs.data['time']
-    timestamps = np.unique(time)
-
-    # get the stations that are able to observe at this frequency
-    available_sites = list()
-    for site in obsgen.sites:
-        if obsgen.bands[site] is not None:
-            available_sites.append(site)
-
-    # create a running index list of baselines to flag
-    master_index = np.zeros(len(obs.data), dtype='bool')
-    count = 0
-
-    # create blank dummy obsdata objects
-    obs = obs.switch_polrep(polrep_out='circ')
-    obs_here = copy.deepcopy(obs)
-    obs_here.data = None
-    obs_search = obs_here.copy()
-
-    # check all timestamps
-    for itime, timestamp in enumerate(timestamps):
-
-        ind_t = (time == timestamp)
-        obs_here.data = obs.data[ind_t]
-
-        # scale effective SNR to the actual integration time
-        snr_scaled = snr_ref*np.sqrt(obs_here.data['tint'] / tint_ref)
-
-        # determine which baselines are "strong"
-        pseudo_I_amp = 0.5*(np.abs(obs_here.data['rrvis']) + np.abs(obs_here.data['llvis']))
-        pseudo_I_sig = obs_here.data['rrsigma'] / np.sqrt(2.0)
-        index = (pseudo_I_amp/pseudo_I_sig) >= snr_scaled
-
-        # determine which sites are available to observe at this frequency
-        t1_available = np.isin(obs_here.data['t1'], available_sites)
-        t2_available = np.isin(obs_here.data['t2'], available_sites)
-        index &= t1_available
-        index &= t2_available
-
-        # limit the searched baselines to those that are strong and available
-        obs_search.data = obs_here.data[index]
-
-        # group stations that are connected by strong baselines
-        groups = list()
-        for datum in obs_search.data:
-            bl = [datum['t1'], datum['t2']]
-            (merged, remaining) = (set(bl), [])
-            for g in groups:
-                if bl[0] in g or bl[1] in g:
-                    merged |= g
-                else:
-                    remaining.append(g)
-            groups = remaining + [merged]
-
-        # assign stations to groups
-        site_dict = {}
-        for ig, group in enumerate(groups):
-            for station in group:
-                site_dict[station] = ig
-
-        # check whether both stations on each baseline are in the same group
-        for datum in obs_here.data:
-            if ((datum['t1'] in list(site_dict.keys())) & (datum['t2'] in list(site_dict.keys()))):
-                if (site_dict[datum['t1']] == site_dict[datum['t2']]):
-                    master_index[count] = True
-            count += 1
-
-    return master_index
+    rows = _fringe_rows_from_obsdata(obs)
+    available_sites = [site for site in obsgen.sites if obsgen.bands[site] is not None]
+    return fringe_selection.fringe_group_mask(
+        rows,
+        snr_ref,
+        tint_ref,
+        available_sites=available_sites,
+    )
 
 
 def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref):
@@ -2169,58 +2109,32 @@ def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref):
         return np.zeros(0, dtype=bool)
 
     names = np.asarray(dataset.stations.names)
-    t1 = names[dataset.antenna1]
-    t2 = names[dataset.antenna2]
-    available_sites = {
-        site for site in obsgen.sites if obsgen.bands[site] is not None
-    }
-    master_index = np.zeros(dataset.row_count, dtype=bool)
-
-    for timestamp in np.unique(dataset.time_mjd):
-        indices = np.flatnonzero(dataset.time_mjd == timestamp)
-        rr = dataset.visibilities[indices, 0, 0]
-        ll = dataset.visibilities[indices, 0, 1]
-        rr_sigma = 1.0 / np.sqrt(dataset.weights[indices, 0, 0])
-        snr_scaled = snr_ref * np.sqrt(dataset.integration_time_s[indices] / tint_ref)
-        strong = (
-            (0.5 * (np.abs(rr) + np.abs(ll)) / (rr_sigma / np.sqrt(2.0)))
-            >= snr_scaled
-        )
-        strong &= np.isin(t1[indices], tuple(available_sites))
-        strong &= np.isin(t2[indices], tuple(available_sites))
-
-        groups = []
-        for index in indices[strong]:
-            baseline = {t1[index], t2[index]}
-            merged = set(baseline)
-            remaining = []
-            for group in groups:
-                if baseline & group:
-                    merged |= group
-                else:
-                    remaining.append(group)
-            groups = remaining + [merged]
-
-        site_groups = {
-            station: group_index
-            for group_index, group in enumerate(groups)
-            for station in group
-        }
-        for index in indices:
-            if (
-                t1[index] in site_groups
-                and t2[index] in site_groups
-                and site_groups[t1[index]] == site_groups[t2[index]]
-            ):
-                master_index[index] = True
-
-    return master_index
+    rows = fringe_selection.FringeRows(
+        time=dataset.time_mjd,
+        station1=names[dataset.antenna1],
+        station2=names[dataset.antenna2],
+        integration_time_s=dataset.integration_time_s,
+        rr=dataset.visibilities[:, 0, 0],
+        ll=dataset.visibilities[:, 0, 1],
+        rr_sigma=1.0 / np.sqrt(dataset.weights[:, 0, 0]),
+        ll_sigma=1.0 / np.sqrt(dataset.weights[:, 0, 1]),
+    )
+    available_sites = [site for site in obsgen.sites if obsgen.bands[site] is not None]
+    return fringe_selection.fringe_group_mask(
+        rows,
+        snr_ref,
+        tint_ref,
+        available_sites=available_sites,
+    )
 
 
-def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemeris/space', **kwargs):
+def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemeris/space',
+        unready_sites=(), **kwargs):
     """
     Function to apply the frequency phase transfer ("FPT") SNR thresholding scheme to an observation.
-    This scheme attempts to mimic the fringe-fitting carried out in the HOPS calibration pipeline.
+    This scheme attempts to mimic the fringe-finding consequences of phase
+    transfer in the HOPS calibration pipeline. It only selects detectable
+    target rows; it does not apply phase-transfer corrections to visibilities.
 
     Args:
       obsgen (ngehtsim.obs.obs_generator.obs_generator): ngehtsim obs_generator object containing information about the observation
@@ -2285,70 +2199,41 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
     # generate observation at reference frequency
     obs_ref = obsgen_ref.observe_legacy(obsgen_ref.im, **kwargs)
 
-    # create a running index list of baselines to flag
-    master_index = np.zeros(len(obs_ref.data), dtype='bool')
+    target_rows = _fringe_rows_from_obsdata(obs)
+    reference_rows = _fringe_rows_from_obsdata(obs_ref)
+    unready_sites = set(unready_sites)
+    target_available = [
+        site for site in obsgen.sites
+        if obsgen.bands[site] is not None and site not in unready_sites
+    ]
+    reference_available = [
+        site for site in obsgen_ref.sites
+        if obsgen_ref.bands[site] is not None and site not in unready_sites
+    ]
+    return fringe_selection.fpt_fringe_group_mask(
+        target_rows,
+        reference_rows,
+        snr_ref,
+        tint_ref,
+        freq_rat,
+        target_available_sites=target_available,
+        reference_available_sites=reference_available,
+    )
 
-    # identify sites that can't observe at the reference frequency
-    sites_to_remove = list()
-    for site in obs_ref.tarr['site']:
-        if obsgen_ref.bands[site] is None:
-            sites_to_remove.append(site)
-    if len(sites_to_remove) > 0:
-        if len(obs_ref.data) > 0:
-            t1_list = obs_ref.unpack('t1')['t1']
-            t2_list = obs_ref.unpack('t2')['t2']
-            mask_ref = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
-        else:
-            mask_ref = np.ones(len(obs_ref.data),dtype=bool)
-    else:
-        mask_ref = np.ones(len(obs_ref.data),dtype=bool)
-    wheremask_ref = np.where(mask_ref)
 
-    # identify sites that can't observe at the target frequency
-    sites_to_remove = list()
-    for site in obs_ref.tarr['site']:
-        if obsgen.bands[site] is None:
-            sites_to_remove.append(site)
-    if len(sites_to_remove) > 0:
-        if len(obs_ref.data) > 0:
-            t1_list = obs_ref.unpack('t1')['t1']
-            t2_list = obs_ref.unpack('t2')['t2']
-            mask_tar = np.array([t1_list[j] not in sites_to_remove and t2_list[j] not in sites_to_remove for j in range(len(t1_list))])
-        else:
-            mask_tar = np.ones(len(obs_ref.data),dtype=bool)
-    else:
-        mask_tar = np.ones(len(obs_ref.data),dtype=bool)
-    wheremask_tar = np.where(mask_tar)
-
-    # get detections from fringe-fitting at the reference frequency
-    obs_ref_pass = obs_ref.copy()
-    obs_ref_pass.data = obs_ref.data.copy()[wheremask_ref]
-    fringegroups_index = fringegroups(obsgen_ref, obs_ref_pass, snr_ref, tint_ref)
-    master_index[wheremask_ref] |= fringegroups_index
-
-    # compare target SNR and (scaled) reference SNR, using the larger of the two for dual-band baselines
-    pseudo_I_amp = 0.5*(np.abs(obs.data['rrvis']) + np.abs(obs.data['llvis']))
-    pseudo_I_sig = obs.data['rrsigma'] / np.sqrt(2.0)
-    snr_data = pseudo_I_amp / pseudo_I_sig
-    pseudo_I_amp_ref = 0.5*(np.abs(obs_ref.data['rrvis']) + np.abs(obs_ref.data['llvis']))
-    pseudo_I_sig_ref = obs_ref.data['rrsigma'] / np.sqrt(2.0)
-    snr_data_ref = (pseudo_I_amp_ref / pseudo_I_sig_ref)*freq_rat
-    ind_snr_boost = (snr_data_ref > snr_data) & mask_ref & mask_tar
-
-    # get any additional detections from fringe-fitting at the target frequency
-    obs_pass = obs.copy()
-    data_copy = obs.data.copy()
-    data_copy[ind_snr_boost] = obs_ref.data[ind_snr_boost]
-    data_copy['rrsigma'][ind_snr_boost] /= freq_rat
-    data_copy['llsigma'][ind_snr_boost] /= freq_rat
-    data_copy['rlsigma'][ind_snr_boost] /= freq_rat
-    data_copy['lrsigma'][ind_snr_boost] /= freq_rat
-    obs_pass.data = data_copy[wheremask_tar]
-    snr_fringegroups = snr_ref * freq_rat
-    fringegroups_index = fringegroups(obsgen, obs_pass, snr_fringegroups, tint_ref)
-    master_index[wheremask_tar] |= fringegroups_index
-
-    return master_index
+def _fringe_rows_from_obsdata(obs):
+    """Extract circular parallel-hand fringe-selection inputs from Obsdata."""
+    circular = obs.switch_polrep(polrep_out='circ')
+    return fringe_selection.FringeRows(
+        time=circular.data['time'],
+        station1=circular.data['t1'],
+        station2=circular.data['t2'],
+        integration_time_s=circular.data['tint'],
+        rr=circular.data['rrvis'],
+        ll=circular.data['llvis'],
+        rr_sigma=circular.data['rrsigma'],
+        ll_sigma=circular.data['llsigma'],
+    )
 
 
 def export_SYMBA_antennas(obsgen, output_filename='obsgen.antennas', t_coh=10.0, RMS_point=1.0,
