@@ -38,14 +38,45 @@ class EhtimImageAdapter(object):
     def observe(self, obs_empty, context, p=None):
         _set_ehtim_metadata(self.input_model, context)
 
-        obs = _run_quietly(
-            lambda: self.input_model.observe_same_nonoise(
-                obs_empty,
+        def sample_observation():
+            # This reproduces ehtim.Image.observe_same_nonoise() without
+            # constructing another Obsdata object around a copied data table.
+            obs = obs_empty.copy()
+            uv = np.column_stack((obs.data["u"], obs.data["v"]))
+            sampled = self.input_model.sample_uv(
+                uv,
+                polrep_obs=obs.polrep,
                 ttype=context["ttype"],
                 fft_pad_factor=context["fft_pad_factor"],
-            ),
-            context["verbosity"],
-        )
+                verbose=context["verbosity"] > 0,
+            )
+            if obs.polrep == "circ":
+                obs.data["rrvis"] = sampled[0]
+                if sampled[1] is not None:
+                    obs.data["llvis"] = sampled[1]
+                if sampled[2] is not None:
+                    obs.data["rlvis"] = sampled[2]
+                    obs.data["lrvis"] = sampled[3]
+            elif obs.polrep == "stokes":
+                obs.data["vis"] = sampled[0]
+                if sampled[1] is not None:
+                    obs.data["qvis"] = sampled[1]
+                    obs.data["uvis"] = sampled[2]
+                    obs.data["vvis"] = sampled[3]
+            else:
+                raise ValueError("Unsupported ehtim observation polarization representation: {0}".format(obs.polrep))
+
+            # Match ehtim.Image.observe_same_nonoise() metadata semantics.
+            obs.source = self.input_model.source
+            obs.mjd = self.input_model.mjd
+            obs.ampcal = True
+            obs.phasecal = True
+            obs.opacitycal = True
+            obs.dcal = True
+            obs.frcal = True
+            return obs
+
+        obs = _run_quietly(sample_observation, context["verbosity"])
 
         F0 = self.input_model.total_flux()
         return obs, F0

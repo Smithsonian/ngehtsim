@@ -79,6 +79,17 @@ def _legacy_model_observe(input_model, obs_empty, context):
     F0 = np.abs(input_model.sample_uv(0.0, 0.0))
     return obs, F0
 
+
+def _legacy_image_observe(input_model, obs_empty, context):
+    source_models._set_ehtim_metadata(input_model, context)
+    obs = input_model.observe_same_nonoise(
+        obs_empty,
+        ttype=context["ttype"],
+        fft_pad_factor=context["fft_pad_factor"],
+    )
+    F0 = input_model.total_flux()
+    return obs, F0
+
 #######################################################
 # tests
 
@@ -147,6 +158,104 @@ def test_ehtim_model_adapter_matches_legacy_full_polarization_sampling():
     assert direct.frcal is legacy.frcal is True
     assert direct_F0 == pytest.approx(legacy_F0)
     for field in ("rrvis", "rlvis", "lrvis", "llvis"):
+        assert np.allclose(direct.data[field], legacy.data[field], atol=1.0e-12)
+
+
+def test_ehtim_image_adapter_does_not_call_observe_same_nonoise(monkeypatch):
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    image = _polarized_model().make_image(160.0 * eh.RADPERUAS, 64)
+
+    def unexpected_legacy_sampler(*args, **kwargs):
+        raise AssertionError("The image adapter must sample the cached template directly.")
+
+    monkeypatch.setattr(image, "observe_same_nonoise", unexpected_legacy_sampler)
+    obs, F0 = source_models.observe_source(image, _empty_observation(obsgen), obsgen.source_context())
+
+    assert len(obs.data) > 0
+    assert F0 > 0.0
+
+
+def test_ehtim_image_adapter_matches_legacy_full_polarization_sampling():
+    direct_generator = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    legacy_generator = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    direct_image = _polarized_model().make_image(160.0 * eh.RADPERUAS, 64)
+    legacy_image = _polarized_model().make_image(160.0 * eh.RADPERUAS, 64)
+
+    direct, direct_F0 = source_models.observe_source(
+        direct_image,
+        _empty_observation(direct_generator),
+        direct_generator.source_context(),
+    )
+    legacy, legacy_F0 = _legacy_image_observe(
+        legacy_image,
+        _empty_observation(legacy_generator),
+        legacy_generator.source_context(),
+    )
+
+    assert direct.source == legacy.source
+    assert direct.mjd == legacy.mjd
+    assert direct.ampcal is legacy.ampcal is True
+    assert direct.phasecal is legacy.phasecal is True
+    assert direct.opacitycal is legacy.opacitycal is True
+    assert direct.dcal is legacy.dcal is True
+    assert direct.frcal is legacy.frcal is True
+    assert direct_F0 == pytest.approx(legacy_F0)
+    for field in ("rrvis", "rlvis", "lrvis", "llvis"):
+        assert np.allclose(direct.data[field], legacy.data[field], atol=1.0e-12)
+
+
+def test_direct_ehtim_image_sampling_preserves_seeded_corruptions(monkeypatch):
+    settings = dict(COMPACT_OBS_SETTINGS)
+    settings["fringe_finder"] = ["naive", 0.0]
+    direct_generator = og.obs_generator(settings=settings)
+    direct = direct_generator.make_obs(
+        _polarized_model().make_image(160.0 * eh.RADPERUAS, 64),
+        addnoise=True,
+        addgains=True,
+        addFR=True,
+        addleakage=True,
+        flagwind=False,
+        flagday=False,
+        flagsun=False,
+    )
+
+    def legacy_adapter_observe(self, obs_empty, context, p=None):
+        return _legacy_image_observe(self.input_model, obs_empty, context)
+
+    monkeypatch.setattr(
+        source_models.EhtimImageAdapter,
+        "observe",
+        legacy_adapter_observe,
+    )
+    legacy_generator = og.obs_generator(settings=settings)
+    legacy = legacy_generator.make_obs(
+        _polarized_model().make_image(160.0 * eh.RADPERUAS, 64),
+        addnoise=True,
+        addgains=True,
+        addFR=True,
+        addleakage=True,
+        flagwind=False,
+        flagday=False,
+        flagsun=False,
+    )
+
+    assert np.array_equal(direct.data["t1"], legacy.data["t1"])
+    assert np.array_equal(direct.data["t2"], legacy.data["t2"])
+    for field in (
+        "time",
+        "u",
+        "v",
+        "tau1",
+        "tau2",
+        "rrvis",
+        "llvis",
+        "rlvis",
+        "lrvis",
+        "rrsigma",
+        "llsigma",
+        "rlsigma",
+        "lrsigma",
+    ):
         assert np.allclose(direct.data[field], legacy.data[field], atol=1.0e-12)
 
 
