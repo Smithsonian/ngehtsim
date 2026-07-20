@@ -156,7 +156,7 @@ def test_circular_leakage_matches_jones_matrix():
 
 def test_circular_generator_matches_composed_station_jones_matrices():
     clean_generator = og.obs_generator(settings=SETTINGS)
-    clean = clean_generator.make_obs(
+    clean = clean_generator.make_dataset(
         _polarized_model(),
         addnoise=False,
         addgains=False,
@@ -167,7 +167,7 @@ def test_circular_generator_matches_composed_station_jones_matrices():
         flagsun=False,
     )
     corrupted_generator = og.obs_generator(settings=SETTINGS, weight=1)
-    corrupted = corrupted_generator.make_obs(
+    corrupted_result = corrupted_generator.make_dataset(
         _polarized_model(),
         addnoise=False,
         addgains=True,
@@ -177,44 +177,60 @@ def test_circular_generator_matches_composed_station_jones_matrices():
         flagday=False,
         flagsun=False,
     )
+    terms = corrupted_result.station_terms
+    row_mask = corrupted_result.row_mask
 
-    assert np.array_equal(corrupted.data["t1"], clean.data["t1"])
-    assert np.array_equal(corrupted.data["t2"], clean.data["t2"])
-    assert np.allclose(corrupted.data["time"], clean.data["time"])
+    assert np.array_equal(clean.row_mask, row_mask)
 
     jones1 = _station_jones(
-        corrupted_generator.station_gains1R,
-        corrupted_generator.station_gains1L,
-        corrupted_generator.station_leakage1R,
-        corrupted_generator.station_leakage1L,
-        corrupted_generator.fa_1,
+        terms["gainamp1R"][row_mask] * np.exp(1.0j * terms["gainphase1R"][row_mask]),
+        terms["gainamp1L"][row_mask] * np.exp(1.0j * terms["gainphase1L"][row_mask]),
+        terms["leak1R"][row_mask],
+        terms["leak1L"][row_mask],
+        (terms["f_par1"][row_mask] * terms["par1"][row_mask])
+        + (terms["f_el1"][row_mask] * terms["el1"][row_mask])
+        + ((np.pi / 180.0) * terms["phi_off1"][row_mask]),
     )
     jones2 = _station_jones(
-        corrupted_generator.station_gains2R,
-        corrupted_generator.station_gains2L,
-        corrupted_generator.station_leakage2R,
-        corrupted_generator.station_leakage2L,
-        corrupted_generator.fa_2,
+        terms["gainamp2R"][row_mask] * np.exp(1.0j * terms["gainphase2R"][row_mask]),
+        terms["gainamp2L"][row_mask] * np.exp(1.0j * terms["gainphase2L"][row_mask]),
+        terms["leak2R"][row_mask],
+        terms["leak2L"][row_mask],
+        (terms["f_par2"][row_mask] * terms["par2"][row_mask])
+        + (terms["f_el2"][row_mask] * terms["el2"][row_mask])
+        + ((np.pi / 180.0) * terms["phi_off2"][row_mask]),
     )
-    expected = jones1 @ _coherency_matrices(clean) @ np.swapaxes(np.conj(jones2), -1, -2)
+    clean_visibility = clean.dataset.visibilities[row_mask, 0]
+    clean_coherency = np.empty((len(clean_visibility), 2, 2), dtype=complex)
+    clean_coherency[:, 0, 0] = clean_visibility[:, 0]
+    clean_coherency[:, 0, 1] = clean_visibility[:, 2]
+    clean_coherency[:, 1, 0] = clean_visibility[:, 3]
+    clean_coherency[:, 1, 1] = clean_visibility[:, 1]
+    expected = jones1 @ clean_coherency @ np.swapaxes(np.conj(jones2), -1, -2)
 
-    assert np.allclose(_coherency_matrices(corrupted), expected, atol=1.0e-12)
-    assert clean.ampcal is True
-    assert clean.phasecal is True
-    assert clean.opacitycal is True
-    assert clean.dcal is True
-    assert clean.frcal is True
-    assert corrupted.ampcal is False
-    assert corrupted.phasecal is False
-    assert corrupted.opacitycal is True
-    assert corrupted.dcal is False
-    assert corrupted.frcal is False
+    corrupted_visibility = corrupted_result.dataset.visibilities[row_mask, 0]
+    corrupted_coherency = np.empty_like(expected)
+    corrupted_coherency[:, 0, 0] = corrupted_visibility[:, 0]
+    corrupted_coherency[:, 0, 1] = corrupted_visibility[:, 2]
+    corrupted_coherency[:, 1, 0] = corrupted_visibility[:, 3]
+    corrupted_coherency[:, 1, 1] = corrupted_visibility[:, 1]
+    assert np.allclose(corrupted_coherency, expected, atol=1.0e-12)
+    assert clean.dataset.ampcal is True
+    assert clean.dataset.phasecal is True
+    assert clean.dataset.opacitycal is True
+    assert clean.dataset.dcal is True
+    assert clean.dataset.frcal is True
+    assert corrupted_result.dataset.ampcal is False
+    assert corrupted_result.dataset.phasecal is False
+    assert corrupted_result.dataset.opacitycal is True
+    assert corrupted_result.dataset.dcal is False
+    assert corrupted_result.dataset.frcal is False
 
 
 def test_thermal_noise_uses_reported_gain_corrupted_sigmas():
     clean_generator = og.obs_generator(settings=SETTINGS)
     clean_generator.rng = FixedRng()
-    clean = clean_generator.make_obs(
+    clean = clean_generator.simulate(
         _polarized_model(),
         addnoise=False,
         addgains=True,
@@ -226,7 +242,7 @@ def test_thermal_noise_uses_reported_gain_corrupted_sigmas():
     )
     noisy_generator = og.obs_generator(settings=SETTINGS)
     noisy_generator.rng = FixedRng()
-    noisy = noisy_generator.make_obs(
+    noisy = noisy_generator.simulate(
         _polarized_model(),
         addnoise=True,
         addgains=True,
@@ -237,17 +253,13 @@ def test_thermal_noise_uses_reported_gain_corrupted_sigmas():
         flagsun=False,
     )
 
-    for visibility_field, sigma_field in (
-        ("rrvis", "rrsigma"),
-        ("llvis", "llsigma"),
-        ("rlvis", "rlsigma"),
-        ("lrvis", "lrsigma"),
-    ):
-        assert np.allclose(noisy.data[sigma_field], clean.data[sigma_field])
-        assert np.allclose(
-            noisy.data[visibility_field] - clean.data[visibility_field],
-            (1.0 + 1.0j) * noisy.data[sigma_field],
-        )
+    clean_sigma = 1.0 / np.sqrt(clean.dataset.weights)
+    noisy_sigma = 1.0 / np.sqrt(noisy.dataset.weights)
+    assert np.allclose(noisy_sigma, clean_sigma)
+    assert np.allclose(
+        noisy.dataset.visibilities - clean.dataset.visibilities,
+        (1.0 + 1.0j) * noisy_sigma,
+    )
 
 
 def test_generator_marks_uncalibrated_opacity_in_output_metadata():
@@ -345,7 +357,7 @@ def test_native_circular_corruptions_match_legacy_generator_without_noise(monkey
         return legacy_empty, "native-test-template", {}, legacy_empty.copy()
 
     monkeypatch.setattr(observation_geometry, "observation_template", fixed_template)
-    legacy = legacy_generator.observe(_polarized_image(), **kwargs)
+    legacy = legacy_generator.observe_legacy(_polarized_image(), **kwargs)
     unflagged = native.select_rows(~np.any(native.flags[:, 0, :], axis=1))
     native_order = _native_row_order(unflagged)
     legacy_order = _obsdata_row_order(legacy)
@@ -508,7 +520,7 @@ def test_native_circular_corruptions_flag_rows_and_support_selection():
 def test_mixed_basis_output_is_rejected_until_native_support_exists():
     obsgen = og.obs_generator(settings=SETTINGS)
 
-    with pytest.raises(NotImplementedError, match="Mixed-polarization output"):
+    with pytest.raises(NotImplementedError, match="Mixed-polarization simulation"):
         obsgen.make_obs(_polarized_model(), allow_mixed_basis=True)
 
 

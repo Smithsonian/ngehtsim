@@ -94,6 +94,29 @@ def test_dataset_select_rows_rejects_invalid_masks(row_mask):
         dataset().select_rows(row_mask)
 
 
+def test_dataset_take_rows_reorders_selected_rows():
+    original = dataset()
+
+    reordered = original.take_rows(np.array((1, 0), dtype=np.intp))
+
+    assert np.array_equal(reordered.time_mjd, original.time_mjd[::-1])
+    assert np.array_equal(reordered.antenna1, original.antenna1[::-1])
+    assert np.array_equal(reordered.visibilities, original.visibilities[::-1])
+
+
+@pytest.mark.parametrize(
+    "row_indices",
+    (
+        np.array((0.0,)),
+        np.array(((0, 1),)),
+        np.array((2,), dtype=np.intp),
+    ),
+)
+def test_dataset_take_rows_rejects_invalid_indices(row_indices):
+    with pytest.raises(ValueError, match="row_indices"):
+        dataset().take_rows(row_indices)
+
+
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [

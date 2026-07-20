@@ -71,7 +71,7 @@ obsgen_fpt = og.obs_generator(settings_file=yamlfile,
                               verbosity=0)
 
 # generate the observation
-obs_fpt = obsgen_fpt.make_obs()
+obs_fpt = obsgen_fpt.make_obs(backend='legacy')
 
 # save it as a uvfits file
 obs_fpt.save_uvfits('./example_datafile_with_fpt.uvfits')

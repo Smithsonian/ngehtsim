@@ -2,6 +2,10 @@
 
 This directory contains opt-in runtime benchmarks and profiling tools for representative synthetic-data generation workflows.
 
+The default scenarios cover clean and corrupted `ehtim.Model`, `ehtim.Image`,
+and `ehtim.Movie` inputs on the EHT2017 array. This makes the source-adapter
+cost visible separately from generator initialization.
+
 The benchmark and profiling runners are intentionally not part of the default unit-test suite. Results depend on hardware, Python version, installed dependency versions, and local system state.
 
 ## List Scenarios

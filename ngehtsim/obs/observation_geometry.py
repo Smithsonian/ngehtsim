@@ -376,6 +376,72 @@ def ground_visibility_template(array, context, geometry=None):
     )
 
 
+def visibility_dataset_elevation_mask(dataset, el_min, el_max):
+    """Return the native ground-array elevation-selection mask."""
+
+    if not isinstance(dataset, VisibilityDataset):
+        raise TypeError("dataset must be a VisibilityDataset instance.")
+    if dataset.row_count == 0:
+        return np.zeros(0, dtype=bool)
+    geometry = station_geometry_from_rows(
+        dataset.stations.position_itrs_m,
+        dataset.time_mjd,
+        dataset.antenna1,
+        dataset.antenna2,
+        dataset.ra_hours,
+        dataset.dec_degrees,
+    )
+    if geometry is None:
+        raise ValueError("Native elevation filtering does not support spacecraft stations.")
+    elevation1 = np.rad2deg(geometry.elevation1_rad)
+    elevation2 = np.rad2deg(geometry.elevation2_rad)
+    return (
+        (elevation1 > el_min)
+        & (elevation1 < el_max)
+        & (elevation2 > el_min)
+        & (elevation2 < el_max)
+    )
+
+
+def apply_visibility_dataset_elevation_limits(dataset, el_min, el_max):
+    """Return a native dataset restricted to the requested elevation range."""
+
+    return dataset.select_rows(visibility_dataset_elevation_mask(dataset, el_min, el_max))
+
+
+def canonicalize_visibility_dataset_rows(dataset):
+    """Order native rows by time and station names before stochastic processing."""
+
+    if not isinstance(dataset, VisibilityDataset):
+        raise TypeError("dataset must be a VisibilityDataset instance.")
+    names = np.asarray(dataset.stations.names)
+    order = np.lexsort((
+        names[dataset.antenna2],
+        names[dataset.antenna1],
+        dataset.time_mjd,
+    ))
+    return dataset.take_rows(order)
+
+
+def native_visibility_template(template, cached_key, template_cache, array, context,
+                               el_min, el_max):
+    """Return a cached, elevation-limited native ground visibility template."""
+
+    old_key = cached_key
+    cached_key = geometry_cache_key(context)
+    if template is None or cached_key != old_key:
+        template = ground_visibility_template(array, context)
+    if template_cache is None or cached_key != old_key:
+        template_cache = {}
+
+    elevation_key = elevation_cache_key(cached_key, el_min, el_max)
+    if elevation_key not in template_cache:
+        template_cache[elevation_key] = canonicalize_visibility_dataset_rows(
+            apply_visibility_dataset_elevation_limits(template, el_min, el_max)
+        )
+    return template, cached_key, template_cache, template_cache[elevation_key]
+
+
 def _ground_geometry_obsdata(array, context, geometry):
     """Adapt the native ground visibility template to the ``ehtim`` boundary."""
 

@@ -21,7 +21,7 @@ settings = {'sites': sites,
 obsgen = og.obs_generator(settings, settings_file=yamlfile, ephem='ephemeris/space')
 
 # generate the observation
-obs = obsgen.make_obs()
+obs = obsgen.make_obs(backend='legacy')
 
 # save it as a uvfits file
 obs.save_uvfits('./example_datafile.uvfits')
