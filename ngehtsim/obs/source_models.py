@@ -89,15 +89,91 @@ class EhtimMovieAdapter(object):
     def observe(self, obs_empty, context, p=None):
         _set_ehtim_metadata(self.input_model, context)
 
-        obs = _run_quietly(
-            lambda: self.input_model.observe_same_nonoise(
-                obs_empty,
-                ttype=context["ttype"],
-                fft_pad_factor=context["fft_pad_factor"],
-                repeat=True,
-            ),
-            context["verbosity"],
-        )
+        def sample_observation():
+            # This reproduces ehtim.Movie.observe_same_nonoise() without
+            # constructing another Obsdata object around each time slice.
+            obs = obs_empty.copy()
+            obslist = obs_empty.tlist()
+            obstimes = np.array([obsdata[0]["time"] for obsdata in obslist])
+
+            if context["ttype"] not in ("direct", "fast", "nfft"):
+                raise Exception(
+                    "ttype={0}, options for ttype are 'direct', 'fast', 'nfft'".format(
+                        context["ttype"]
+                    )
+                )
+            if context["verbosity"] > 0:
+                print("Producing clean visibilities from movie with " + context["ttype"] + " FT . . . ")
+
+            if (obstimes < self.input_model.start_hr).any():
+                if context["verbosity"] > 0:
+                    print(
+                        "Some observation times before movie start time %f"
+                        % self.input_model.start_hr
+                    )
+                    print("Looping movie before start\\n")
+            if (obstimes > self.input_model.stop_hr).any():
+                if context["verbosity"] > 0:
+                    print(
+                        "Some observation times after movie stop time %f"
+                        % self.input_model.stop_hr
+                    )
+                    print("Looping movie after stop\\n")
+
+            sampled_rows = []
+            for obsdata in obslist:
+                time = obsdata[0]["time"]
+                if self.input_model.bounds_error:
+                    if time < self.input_model.start_hr or time > self.input_model.stop_hr:
+                        time = self.input_model.start_hr + np.mod(
+                            time - self.input_model.start_hr,
+                            self.input_model.duration,
+                        )
+
+                image = self.input_model.get_image(time)
+                uv = np.column_stack((obsdata["u"], obsdata["v"]))
+                sampled = image.sample_uv(
+                    uv,
+                    polrep_obs=obs.polrep,
+                    ttype=context["ttype"],
+                    fft_pad_factor=context["fft_pad_factor"],
+                    verbose=False,
+                )
+
+                if obs.polrep == "circ":
+                    obsdata["rrvis"] = sampled[0]
+                    if sampled[1] is not None:
+                        obsdata["llvis"] = sampled[1]
+                    if sampled[2] is not None:
+                        obsdata["rlvis"] = sampled[2]
+                        obsdata["lrvis"] = sampled[3]
+                elif obs.polrep == "stokes":
+                    obsdata["vis"] = sampled[0]
+                    if sampled[1] is not None:
+                        obsdata["qvis"] = sampled[1]
+                        obsdata["uvis"] = sampled[2]
+                        obsdata["vvis"] = sampled[3]
+                else:
+                    raise ValueError(
+                        "Unsupported ehtim observation polarization representation: {0}".format(
+                            obs.polrep
+                        )
+                    )
+
+                sampled_rows.append(obsdata)
+
+            if sampled_rows:
+                obs.data = np.hstack(sampled_rows)
+            obs.source = self.input_model.source
+            obs.mjd = np.floor(obs_empty.mjd)
+            obs.ampcal = True
+            obs.phasecal = True
+            obs.opacitycal = True
+            obs.dcal = True
+            obs.frcal = True
+            return obs
+
+        obs = _run_quietly(sample_observation, context["verbosity"])
 
         F0 = np.mean(self.input_model.lightcurve)
         return obs, F0
