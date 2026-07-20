@@ -1,6 +1,8 @@
 #######################################################
 # imports
 
+import copy
+
 import numpy as np
 import ehtim as eh
 
@@ -8,6 +10,7 @@ import ngehtsim.obs.obs_generator as og
 import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.station_observation as station_observation
+from ngehtsim.obs.visibility_dataset import VisibilityDataset
 
 #######################################################
 # helpers
@@ -343,3 +346,112 @@ def test_station_terms_populates_gain_and_leakage_arrays_when_enabled():
     assert np.any(terms["gainamp2R"] != 0.0)
     assert np.iscomplexobj(terms["leak1R"])
     assert np.iscomplexobj(terms["leak2R"])
+
+
+def test_native_station_terms_match_obsdata_terms_and_station_table():
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    obs, F0 = _source_observation(obsgen)
+    context = _time_varying_weather_context(obsgen, obs)
+    context["tau"]["ALMA"] = np.linspace(0.1, 0.2, len(obs.data))
+    context["windspeed"]["ALMA"] = np.linspace(1.0, 8.0, len(obs.data))
+    kwargs = {
+        "gainamp": 0.04,
+        "leakamp": 0.1,
+        "addgains": True,
+        "addleakage": True,
+        "flagwind": True,
+        "flagday": False,
+        "flagsun": False,
+        "solar_angle": obsgen.solar_angle,
+        "windspeed_sefd_modifier": og.windspeed_SEFD_modification,
+    }
+
+    legacy_array = copy.deepcopy(obsgen.arr)
+    legacy = station_observation.station_terms(
+        obs.copy(),
+        F0,
+        context,
+        legacy_array,
+        np.random.default_rng(17),
+        **kwargs,
+    )
+    native, native_stations = station_observation.station_terms_for_dataset(
+        VisibilityDataset.from_ehtim_obsdata(obs),
+        F0,
+        context,
+        np.random.default_rng(17),
+        reference_mjd=obs.mjd,
+        **kwargs,
+    )
+
+    assert np.array_equal(native["t1"], legacy["t1"])
+    assert np.array_equal(native["t2"], legacy["t2"])
+    assert native["flagsites"] == legacy["flagsites"]
+    for field in (
+        "times",
+        "el1",
+        "el2",
+        "par1",
+        "par2",
+        "tau1",
+        "tau2",
+        "Tb1",
+        "Tb2",
+        "Tsys1",
+        "Tsys2",
+        "SEFD1",
+        "SEFD2",
+        "bw1",
+        "bw2",
+        "f_el1",
+        "f_el2",
+        "f_par1",
+        "f_par2",
+        "phi_off1",
+        "phi_off2",
+        "gainamp1R",
+        "gainamp2R",
+        "gainphase1R",
+        "gainphase2R",
+        "gainamp1L",
+        "gainamp2L",
+        "gainphase1L",
+        "gainphase2L",
+        "leak1R",
+        "leak2R",
+        "leak1L",
+        "leak2L",
+    ):
+        assert np.allclose(native[field], legacy[field], atol=1.0e-10)
+    assert np.array_equal(native["uptime_mask"], legacy["uptime_mask"])
+    assert np.allclose(native_stations.sefd_r_jy, legacy_array.tarr["sefdr"])
+    assert np.allclose(native_stations.sefd_l_jy, legacy_array.tarr["sefdl"])
+    assert np.allclose(native_stations.leakage_r, legacy_array.tarr["dr"])
+    assert np.allclose(native_stations.leakage_l, legacy_array.tarr["dl"])
+
+
+def test_native_station_metadata_uses_cache_without_obsdata_conversion():
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    obs, _ = _source_observation(obsgen)
+    dataset = VisibilityDataset.from_ehtim_obsdata(obs)
+    cache = {}
+
+    metadata = station_observation.station_metadata_for_dataset(
+        dataset,
+        obsgen.station_context(),
+        reference_mjd=obs.mjd,
+        cache=cache,
+    )
+    metadata_again = station_observation.station_metadata_for_dataset(
+        dataset,
+        obsgen.station_context(),
+        reference_mjd=obs.mjd,
+        cache=cache,
+    )
+
+    assert metadata_again is metadata
+    assert len(cache) == 1
+    assert np.array_equal(
+        metadata["_rows"].t1,
+        np.asarray(dataset.stations.names)[dataset.antenna1],
+    )

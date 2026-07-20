@@ -124,44 +124,40 @@ def _observation_times(context):
     return np.arange(t_start, t_stop, float(context["t_rest"]) / 3600.0)
 
 
-def ground_station_geometry(obs):
-    """Calculate station angles for a UTC ground-array ``ehtim.Obsdata``.
+def station_geometry_from_rows(position_itrs_m, time_mjd, antenna1, antenna2,
+                               ra_hours, dec_degrees):
+    """Calculate ground-station angles from native row and station arrays.
 
-    Returns ``None`` for spacecraft-containing arrays or non-UTC observations,
-    which retain the established ``ehtim`` metadata path.
+    Returns ``None`` when a row cannot be represented by the ground-only
+    geometry kernel, including arrays containing spacecraft placeholders.
     """
 
-    if getattr(obs, "timetype", None) != "UTC":
-        return None
-
-    coordinates = np.column_stack((obs.tarr["x"], obs.tarr["y"], obs.tarr["z"]))
+    coordinates = np.asarray(position_itrs_m, dtype=float)
+    time_mjd = np.asarray(time_mjd, dtype=float)
+    antenna1 = np.asarray(antenna1, dtype=np.intp)
+    antenna2 = np.asarray(antenna2, dtype=np.intp)
+    if coordinates.ndim != 2 or coordinates.shape[1] != 3:
+        raise ValueError("position_itrs_m must have shape (station, 3).")
+    if time_mjd.ndim != 1 or antenna1.shape != time_mjd.shape or antenna2.shape != time_mjd.shape:
+        raise ValueError("Station geometry row arrays must have matching one-dimensional shapes.")
+    if not np.all(np.isfinite(coordinates)) or not np.all(np.isfinite(time_mjd)):
+        raise ValueError("Station geometry inputs must be finite.")
+    if np.any(antenna1 < 0) or np.any(antenna1 >= len(coordinates)):
+        raise ValueError("antenna1 contains an out-of-range station index.")
+    if np.any(antenna2 < 0) or np.any(antenna2 >= len(coordinates)):
+        raise ValueError("antenna2 contains an out-of-range station index.")
     if np.any(np.all(coordinates == 0.0, axis=1)):
         return None
 
-    station_index = {str(site): index for index, site in enumerate(obs.tarr["site"])}
-    try:
-        antenna1 = np.fromiter(
-            (station_index[str(site)] for site in obs.data["t1"]),
-            dtype=np.intp,
-            count=len(obs.data),
-        )
-        antenna2 = np.fromiter(
-            (station_index[str(site)] for site in obs.data["t2"]),
-            dtype=np.intp,
-            count=len(obs.data),
-        )
-    except KeyError:
-        return None
-
     times_sidereal = Time(
-        (np.asarray(obs.data["time"], dtype=float) / 24.0) + np.floor(float(obs.mjd)),
+        time_mjd,
         format="mjd",
         scale="utc",
     ).sidereal_time("mean", "greenwich").hour
-    ra_rad = float(obs.ra) * (np.pi / 12.0)
-    dec_rad = np.deg2rad(float(obs.dec))
+    ra_rad = float(ra_hours) * (np.pi / 12.0)
+    dec_rad = np.deg2rad(float(dec_degrees))
     hour_angle_rotation = np.mod(
-        (times_sidereal - float(obs.ra)) * (np.pi / 12.0),
+        (times_sidereal - float(ra_hours)) * (np.pi / 12.0),
         2.0 * np.pi,
     )
     source_vector = np.array((np.cos(dec_rad), 0.0, np.sin(dec_rad)))
@@ -202,6 +198,42 @@ def ground_station_geometry(obs):
         elevation2_rad=elevation2,
         parallactic_angle1_rad=parallactic_angle1,
         parallactic_angle2_rad=parallactic_angle2,
+    )
+
+
+def ground_station_geometry(obs):
+    """Calculate station angles for a UTC ground-array ``ehtim.Obsdata``.
+
+    Returns ``None`` for spacecraft-containing arrays or non-UTC observations,
+    which retain the established ``ehtim`` metadata path.
+    """
+
+    if getattr(obs, "timetype", None) != "UTC":
+        return None
+
+    coordinates = np.column_stack((obs.tarr["x"], obs.tarr["y"], obs.tarr["z"]))
+    station_index = {str(site): index for index, site in enumerate(obs.tarr["site"])}
+    try:
+        antenna1 = np.fromiter(
+            (station_index[str(site)] for site in obs.data["t1"]),
+            dtype=np.intp,
+            count=len(obs.data),
+        )
+        antenna2 = np.fromiter(
+            (station_index[str(site)] for site in obs.data["t2"]),
+            dtype=np.intp,
+            count=len(obs.data),
+        )
+    except KeyError:
+        return None
+
+    return station_geometry_from_rows(
+        coordinates,
+        np.floor(float(obs.mjd)) + (np.asarray(obs.data["time"], dtype=float) / 24.0),
+        antenna1,
+        antenna2,
+        obs.ra,
+        obs.dec,
     )
 
 
