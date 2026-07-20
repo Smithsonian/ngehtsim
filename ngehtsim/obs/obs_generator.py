@@ -1287,7 +1287,7 @@ class obs_generator(object):
             model_path_ref = snr_args[3]
 
             # run FPT
-            master_index &= FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, flagsun=flagsun, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p, unready_sites=unready_sites)
+            master_index &= FPT(self, obs, snr_ref, tint_ref, freq_ref, model_path_ref, ephem=self.ephem, addnoise=addnoise, addgains=addgains, gainamp=gainamp, leakamp=leakamp, opacitycal=opacitycal, flagwind=flagwind, flagday=flagday, flagsun=flagsun, addFR=addFR, addleakage=addleakage, el_min=el_min, el_max=el_max, p=p, unready_sites=unready_sites, target_model=input_model)
 
         # unrecognized SNR thresholding scheme
         else:
@@ -1330,7 +1330,7 @@ class obs_generator(object):
         # return observation object
         return obs
 
-    def _native_selection_mask(self, dataset):
+    def _native_selection_mask(self, dataset, input_model=None, simulation_kwargs=None):
         """Return the native row-selection mask for availability and fringe finding."""
 
         mask = ~np.any(dataset.flags, axis=(1, 2))
@@ -1355,6 +1355,11 @@ class obs_generator(object):
                 print("Dropping {0} due to technical (un)readiness.".format(unready))
             mask &= ~np.isin(t1, unready) & ~np.isin(t2, unready)
 
+        available_sites = [
+            site for site in dataset.stations.names
+            if self.bands[site] is not None and site not in unready
+        ]
+
         snr_algorithm, snr_args = self.settings["fringe_finder"]
         snr_algorithm = snr_algorithm.lower()
         if snr_algorithm == "naive":
@@ -1374,13 +1379,63 @@ class obs_generator(object):
                 snr_args[1],
             )
         elif snr_algorithm == "fpt":
-            raise NotImplementedError(
-                "Native FPT fringe selection is not implemented; use make_obs_legacy() "
-                "or observe_legacy() explicitly."
+            if input_model is None or simulation_kwargs is None:
+                raise ValueError(
+                    "Native FPT selection requires the target model and simulation settings."
+                )
+            snr_ref, tint_ref, freq_ref, model_ref = snr_args
+            mask &= self._native_fpt_selection_mask(
+                dataset,
+                input_model,
+                snr_ref,
+                tint_ref,
+                freq_ref,
+                model_ref,
+                simulation_kwargs,
+                target_available_sites=available_sites,
+                target_row_available=mask,
+                unready_sites=unready,
             )
         else:
             raise ValueError("Unknown algorithm for fringe_finder.")
         return mask
+
+    def _native_fpt_selection_mask(self, target_dataset, target_model, snr_ref,
+                                   tint_ref, freq_ref, model_ref, simulation_kwargs,
+                                   target_available_sites, target_row_available,
+                                   unready_sites):
+        """Run the FPT reference simulation without constructing ``ehtim.Obsdata``."""
+
+        reference_generator, reference_model = _fpt_reference_generator(
+            self,
+            snr_ref,
+            tint_ref,
+            freq_ref,
+            model_ref,
+            target_model,
+            ephem=self.ephem,
+        )
+        reference_result = reference_generator.simulate(
+            input_model=reference_model,
+            **simulation_kwargs
+        )
+        reference_dataset = reference_result.dataset
+        reference_available_sites = [
+            site for site in reference_dataset.stations.names
+            if reference_generator.bands[site] is not None
+            and site not in unready_sites
+        ]
+        return fringe_selection.fpt_fringe_group_mask(
+            _fringe_rows_from_dataset(target_dataset),
+            _fringe_rows_from_dataset(reference_dataset),
+            snr_ref,
+            tint_ref,
+            freq_ref / (self.freq / 1.0e9),
+            target_available_sites=target_available_sites,
+            reference_available_sites=reference_available_sites,
+            target_row_available=target_row_available,
+            reference_row_available=~np.any(reference_dataset.flags, axis=(1, 2)),
+        )
 
     def make_dataset(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
                      leakamp=0.1, opacitycal=True, addFR=True, addleakage=False,
@@ -1394,27 +1449,35 @@ class obs_generator(object):
         deleting rows from the internal data model.
         """
 
+        input_model = self._resolve_input_model(input_model, "make_dataset")
+        simulation_kwargs = {
+            "addnoise": addnoise,
+            "addgains": addgains,
+            "gainamp": gainamp,
+            "leakamp": leakamp,
+            "opacitycal": opacitycal,
+            "addFR": addFR,
+            "addleakage": addleakage,
+            "flagwind": flagwind,
+            "flagday": flagday,
+            "flagsun": flagsun,
+            "allow_mixed_basis": allow_mixed_basis,
+            "el_min": el_min,
+            "el_max": el_max,
+            "p": p,
+        }
         result = self.simulate(
             input_model=input_model,
-            addnoise=addnoise,
-            addgains=addgains,
-            gainamp=gainamp,
-            leakamp=leakamp,
-            opacitycal=opacitycal,
-            addFR=addFR,
-            addleakage=addleakage,
-            flagwind=flagwind,
-            flagday=flagday,
-            flagsun=flagsun,
-            allow_mixed_basis=allow_mixed_basis,
-            el_min=el_min,
-            el_max=el_max,
-            p=p,
+            **simulation_kwargs
         )
         if not result.dataset.row_count:
             return result
 
-        mask = self._native_selection_mask(result.dataset)
+        mask = self._native_selection_mask(
+            result.dataset,
+            input_model=input_model,
+            simulation_kwargs=simulation_kwargs,
+        )
         flags = np.array(result.dataset.flags, copy=True)
         flags[~mask] = True
         if self.verbosity > 0:
@@ -2100,16 +2163,13 @@ def fringegroups(obsgen, obs, snr_ref, tint_ref):
     )
 
 
-def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref):
-    """Apply the fringe-group proxy directly to a native circular dataset."""
+def _fringe_rows_from_dataset(dataset):
+    """Extract circular parallel-hand fringe-selection inputs from a native dataset."""
 
     if dataset.channel_count != 1:
-        raise ValueError("Native fringe groups require exactly one spectral channel.")
-    if dataset.row_count == 0:
-        return np.zeros(0, dtype=bool)
-
+        raise ValueError("Native fringe selection requires exactly one spectral channel.")
     names = np.asarray(dataset.stations.names)
-    rows = fringe_selection.FringeRows(
+    return fringe_selection.FringeRows(
         time=dataset.time_mjd,
         station1=names[dataset.antenna1],
         station2=names[dataset.antenna2],
@@ -2119,6 +2179,15 @@ def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref):
         rr_sigma=1.0 / np.sqrt(dataset.weights[:, 0, 0]),
         ll_sigma=1.0 / np.sqrt(dataset.weights[:, 0, 1]),
     )
+
+
+def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref):
+    """Apply the fringe-group proxy directly to a native circular dataset."""
+
+    if dataset.row_count == 0:
+        return np.zeros(0, dtype=bool)
+
+    rows = _fringe_rows_from_dataset(dataset)
     available_sites = [site for site in obsgen.sites if obsgen.bands[site] is not None]
     return fringe_selection.fringe_group_mask(
         rows,
@@ -2128,8 +2197,58 @@ def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref):
     )
 
 
+def _fpt_reference_generator(obsgen, snr_ref, tint_ref, freq_ref, model_ref,
+                             target_model=None, ephem='ephemeris/space'):
+    """Create the isolated native/legacy reference generator used by FPT."""
+
+    if target_model is None:
+        target_model = obsgen.im
+
+    new_settings = copy.copy(obsgen.settings)
+    new_settings['frequency'] = freq_ref
+    new_settings['bandwidth'] = obsgen.settings['bandwidth']
+    new_settings['fringe_finder'] = ['fringegroups', [snr_ref, tint_ref]]
+    new_settings['random_seed'] = obsgen.seed
+    if isinstance(model_ref, str):
+        new_settings['model_file'] = model_ref
+    else:
+        new_settings['model_file'] = None
+    if ((obsgen.weather == 'random') | (obsgen.weather == 'exact')):
+        new_settings['weather'] = 'exact'
+        new_settings['weather_year'] = str(obsgen.weather_year)
+        new_settings['weather_day'] = str(obsgen.weather_day)
+
+    obsgen_ref = obs_generator(
+        new_settings,
+        D_overrides=copy.deepcopy(obsgen.D_overrides),
+        receiver_configuration_overrides=copy.deepcopy(obsgen.receiver_configuration_overrides),
+        surf_rms_overrides=copy.deepcopy(obsgen.surf_rms_overrides),
+        bandwidth_overrides=copy.deepcopy(obsgen.bandwidth_overrides),
+        T_R_overrides=copy.deepcopy(obsgen.T_R_overrides),
+        sideband_ratio_overrides=copy.deepcopy(obsgen.sideband_ratio_overrides),
+        lo_freq_overrides=copy.deepcopy(obsgen.lo_freq_overrides),
+        hi_freq_overrides=copy.deepcopy(obsgen.hi_freq_overrides),
+        ap_eff_overrides=copy.deepcopy(obsgen.ap_eff_overrides),
+        wind_loading_overrides=copy.deepcopy(obsgen.wind_loading_overrides),
+        custom_receivers=copy.deepcopy(obsgen.custom_receivers),
+        station_uptimes=copy.deepcopy(obsgen.station_uptimes),
+        array=getattr(obsgen, 'array', None),
+        ephem=ephem,
+        weather_store=obsgen.weather_store,
+        weather_cadence=obsgen.weather_cadence,
+    )
+    if model_ref is None:
+        reference_model = target_model
+    elif isinstance(model_ref, str):
+        reference_model = obsgen_ref.im
+    else:
+        reference_model = model_ref
+    obsgen_ref.im = reference_model
+    return obsgen_ref, reference_model
+
+
 def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemeris/space',
-        unready_sites=(), **kwargs):
+        unready_sites=(), target_model=None, **kwargs):
     """
     Function to apply the frequency phase transfer ("FPT") SNR thresholding scheme to an observation.
     This scheme attempts to mimic the fringe-finding consequences of phase
@@ -2142,62 +2261,26 @@ def FPT(obsgen, obs, snr_ref, tint_ref, freq_ref, model_ref=None, ephem='ephemer
       snr_ref (float): strong baseline SNR threshold
       tint_ref (float): strong baseline coherence time, in seconds
       freq_ref(float): FPT reference frequency, in GHz
-      model_ref (str): path to FPT reference model, or the reference model itself
+      model_ref (str): path to FPT reference model, the reference model itself,
+                       or None to reuse the target model
 
     Returns:
       (numpy.ndarray): An array of kept data indices
     """
 
-    # frequency ratio
-    freq_rat = (freq_ref/(obsgen.freq/(1.0e9)))
-
-    # determine settings for dummy obsgen object
-    new_settings = copy.deepcopy(obsgen.settings)
-    new_settings['frequency'] = freq_ref
-    new_settings['bandwidth'] = obsgen.settings['bandwidth']
-    new_settings['fringe_finder'] = ['fringegroups', [snr_ref, tint_ref]]
-    new_settings['random_seed'] = obsgen.seed
-    if ((model_ref is None) | isinstance(model_ref, str)):
-        new_settings['model_file'] = model_ref
-    if ((obsgen.weather == 'random') | (obsgen.weather == 'exact')):
-        new_settings['weather'] = 'exact'
-        new_settings['weather_year'] = str(obsgen.weather_year)
-        new_settings['weather_day'] = str(obsgen.weather_day)
-    new_D_overrides = copy.deepcopy(obsgen.D_overrides)
-    new_surf_rms_overrides = copy.deepcopy(obsgen.surf_rms_overrides)
-    new_receiver_configuration_overrides = copy.deepcopy(obsgen.receiver_configuration_overrides)
-    new_bandwidth_overrides = copy.deepcopy(obsgen.bandwidth_overrides)
-    new_T_R_overrides = copy.deepcopy(obsgen.T_R_overrides)
-    new_sideband_ratio_overrides = copy.deepcopy(obsgen.sideband_ratio_overrides)
-    new_lo_freq_overrides = copy.deepcopy(obsgen.lo_freq_overrides)
-    new_hi_freq_overrides = copy.deepcopy(obsgen.hi_freq_overrides)
-    new_ap_eff_overrides = copy.deepcopy(obsgen.ap_eff_overrides)
-    new_wind_loading_overrides = copy.deepcopy(obsgen.wind_loading_overrides)
-    new_custom_receivers = copy.deepcopy(obsgen.custom_receivers)
-    new_station_uptimes = copy.deepcopy(obsgen.station_uptimes)
-
-    # create dummy obsgen object
-    obsgen_ref = obs_generator(new_settings,
-                               D_overrides=new_D_overrides,
-                               receiver_configuration_overrides=new_receiver_configuration_overrides,
-                               surf_rms_overrides=new_surf_rms_overrides,
-                               bandwidth_overrides=new_bandwidth_overrides,
-                               T_R_overrides=new_T_R_overrides,
-                               sideband_ratio_overrides=new_sideband_ratio_overrides,
-                               lo_freq_overrides=new_lo_freq_overrides,
-                               hi_freq_overrides=new_hi_freq_overrides,
-                               ap_eff_overrides=new_ap_eff_overrides,
-                               wind_loading_overrides=new_wind_loading_overrides,
-                               custom_receivers=new_custom_receivers,
-                               station_uptimes=new_station_uptimes,
-                               ephem=ephem,
-                               weather_store=obsgen.weather_store,
-                               weather_cadence=obsgen.weather_cadence)
-    if ((model_ref is not None) & (not isinstance(model_ref, str))):
-        obsgen_ref.im = model_ref
+    freq_rat = freq_ref / (obsgen.freq / 1.0e9)
+    obsgen_ref, reference_model = _fpt_reference_generator(
+        obsgen,
+        snr_ref,
+        tint_ref,
+        freq_ref,
+        model_ref,
+        target_model,
+        ephem=ephem,
+    )
 
     # generate observation at reference frequency
-    obs_ref = obsgen_ref.observe_legacy(obsgen_ref.im, **kwargs)
+    obs_ref = obsgen_ref.observe_legacy(reference_model, **kwargs)
 
     target_rows = _fringe_rows_from_obsdata(obs)
     reference_rows = _fringe_rows_from_obsdata(obs_ref)

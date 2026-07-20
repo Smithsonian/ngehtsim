@@ -529,6 +529,70 @@ def test_native_simulate_does_not_construct_obsdata(monkeypatch, source_factory)
     assert isinstance(result.dataset, VisibilityDataset)
 
 
+@pytest.mark.parametrize(
+    "source_factory",
+    (
+        lambda: _polarized_model().make_image(160.0 * eh.RADPERUAS, 64),
+        _polarized_model,
+        _polarized_movie,
+    ),
+)
+def test_native_fpt_selection_stays_native_and_uses_one_readiness_draw(monkeypatch, source_factory):
+    settings = dict(COMPACT_OBS_SETTINGS)
+    settings["fringe_finder"] = ["fpt", [0.0, 10.0, 86.0, None]]
+    readiness_calls = []
+
+    def unready_sites(sites, tech_readiness, rng):
+        readiness_calls.append((tuple(sites), tech_readiness))
+        return np.array(["ALMA"])
+
+    def unexpected_obsdata_conversion(*args, **kwargs):
+        raise AssertionError("Native FPT selection must not construct an ehtim Obsdata object.")
+
+    monkeypatch.setattr(og, "get_unready_sites", unready_sites)
+    monkeypatch.setattr(VisibilityDataset, "to_ehtim_obsdata", unexpected_obsdata_conversion)
+    source = source_factory()
+    original = (source.ra, source.dec, source.mjd, source.source, source.rf)
+    result = og.obs_generator(settings=settings).make_dataset(
+        source,
+        addnoise=False,
+        addgains=False,
+        addFR=False,
+        addleakage=False,
+        flagwind=False,
+        flagday=False,
+        flagsun=False,
+    )
+
+    names = np.asarray(result.dataset.stations.names)
+    touches_alma = (
+        (names[result.dataset.antenna1] == "ALMA")
+        | (names[result.dataset.antenna2] == "ALMA")
+    )
+    assert isinstance(result.dataset, VisibilityDataset)
+    assert len(readiness_calls) == 1
+    assert np.all(result.dataset.flags[touches_alma])
+    assert (source.ra, source.dec, source.mjd, source.source, source.rf) == original
+
+
+def test_native_fpt_make_obs_exports_only_after_selection():
+    settings = dict(COMPACT_OBS_SETTINGS)
+    settings["fringe_finder"] = ["fpt", [0.0, 10.0, 86.0, None]]
+
+    obs = og.obs_generator(settings=settings).make_obs(
+        _compact_model(),
+        addnoise=False,
+        addgains=False,
+        addFR=False,
+        addleakage=False,
+        flagwind=False,
+        flagday=False,
+        flagsun=False,
+    )
+
+    assert len(obs.data) > 0
+
+
 def test_native_simulation_keeps_terms_in_the_result_not_the_generator():
     settings = dict(COMPACT_OBS_SETTINGS)
     settings["fringe_finder"] = ["naive", 0.0]
