@@ -15,7 +15,29 @@ import numpy as np
 
 @dataclass(frozen=True)
 class FringeRows:
-    """Visibility rows required for fringe-detection selection."""
+    """Visibility rows required for fringe-detection selection.
+
+    Parameters
+    ----------
+    time : array_like, shape (row,)
+        Timestamp keys. Values are compared exactly, so callers should use a
+        common time representation for all rows passed to one selection call.
+    station1, station2 : array_like, shape (row,)
+        Ordered station identifiers for each baseline.
+    integration_time_s : array_like, shape (row,)
+        Positive integration durations in seconds.
+    rr, ll : array_like, shape (row,)
+        Parallel-hand circular visibility samples.
+    rr_sigma, ll_sigma : array_like, shape (row,)
+        Positive one-sigma uncertainties of the real or imaginary component of
+        the corresponding parallel-hand visibility.
+
+    Notes
+    -----
+    This compact structure intentionally contains only the information needed
+    for the published detectability proxy. It is not a calibrated visibility
+    data model.
+    """
 
     time: np.ndarray
     station1: np.ndarray
@@ -75,7 +97,30 @@ class FringeRows:
 
 
 def fringe_group_mask(rows, snr_threshold, tint_reference_s, available_sites=None):
-    """Return rows in timestamp-local components of strong baselines."""
+    """Return rows in timestamp-local components of strong baselines.
+
+    Parameters
+    ----------
+    rows : FringeRows
+        Target-frequency parallel-hand visibility rows.
+    snr_threshold : float
+        Strong-baseline SNR threshold at ``tint_reference_s``.
+    tint_reference_s : float
+        Positive reference integration time in seconds.
+    available_sites : iterable, optional
+        Restrict both graph edges and selected rows to baselines whose stations
+        are in this set.
+
+    Returns
+    -------
+    numpy.ndarray of bool, shape (row,)
+        Rows whose stations lie in a connected component built from strong
+        baselines at the same timestamp.
+
+    Notes
+    -----
+    This is a detectability/fringe-selection proxy, not fringe fitting.
+    """
     _validate_thresholds(snr_threshold, tint_reference_s)
     available = _availability_mask(rows.station1, rows.station2, available_sites)
     strong = available & (
@@ -106,6 +151,34 @@ def fpt_fringe_group_mask(target_rows, reference_rows, reference_snr_threshold,
     are intentionally independent: the station graph is keyed by timestamp
     and never by row position.  Optional row-availability masks exclude
     station-flagged data before either graph is assembled.
+
+    Parameters
+    ----------
+    target_rows, reference_rows : FringeRows
+        Target- and reference-frequency visibility rows. Their row ordering and
+        counts may differ.
+    reference_snr_threshold : float
+        Strong-baseline threshold at the reference frequency and reference
+        integration time.
+    tint_reference_s : float
+        Positive reference integration time in seconds.
+    reference_to_target_ratio : float
+        Positive multiplier mapping the reference SNR threshold to the target
+        frequency.
+    target_available_sites, reference_available_sites : iterable, optional
+        Site-level availability restrictions for the two datasets.
+    target_row_available, reference_row_available : array_like of bool, optional
+        Additional row-level availability masks.
+
+    Returns
+    -------
+    numpy.ndarray of bool, shape (target_row,)
+        Target rows whose stations are connected by strong target or reference
+        baselines at the same timestamp.
+
+    Notes
+    -----
+    FPT selection does not transfer or correct visibility phases.
     """
     _validate_thresholds(reference_snr_threshold, tint_reference_s)
     if not np.isfinite(reference_to_target_ratio) or reference_to_target_ratio <= 0.0:

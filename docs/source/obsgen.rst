@@ -40,18 +40,19 @@ weather mode.
 Raster Source Transform Backend
 -------------------------------
 
-Rasterized ``ehtim.Image`` and ``ehtim.Movie`` sources use the FINUFFT-backed
-``"nfft"`` transform by default. It is substantially faster than a direct
-Fourier transform for typical high-resolution synthetic datasets. FINUFFT
-requires even image dimensions. Use ``"direct"`` explicitly for an odd-sized
-raster or when an exact direct transform is required:
+Rasterized ``ehtim.Image`` and ``ehtim.Movie`` sources currently delegate
+their Fourier transform to ``ehtim``.  Consequently, ``"nfft"`` selects
+ehtim's pyNFFT-based backend; it is not a FINUFFT backend and requires a
+working pyNFFT installation.  Use ``"direct"`` for a supported, dependency-free
+reference transform:
 
 .. code-block:: python
 
    settings = {"ttype": "direct"}
    obsgen = obs_generator.obs_generator(settings=settings)
 
-``"fast"`` is no longer a supported ngehtsim transform backend.
+``"fast"`` is not a supported ngehtsim transform backend. A native FINUFFT
+sampler will replace this delegated raster path in a later v2 refactor step.
 
 .. automodule:: ngehtsim.obs.obs_generator
    :members:

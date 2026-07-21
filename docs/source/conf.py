@@ -21,6 +21,9 @@ extensions = [
     "sphinx.ext.napoleon",
 ]
 
+autodoc_member_order = "bysource"
+autodoc_typehints = "description"
+
 templates_path = ["_templates"]
 exclude_patterns = ["_build"]
 html_theme = "sphinx_rtd_theme"

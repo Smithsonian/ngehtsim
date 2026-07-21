@@ -17,6 +17,19 @@ def apply_circular_leakage(visibilities, leakage1_r, leakage1_l, leakage2_r,
     The final axis of ``visibilities`` must use the order ``RR, LL, RL, LR``.
     The result is a new array so every output correlation is calculated from
     the same, unmodified input coherency matrix.
+
+    Parameters
+    ----------
+    visibilities : array_like, shape (..., 4)
+        Circular-basis coherency products ordered RR, LL, RL, LR.
+    leakage1_r, leakage1_l, leakage2_r, leakage2_l : complex or array_like
+        Station 1 and station 2 circular D-terms, broadcast against the
+        leading visibility dimensions.
+
+    Returns
+    -------
+    numpy.ndarray
+        Corrupted visibility products after applying ``D_1 V D_2^H``.
     """
 
     visibilities = np.asarray(visibilities, dtype=complex)
@@ -64,6 +77,34 @@ def apply_circular_corruptions(dataset, station_terms, stations, rng, addnoise=T
 
     Flagged rows remain in the returned dataset. Use ``select_rows()`` before
     converting an eligible result to ``ehtim.Obsdata``.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        One-channel native dataset with exactly RR, LL, RL, LR products.
+    station_terms : mapping
+        Row-aligned output from ``station_terms_for_dataset()``. Required terms
+        include station names, opacity, SEFD, bandwidth, feed angles, and
+        availability; optional gain and leakage terms are required only when
+        their corresponding switches are enabled.
+    stations : StationTable
+        Station metadata updated by the station-term calculation.
+    rng : numpy.random.Generator
+        Random generator used for thermal noise.
+    addnoise, addgains, opacitycal, addFR, addleakage : bool, optional
+        Enable thermal noise, gain errors, opacity calibration state, feed
+        rotation, and leakage corruption, respectively.
+
+    Returns
+    -------
+    VisibilityDataset
+        New dataset containing corrupted visibilities, propagated ``sigma_jy``
+        values, flags, and calibration-state metadata.
+
+    Notes
+    -----
+    This is currently a circular single-channel kernel. It rejects mixed
+    receptor layouts rather than applying an implicit basis conversion.
     """
 
     if not isinstance(dataset, VisibilityDataset):

@@ -39,7 +39,33 @@ def _integer_array(values, name):
 
 @dataclass(frozen=True)
 class StationTable:
-    """Station metadata independent of an ``ehtim`` telescope table."""
+    """Station metadata independent of an ``ehtim`` telescope table.
+
+    Parameters
+    ----------
+    names : tuple of str
+        Unique station names. Native visibility rows refer to this table by
+        zero-based integer index.
+    position_itrs_m : array_like, shape (station, 3)
+        ITRS Cartesian station positions in metres.
+    sefd_r_jy, sefd_l_jy : array_like, shape (station,)
+        Circular R and L system-equivalent flux densities in Jy. These fields
+        retain the station calibration metadata used by the current circular
+        corruption kernel.
+    leakage_r, leakage_l : array_like, shape (station,)
+        Complex circular-basis D-terms for the R and L signal paths.
+    feed_rotation_par, feed_rotation_elev : array_like, shape (station,)
+        Coefficients multiplying parallactic and elevation angles in the
+        current circular feed-rotation model.
+    feed_rotation_offset_deg : array_like, shape (station,)
+        Constant feed-rotation offset in degrees.
+
+    Notes
+    -----
+    All arrays are copied, validated, and stored read-only. This table does
+    not define the correlations stored in a dataset; use :class:`ReceptorTable`
+    and :class:`CorrelationProductTable` for that purpose.
+    """
 
     names: tuple[str, ...]
     position_itrs_m: np.ndarray
@@ -96,7 +122,18 @@ class StationTable:
 
     @classmethod
     def from_ehtim_tarr(cls, tarr):
-        """Create a station table from an ``ehtim`` telescope array."""
+        """Create a station table from an ``ehtim`` telescope array.
+
+        Parameters
+        ----------
+        tarr : numpy structured array
+            An ehtim ``DTARR`` telescope table.
+
+        Returns
+        -------
+        StationTable
+            A native copy of the telescope metadata.
+        """
 
         return cls(
             names=tuple(str(name) for name in tarr["site"]),
@@ -111,7 +148,13 @@ class StationTable:
         )
 
     def to_ehtim_tarr(self):
-        """Convert station metadata to an ``ehtim`` telescope array."""
+        """Convert station metadata to an ehtim ``DTARR`` telescope table.
+
+        Returns
+        -------
+        numpy structured array
+            A newly allocated ehtim-compatible telescope table.
+        """
 
         import ehtim as eh
 
@@ -139,6 +182,20 @@ class ReceptorTable:
     ``feed_id`` and ``polarization_label`` fields are descriptive rather than
     inferred calibration instructions, so non-standard receiver arrangements
     remain representable.
+
+    Parameters
+    ----------
+    station_index : array_like, shape (receptor,)
+        Zero-based :class:`StationTable` index owning each receptor.
+    feed_id : tuple of str
+        Station-local feed identifier. ``(station_index, feed_id)`` pairs must
+        be unique.
+    polarization_label : tuple of str
+        Descriptive voltage-product label, such as ``"R"``, ``"L"``, ``"X"``,
+        or ``"Y"``. Labels are not used to infer a basis conversion.
+    basis : tuple of str
+        Basis metadata for each receptor, commonly ``"CIRCULAR"`` or
+        ``"LINEAR"``. Custom strings are preserved for native/FITS-EHT data.
     """
 
     station_index: np.ndarray
@@ -186,6 +243,20 @@ class ReceptorTable:
         This is a convenience constructor for standard all-circular or
         all-linear arrays. More general arrays should construct a table
         directly with station-local ``feed_id`` values.
+
+        Parameters
+        ----------
+        station_count : int
+            Number of stations receiving the same receptor inventory.
+        labels : iterable of str
+            Distinct receptor labels to create at every station.
+        basis : str
+            Basis metadata assigned to every created receptor.
+
+        Returns
+        -------
+        ReceptorTable
+            A standard, identical receptor inventory for each station.
         """
 
         if not isinstance(station_count, (int, np.integer)) or station_count <= 0:
@@ -201,7 +272,25 @@ class ReceptorTable:
         )
 
     def index_for(self, station_index, polarization_label):
-        """Return the unique receptor index for a station and label."""
+        """Return the unique receptor index for a station and label.
+
+        Parameters
+        ----------
+        station_index : int
+            Zero-based station index.
+        polarization_label : str
+            Label to match at that station.
+
+        Returns
+        -------
+        int
+            The zero-based receptor index.
+
+        Raises
+        ------
+        ValueError
+            If the station has no matching receptor or has an ambiguous match.
+        """
 
         matches = np.flatnonzero(
             (self.station_index == station_index)
@@ -219,7 +308,15 @@ class ReceptorTable:
 
 @dataclass(frozen=True)
 class CorrelationProductTable:
-    """Ordered pairs of receptor IDs that define stored correlations."""
+    """Ordered pairs of receptor IDs that define stored correlations.
+
+    Parameters
+    ----------
+    receptor1_id, receptor2_id : array_like, shape (product,)
+        Zero-based :class:`ReceptorTable` indices for the first and second
+        voltage streams. Product order matters: a visibility product is always
+        ``receptor1`` correlated with ``receptor2``.
+    """
 
     receptor1_id: np.ndarray
     receptor2_id: np.ndarray
@@ -251,6 +348,28 @@ def standard_products_for_rows(receptors, antenna1, antenna2, product_labels):
     as ``("RR", "LL", "RL", "LR")``. The returned product table contains
     each unique station/receptor pair once, while ``row_product_id`` maps every
     input row to the relevant ordered product IDs.
+
+    Parameters
+    ----------
+    receptors : ReceptorTable
+        Receptor inventory from which labels are resolved.
+    antenna1, antenna2 : array_like, shape (row,)
+        Zero-based station indices for ordered baseline-time rows.
+    product_labels : iterable of str
+        Ordered two-label products, for example ``("RR", "LL", "RL", "LR")``.
+
+    Returns
+    -------
+    CorrelationProductTable
+        Unique ordered receptor pairs used by the supplied rows.
+    numpy.ndarray
+        Integer array of shape ``(row, product_slot)`` mapping each requested
+        row product to the returned product table.
+
+    Raises
+    ------
+    ValueError
+        If a requested label is unavailable or ambiguous at a row's station.
     """
 
     if not isinstance(receptors, ReceptorTable):
@@ -297,8 +416,55 @@ class VisibilityDataset:
     ordered receptor pair in ``correlation_products``. A value of ``-1`` marks
     padding introduced by the dense in-memory representation; padding is
     always flagged and is never written to a FITS-EHT archive.
-    """
 
+    Parameters
+    ----------
+    stations : StationTable
+        Station metadata.
+    receptors : ReceptorTable
+        Station-local voltage-stream inventory.
+    correlation_products : CorrelationProductTable
+        Ordered receptor pairs referenced by ``row_product_id``.
+    time_mjd : array_like, shape (row,)
+        UTC Modified Julian Date of each baseline-time row.
+    integration_time_s : array_like, shape (row,)
+        Positive integration duration in seconds.
+    antenna1, antenna2 : array_like, shape (row,)
+        Distinct zero-based station indices. The first and second product
+        receptors must belong to these stations, respectively.
+    uvw_m : array_like, shape (row, 3)
+        Baseline coordinates in metres.
+    tau1, tau2 : array_like, shape (row,)
+        Non-negative line-of-sight opacity terms for the two stations.
+    channel_frequency_hz, channel_bandwidth_hz : array_like, shape (channel,)
+        Positive per-channel center frequencies and bandwidths in Hz.
+    spectral_window_id : array_like, shape (channel,)
+        Integer spectral-window identifier for every channel.
+    row_product_id : array_like, shape (row, product_slot)
+        Zero-based correlation-product IDs. ``-1`` denotes dense-array padding.
+    visibilities : array_like, shape (row, channel, product_slot)
+        Complex correlation samples in Jy.
+    sigma_jy : array_like, shape (row, channel, product_slot)
+        One-standard-deviation uncertainty, in Jy, of each real *and*
+        imaginary component. Unflagged populated samples require finite,
+        positive values. Flagged samples may use ``NaN``; padding must do so.
+    flags : array_like, shape (row, channel, product_slot)
+        Boolean sample flags. Padding slots must always be flagged.
+    source : str
+        Source name.
+    ra_hours, dec_degrees : float
+        Source right ascension in hours and declination in degrees.
+    ampcal, phasecal, opacitycal, dcal, frcal : bool, optional
+        Calibration-state metadata retained at export boundaries.
+    scan_start_mjd, scan_stop_mjd : array_like, shape (scan,), optional
+        Matching scan boundaries in MJD. Omit both when scan metadata is not
+        available.
+
+    Notes
+    -----
+    Arrays are copied and made immutable. Native datasets have no ``weights``
+    attribute: applications must use the explicit ``sigma_jy`` uncertainty.
+    """
     stations: StationTable
     receptors: ReceptorTable
     correlation_products: CorrelationProductTable
@@ -487,7 +653,14 @@ class VisibilityDataset:
 
     @property
     def sample_present(self):
-        """Return a mask for populated, non-padding visibility samples."""
+        """Return a mask for populated, non-padding visibility samples.
+
+        Returns
+        -------
+        numpy.ndarray of bool, shape (row, channel, product_slot)
+            ``True`` where ``row_product_id`` identifies a real correlation
+            product, including samples that are flagged.
+        """
 
         return np.broadcast_to(
             self.row_product_id[:, np.newaxis, :] >= 0,
@@ -500,6 +673,21 @@ class VisibilityDataset:
         This is intentionally strict. Boundary adapters that require standard
         circular or linear data must reject extra, missing, or ambiguous
         receptor products instead of silently dropping or relabelling them.
+
+        Parameters
+        ----------
+        product_labels : iterable of str
+            Exact ordered set of two-receptor labels required in every row.
+
+        Returns
+        -------
+        numpy.ndarray of int, shape (row, len(product_labels))
+            Dense product-axis slots in the requested label order.
+
+        Raises
+        ------
+        ValueError
+            If any row has a missing, extra, or ambiguous requested product.
         """
 
         product_labels = tuple(str(value) for value in product_labels)
@@ -532,12 +720,24 @@ class VisibilityDataset:
         return output
 
     def circular_product_slots(self):
-        """Return slots holding RR, LL, RL, and LR for every row."""
+        """Return slots holding RR, LL, RL, and LR for every row.
+
+        Raises
+        ------
+        ValueError
+            If a row is not exactly a standard circular four-product layout.
+        """
 
         return self._standard_product_slots(CIRCULAR_PRODUCT_LABELS, "CIRCULAR")
 
     def linear_product_slots(self):
-        """Return slots holding XX, YY, XY, and YX for every row."""
+        """Return slots holding XX, YY, XY, and YX for every row.
+
+        Raises
+        ------
+        ValueError
+            If a row is not exactly a standard linear four-product layout.
+        """
 
         return self._standard_product_slots(LINEAR_PRODUCT_LABELS, "LINEAR")
 
@@ -559,7 +759,18 @@ class VisibilityDataset:
         return slots
 
     def select_rows(self, row_mask):
-        """Return a dataset containing the selected visibility rows."""
+        """Return a dataset containing the selected visibility rows.
+
+        Parameters
+        ----------
+        row_mask : numpy.ndarray of bool, shape (row,)
+            Rows retained in their existing order.
+
+        Returns
+        -------
+        VisibilityDataset
+            A new immutable dataset with row-aligned arrays filtered.
+        """
 
         row_mask = np.asarray(row_mask)
         if row_mask.dtype != bool or row_mask.shape != (self.row_count,):
@@ -569,7 +780,19 @@ class VisibilityDataset:
         return self.take_rows(np.flatnonzero(row_mask))
 
     def take_rows(self, row_indices):
-        """Return a dataset containing rows selected in the given order."""
+        """Return a dataset containing rows selected in the given order.
+
+        Parameters
+        ----------
+        row_indices : array_like of int, shape (selected_row,)
+            Row indices to retain. Repeated indices are permitted and the
+            supplied order is preserved.
+
+        Returns
+        -------
+        VisibilityDataset
+            A new immutable dataset with row-aligned arrays reordered.
+        """
 
         row_indices = np.asarray(row_indices)
         if row_indices.ndim != 1 or not np.issubdtype(row_indices.dtype, np.integer):
@@ -593,7 +816,29 @@ class VisibilityDataset:
 
     @classmethod
     def from_ehtim_obsdata(cls, obs):
-        """Convert a standard ``ehtim.Obsdata`` object to a native dataset."""
+        """Convert a standard ``ehtim.Obsdata`` object to a native dataset.
+
+        Parameters
+        ----------
+        obs : ehtim.obsdata.Obsdata
+            Input observation. It is copied internally when conversion to UTC
+            time or circular polarization representation is required.
+
+        Returns
+        -------
+        VisibilityDataset
+            One-channel circular native dataset with unflagged samples.
+
+        Raises
+        ------
+        ValueError
+            If ehtim does not provide finite positive uncertainties.
+
+        Notes
+        -----
+        This adapter cannot recover mixed-receptor products because
+        ``ehtim.Obsdata`` cannot represent them.
+        """
 
         import ehtim as eh
 
@@ -677,7 +922,24 @@ class VisibilityDataset:
         )
 
     def to_ehtim_obsdata(self):
-        """Convert a representable circular single-channel dataset to ``ehtim.Obsdata``."""
+        """Convert a representable dataset to ``ehtim.Obsdata``.
+
+        Returns
+        -------
+        ehtim.obsdata.Obsdata
+            A circular, single-channel, unflagged ehtim boundary object.
+
+        Raises
+        ------
+        ValueError
+            If the dataset is empty, multi-channel, mixed/non-circular, or
+            contains flagged populated samples.
+
+        Notes
+        -----
+        This is an export boundary, not a native storage format. Use
+        :meth:`to_ehtfits` to preserve mixed receptors and flags.
+        """
 
         if self.channel_count != 1:
             raise ValueError("ehtim Obsdata output requires exactly one spectral channel.")
@@ -740,14 +1002,39 @@ class VisibilityDataset:
 
     @classmethod
     def from_uvfits(cls, path):
-        """Read a native multi-channel UVFITS dataset without using ``ehtim``."""
+        """Read a native multi-channel UVFITS dataset without using ehtim.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            UVFITS random-groups file.
+
+        Returns
+        -------
+        VisibilityDataset
+            Dataset with a globally circular or linear product layout.
+        """
 
         from ngehtsim.obs.uvfits import read_uvfits
 
         return read_uvfits(path)
 
     def to_uvfits(self, path, overwrite=False):
-        """Write this dataset through the native UVFITS adapter."""
+        """Write this dataset through the native UVFITS adapter.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Destination UVFITS filename.
+        overwrite : bool, optional
+            Replace an existing file when ``True``.
+
+        Raises
+        ------
+        UvfitsError
+            If the dataset is not representable by UVFITS's global
+            polarization axis or regular-frequency constraints.
+        """
 
         from ngehtsim.obs.uvfits import write_uvfits
 
@@ -755,14 +1042,34 @@ class VisibilityDataset:
 
     @classmethod
     def from_ehtfits(cls, path):
-        """Read a lossless native FITS-EHT visibility dataset."""
+        """Read a lossless native FITS-EHT visibility dataset.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            FITS-EHT archive filename.
+
+        Returns
+        -------
+        VisibilityDataset
+            Dataset preserving native receptor products, flags, and sigmas.
+        """
 
         from ngehtsim.obs.ehtfits import read_ehtfits
 
         return read_ehtfits(path)
 
     def to_ehtfits(self, path, overwrite=False):
-        """Write this dataset as a lossless native FITS-EHT archive."""
+        """Write this dataset as a lossless native FITS-EHT archive.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Destination filename, conventionally using the ``.ehtfits``
+            suffix.
+        overwrite : bool, optional
+            Replace an existing file when ``True``.
+        """
 
         from ngehtsim.obs.ehtfits import write_ehtfits
 

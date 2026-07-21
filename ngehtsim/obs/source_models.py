@@ -113,10 +113,45 @@ def _with_circular_samples(dataset, sampled, context):
 
 
 class EhtimImageAdapter(object):
+    """Adapt an ``ehtim.Image`` to ngehtsim observation interfaces.
+
+    Parameters
+    ----------
+    input_model : ehtim.image.Image
+        Raster source model. The current raster Fourier transform is delegated
+        to ehtim; see the Observation utilities documentation for supported
+        transform settings and their dependency constraints.
+
+    Notes
+    -----
+    :meth:`observe_dataset` samples directly into a native dataset, avoiding
+    an intermediate ``ehtim.Obsdata`` data table. It currently requires one
+    channel with exactly circular RR, LL, RL, LR products.
+    """
+
     def __init__(self, input_model):
         self.input_model = input_model
 
     def observe(self, obs_empty, context, p=None):
+        """Sample the image onto an ehtim observation boundary object.
+
+        Parameters
+        ----------
+        obs_empty : ehtim.obsdata.Obsdata
+            Geometry-only observation rows to populate.
+        context : mapping
+            Normalized observation settings, including source coordinates,
+            frequency, transform backend, and verbosity.
+        p : object, optional
+            Unused; retained for the common source-adapter interface.
+
+        Returns
+        -------
+        ehtim.obsdata.Obsdata
+            Noise-free source-sampled observation.
+        float
+            Image total flux density in Jy.
+        """
         _validate_raster_ttype(self.input_model, context)
         _set_ehtim_metadata(self.input_model, context)
 
@@ -164,7 +199,29 @@ class EhtimImageAdapter(object):
         return obs, F0
 
     def observe_dataset(self, dataset, context):
-        """Sample an image onto a native circular single-channel dataset."""
+        """Sample an image onto a native circular single-channel dataset.
+
+        Parameters
+        ----------
+        dataset : VisibilityDataset
+            Geometry and correlation layout to populate.
+        context : mapping
+            Normalized observation settings.
+
+        Returns
+        -------
+        VisibilityDataset
+            Copy of ``dataset`` containing source visibilities and source
+            metadata.
+        float
+            Image total flux density in Jy.
+
+        Raises
+        ------
+        ValueError
+            If the dataset is not exactly a one-channel circular layout or the
+            requested ehtim transform backend is unsupported.
+        """
 
         _require_native_circular_dataset(dataset)
         _validate_raster_ttype(self.input_model, context)
@@ -188,10 +245,34 @@ class EhtimImageAdapter(object):
 
 
 class EhtimMovieAdapter(object):
+    """Adapt a time-varying ``ehtim.Movie`` to ngehtsim interfaces.
+
+    Parameters
+    ----------
+    input_model : ehtim.movie.Movie
+        Raster movie sampled at each distinct observation timestamp.
+
+    Notes
+    -----
+    The movie's own ``bounds_error`` behavior determines whether observation
+    times outside its nominal range are looped. Native sampling has the same
+    circular single-channel limitation as :class:`EhtimImageAdapter`.
+    """
+
     def __init__(self, input_model):
         self.input_model = input_model
 
     def observe(self, obs_empty, context, p=None):
+        """Sample movie frames onto an ehtim observation boundary object.
+
+        Returns
+        -------
+        ehtim.obsdata.Obsdata
+            Noise-free observation with the corresponding movie frame sampled
+            at every timestamp.
+        float
+            Mean movie light-curve flux density in Jy.
+        """
         _validate_raster_ttype(self.input_model, context)
         _set_ehtim_metadata(self.input_model, context)
 
@@ -279,7 +360,23 @@ class EhtimMovieAdapter(object):
         return obs, F0
 
     def observe_dataset(self, dataset, context):
-        """Sample a repeating movie onto a native circular dataset."""
+        """Sample a repeating movie onto a native circular dataset.
+
+        Parameters
+        ----------
+        dataset : VisibilityDataset
+            Geometry and correlation layout to populate.
+        context : mapping
+            Normalized observation settings. Dataset MJD values determine the
+            movie sampling times relative to ``context["mjd"]``.
+
+        Returns
+        -------
+        VisibilityDataset
+            Dataset populated from the applicable frame for every timestamp.
+        float
+            Mean movie light-curve flux density in Jy.
+        """
 
         circular_slots = _require_native_circular_dataset(dataset)
         _validate_raster_ttype(self.input_model, context)
@@ -330,10 +427,32 @@ class EhtimMovieAdapter(object):
 
 
 class EhtimModelAdapter(object):
+    """Adapt an analytic ``ehtim.Model`` to ngehtsim interfaces.
+
+    Parameters
+    ----------
+    input_model : ehtim.model.Model
+        Analytic source model sampled by ehtim's model evaluator.
+
+    Notes
+    -----
+    Unlike raster Image and Movie models, this path does not use an NFFT
+    backend. Native sampling still requires a one-channel circular layout.
+    """
+
     def __init__(self, input_model):
         self.input_model = input_model
 
     def observe(self, obs_empty, context, p=None):
+        """Sample the analytic model onto an ehtim observation boundary object.
+
+        Returns
+        -------
+        ehtim.obsdata.Obsdata
+            Noise-free model-sampled observation.
+        float
+            Zero-baseline model amplitude in Jy.
+        """
         _set_ehtim_metadata(self.input_model, context)
 
         def sample_observation():
@@ -371,7 +490,22 @@ class EhtimModelAdapter(object):
         return obs, F0
 
     def observe_dataset(self, dataset, context):
-        """Sample an analytic model onto a native circular dataset."""
+        """Sample an analytic model onto a native circular dataset.
+
+        Parameters
+        ----------
+        dataset : VisibilityDataset
+            Geometry and correlation layout to populate.
+        context : mapping
+            Normalized observation settings used to label the output source.
+
+        Returns
+        -------
+        VisibilityDataset
+            Dataset with analytic model samples in its circular product slots.
+        float
+            Zero-baseline model amplitude in Jy.
+        """
 
         _require_native_circular_dataset(dataset)
 
@@ -392,6 +526,8 @@ class EhtimModelAdapter(object):
 
 
 class FisherForecastAdapter(object):
+    """Adapt an optional ``ngEHTforecast.FisherForecast`` source model."""
+
     def __init__(self, input_model):
         self.input_model = input_model
 
@@ -429,6 +565,23 @@ class FisherForecastAdapter(object):
 
 
 def adapter_for(input_model):
+    """Return the source adapter appropriate for a supported input object.
+
+    Parameters
+    ----------
+    input_model : ehtim Image, Movie, or Model, or ngEHTforecast FisherForecast
+        Source object accepted by ngehtsim.
+
+    Returns
+    -------
+    EhtimImageAdapter, EhtimMovieAdapter, EhtimModelAdapter, or FisherForecastAdapter
+        Adapter implementing the appropriate observation route.
+
+    Raises
+    ------
+    TypeError
+        If ``input_model`` is not a supported source type.
+    """
     if isinstance(input_model, eh.image.Image):
         return EhtimImageAdapter(input_model)
 
@@ -445,11 +598,56 @@ def adapter_for(input_model):
 
 
 def observe_source(input_model, obs_empty, context, p=None):
+    """Sample a supported source onto an ehtim observation boundary object.
+
+    Parameters
+    ----------
+    input_model : supported source object
+        Source accepted by :func:`adapter_for`.
+    obs_empty : ehtim.obsdata.Obsdata
+        Geometry-only observation rows to populate.
+    context : mapping
+        Normalized observation settings.
+    p : object, optional
+        Parameter vector required by ``ngEHTforecast.FisherForecast`` models.
+
+    Returns
+    -------
+    ehtim.obsdata.Obsdata
+        Noise-free source-sampled observation.
+    float
+        Reference total or zero-baseline flux density in Jy.
+    """
     return adapter_for(input_model).observe(obs_empty, context, p=p)
 
 
 def observe_source_dataset(input_model, dataset, context):
-    """Sample a supported source model onto a native visibility dataset."""
+    """Sample a supported source model onto a native visibility dataset.
+
+    Parameters
+    ----------
+    input_model : ehtim Image, Movie, or Model
+        Source object supporting native sampling.
+    dataset : VisibilityDataset
+        Native geometry and correlation layout to populate.
+    context : mapping
+        Normalized observation settings.
+
+    Returns
+    -------
+    VisibilityDataset
+        Source-sampled native dataset.
+    float
+        Reference total or zero-baseline flux density in Jy.
+
+    Raises
+    ------
+    TypeError
+        If the source type has no native dataset adapter.
+    ValueError
+        If the dataset has a currently unsupported channel or correlation
+        layout.
+    """
 
     adapter = adapter_for(input_model)
     if not hasattr(adapter, "observe_dataset"):
