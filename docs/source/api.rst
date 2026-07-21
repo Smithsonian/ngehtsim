@@ -7,7 +7,7 @@ Individual package documentation organized by area.
    :maxdepth: 3
 
    ./obsgen
+   ./uvfits
    ./metrics
    ./weather
    ./calibration
-   
