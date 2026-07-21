@@ -26,9 +26,9 @@ setup(name='ngehtsim',
       package_data={'': extra_files},
       include_package_data=True,
       install_requires=['astropy>=5.2.2,<8',
-                        'ehtim>=1.2.7',
+                        'ehtim @ git+https://github.com/dpesce/eht-imaging.git@5cdddafab83d26dad80bb5cab9f54edffcedbb18',
                         'matplotlib>=3.7.4',
-                        'numpy>=1.23.1, <2.0.0',
+                        'numpy>=2.0',
                         'scipy>=1.10.1,<1.17',
                         # 'ngEHTforecast @ git+https://github.com/aeb/ngEHTforecast.git#115bf73e77f23336516ce385521aeb2bae2f9a98'
                         'ngEHTforecast @ git+https://github.com/dpesce/ngEHTforecast.git#84ae29663ad713b4394106c6d76afec68b71cb83'
