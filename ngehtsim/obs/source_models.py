@@ -33,6 +33,30 @@ def _run_quietly(function, verbosity):
     return function()
 
 
+def _validate_raster_ttype(input_model, context):
+    """Validate a transform backend before sampling an ehtim raster source."""
+
+    ttype = context["ttype"]
+    if ttype == "fast":
+        raise ValueError(
+            "ttype='fast' is no longer supported; use ttype='nfft' or "
+            "ttype='direct'."
+        )
+    if ttype not in ("direct", "nfft"):
+        raise ValueError(
+            "ttype={0!r}; supported transform backends are 'nfft' and "
+            "'direct'.".format(ttype)
+        )
+    if ttype == "nfft" and (input_model.xdim % 2 or input_model.ydim % 2):
+        raise ValueError(
+            "ttype='nfft' requires even image dimensions; use "
+            "ttype='direct' for a {0}x{1} raster.".format(
+                input_model.xdim,
+                input_model.ydim,
+            )
+        )
+
+
 def _require_native_circular_dataset(dataset):
     if not isinstance(dataset, VisibilityDataset):
         raise TypeError("dataset must be a VisibilityDataset instance.")
@@ -82,6 +106,7 @@ class EhtimImageAdapter(object):
         self.input_model = input_model
 
     def observe(self, obs_empty, context, p=None):
+        _validate_raster_ttype(self.input_model, context)
         _set_ehtim_metadata(self.input_model, context)
 
         def sample_observation():
@@ -131,6 +156,7 @@ class EhtimImageAdapter(object):
         """Sample an image onto a native circular single-channel dataset."""
 
         _require_native_circular_dataset(dataset)
+        _validate_raster_ttype(self.input_model, context)
 
         def sample_dataset():
             sampled = self.input_model.sample_uv(
@@ -155,6 +181,7 @@ class EhtimMovieAdapter(object):
         self.input_model = input_model
 
     def observe(self, obs_empty, context, p=None):
+        _validate_raster_ttype(self.input_model, context)
         _set_ehtim_metadata(self.input_model, context)
 
         def sample_observation():
@@ -164,12 +191,6 @@ class EhtimMovieAdapter(object):
             obslist = obs_empty.tlist()
             obstimes = np.array([obsdata[0]["time"] for obsdata in obslist])
 
-            if context["ttype"] not in ("direct", "fast", "nfft"):
-                raise Exception(
-                    "ttype={0}, options for ttype are 'direct', 'fast', 'nfft'".format(
-                        context["ttype"]
-                    )
-                )
             if context["verbosity"] > 0:
                 print("Producing clean visibilities from movie with " + context["ttype"] + " FT . . . ")
 
@@ -250,6 +271,7 @@ class EhtimMovieAdapter(object):
         """Sample a repeating movie onto a native circular dataset."""
 
         _require_native_circular_dataset(dataset)
+        _validate_raster_ttype(self.input_model, context)
 
         def sample_dataset():
             visibilities = np.array(dataset.visibilities, copy=True)

@@ -249,7 +249,7 @@ def test_ground_geometry_preserves_ehtim_model_visibilities():
         "mjd": context["mjd"],
         "source": "M87",
         "rf": context["rf"],
-        "ttype": "fast",
+        "ttype": "nfft",
         "fft_pad_factor": 2,
         "verbosity": 0,
     }
