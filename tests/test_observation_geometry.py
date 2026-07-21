@@ -7,7 +7,7 @@ from ngehtsim.obs.obs_generator import obs_generator
 import ngehtsim.obs.observation_geometry as observation_geometry
 from ngehtsim.obs.obs_generator import make_array
 import ngehtsim.obs.source_models as source_models
-from ngehtsim.obs.visibility_dataset import CIRCULAR_CORRELATIONS, VisibilityDataset
+from ngehtsim.obs.visibility_dataset import VisibilityDataset
 
 
 @pytest.fixture
@@ -66,7 +66,7 @@ def test_ground_visibility_template_preserves_legacy_visibility_rows(array_name)
 
     assert isinstance(template, VisibilityDataset)
     assert template.channel_count == 1
-    assert template.correlation_layouts == (CIRCULAR_CORRELATIONS,)
+    assert template.circular_product_slots().shape == (template.row_count, 4)
     assert np.allclose(template.time_mjd, legacy.mjd + (legacy.data["time"] / 24.0))
     geometry = observation_geometry.ground_geometry(array, context)
     assert np.array_equal(template.antenna1, geometry.station1_indices)

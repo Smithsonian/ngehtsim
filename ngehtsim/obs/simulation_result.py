@@ -40,7 +40,10 @@ class SimulationResult:
     def row_mask(self):
         """Rows retained after station and fringe-selection flagging."""
 
-        return ~np.any(self.dataset.flags, axis=(1, 2))
+        return ~np.any(
+            self.dataset.flags & self.dataset.sample_present,
+            axis=(1, 2),
+        )
 
     @property
     def unflagged_dataset(self):
@@ -61,7 +64,9 @@ class SimulationResult:
 
         # ehtim refuses to construct an Obsdata from zero rows. Construct a
         # valid temporary export and then expose its representable empty view.
-        temporary = replace(self.dataset, flags=np.zeros_like(self.dataset.flags))
+        temporary_flags = np.array(self.dataset.flags, copy=True)
+        temporary_flags[self.dataset.sample_present] = False
+        temporary = replace(self.dataset, flags=temporary_flags)
         obs = temporary.to_ehtim_obsdata()
         obs.data = obs.data[:0]
         return obs

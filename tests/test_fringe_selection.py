@@ -333,12 +333,16 @@ def test_native_fringegroups_uses_parallel_hand_weights_and_shared_selector():
             np.zeros(selection_rows.row_count, dtype=complex),
             np.zeros(selection_rows.row_count, dtype=complex),
         ))[:, np.newaxis, :],
-        weights=np.column_stack((
-            1.0 / np.square(selection_rows.rr_sigma),
-            1.0 / np.square(selection_rows.ll_sigma),
+        sigma_jy=np.column_stack((
+            selection_rows.rr_sigma,
+            selection_rows.ll_sigma,
             np.ones(selection_rows.row_count),
             np.ones(selection_rows.row_count),
         ))[:, np.newaxis, :],
+        circular_product_slots=lambda: np.tile(
+            np.arange(4, dtype=np.intp),
+            (selection_rows.row_count, 1),
+        ),
     )
 
     class Generator:

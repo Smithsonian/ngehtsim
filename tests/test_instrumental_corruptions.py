@@ -23,6 +23,7 @@ SETTINGS = {
     "t_rest": 1200.0,
     "fringe_finder": ["naive", 0.0],
     "random_seed": 1,
+    "ttype": "direct",
 }
 
 
@@ -253,8 +254,8 @@ def test_thermal_noise_uses_reported_gain_corrupted_sigmas():
         flagsun=False,
     )
 
-    clean_sigma = 1.0 / np.sqrt(clean.dataset.weights)
-    noisy_sigma = 1.0 / np.sqrt(noisy.dataset.weights)
+    clean_sigma = clean.dataset.sigma_jy
+    noisy_sigma = noisy.dataset.sigma_jy
     assert np.allclose(noisy_sigma, clean_sigma)
     assert np.allclose(
         noisy.dataset.visibilities - clean.dataset.visibilities,
@@ -341,11 +342,12 @@ def test_native_circular_corruptions_match_legacy_generator_without_noise(monkey
         "flagday": False,
         "flagsun": False,
     }
-    native_generator = og.obs_generator(settings=SETTINGS)
+    direct_settings = {**SETTINGS, "ttype": "direct"}
+    native_generator = og.obs_generator(settings=direct_settings)
     native_generator.rng = FixedRng()
     native = _native_corrupted_dataset(native_generator, _polarized_image(), **kwargs)
 
-    legacy_generator = og.obs_generator(settings=SETTINGS)
+    legacy_generator = og.obs_generator(settings=direct_settings)
     legacy_generator.rng = FixedRng()
     legacy_template = observation_geometry.ground_visibility_template(
         legacy_generator.arr,
@@ -363,7 +365,7 @@ def test_native_circular_corruptions_match_legacy_generator_without_noise(monkey
     legacy_order = _obsdata_row_order(legacy)
     native_names = np.asarray(unflagged.stations.names)
     native_visibilities = unflagged.visibilities[:, 0, :]
-    native_sigma = 1.0 / np.sqrt(unflagged.weights[:, 0, :])
+    native_sigma = unflagged.sigma_jy[:, 0, :]
     legacy_visibilities = np.column_stack((
         legacy.data["rrvis"],
         legacy.data["llvis"],
@@ -440,7 +442,7 @@ def test_native_circular_corruptions_do_not_require_obsdata_conversion(monkeypat
 
     assert isinstance(corrupted, VisibilityDataset)
     assert corrupted.opacitycal is False
-    assert np.all(np.isfinite(corrupted.weights))
+    assert np.all(np.isfinite(corrupted.sigma_jy))
 
 
 def test_native_circular_noise_uses_reported_sigmas():
@@ -473,8 +475,8 @@ def test_native_circular_noise_uses_reported_sigmas():
         flagsun=False,
     )
 
-    sigma = 1.0 / np.sqrt(noisy.weights)
-    assert np.allclose(noisy.weights, clean.weights)
+    sigma = noisy.sigma_jy
+    assert np.allclose(noisy.sigma_jy, clean.sigma_jy)
     assert np.allclose(noisy.visibilities - clean.visibilities, (1.0 + 1.0j) * sigma)
 
 

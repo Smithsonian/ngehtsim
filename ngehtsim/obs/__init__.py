@@ -6,6 +6,7 @@ __author__ = "Dom Pesce"
 
 __all__ = [
     'fringe_selection',
+    'ehtfits',
     'obs_generator',
     'obs_plotter',
     'simulation_result',

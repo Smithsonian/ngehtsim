@@ -1333,7 +1333,7 @@ class obs_generator(object):
     def _native_selection_mask(self, dataset, input_model=None, simulation_kwargs=None):
         """Return the native row-selection mask for availability and fringe finding."""
 
-        mask = ~np.any(dataset.flags, axis=(1, 2))
+        mask = ~np.any(dataset.flags & dataset.sample_present, axis=(1, 2))
         names = np.asarray(dataset.stations.names)
         t1 = names[dataset.antenna1]
         t2 = names[dataset.antenna2]
@@ -1363,11 +1363,13 @@ class obs_generator(object):
         snr_algorithm, snr_args = self.settings["fringe_finder"]
         snr_algorithm = snr_algorithm.lower()
         if snr_algorithm == "naive":
+            circular_slots = dataset.circular_product_slots()
+            rows = np.arange(dataset.row_count)
             pseudo_i_amplitude = 0.5 * (
-                np.abs(dataset.visibilities[:, 0, 0])
-                + np.abs(dataset.visibilities[:, 0, 1])
+                np.abs(dataset.visibilities[rows, 0, circular_slots[:, 0]])
+                + np.abs(dataset.visibilities[rows, 0, circular_slots[:, 1]])
             )
-            pseudo_i_sigma = 1.0 / np.sqrt(2.0 * dataset.weights[:, 0, 0])
+            pseudo_i_sigma = dataset.sigma_jy[rows, 0, circular_slots[:, 0]] / np.sqrt(2.0)
             mask &= (pseudo_i_amplitude / pseudo_i_sigma) > snr_args
         elif snr_algorithm == "fringegroups":
             selected_indices = np.flatnonzero(mask)
@@ -1434,7 +1436,10 @@ class obs_generator(object):
             target_available_sites=target_available_sites,
             reference_available_sites=reference_available_sites,
             target_row_available=target_row_available,
-            reference_row_available=~np.any(reference_dataset.flags, axis=(1, 2)),
+            reference_row_available=~np.any(
+                reference_dataset.flags & reference_dataset.sample_present,
+                axis=(1, 2),
+            ),
         )
 
     def make_dataset(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
@@ -2168,16 +2173,18 @@ def _fringe_rows_from_dataset(dataset):
 
     if dataset.channel_count != 1:
         raise ValueError("Native fringe selection requires exactly one spectral channel.")
+    circular_slots = dataset.circular_product_slots()
+    rows = np.arange(dataset.row_count)
     names = np.asarray(dataset.stations.names)
     return fringe_selection.FringeRows(
         time=dataset.time_mjd,
         station1=names[dataset.antenna1],
         station2=names[dataset.antenna2],
         integration_time_s=dataset.integration_time_s,
-        rr=dataset.visibilities[:, 0, 0],
-        ll=dataset.visibilities[:, 0, 1],
-        rr_sigma=1.0 / np.sqrt(dataset.weights[:, 0, 0]),
-        ll_sigma=1.0 / np.sqrt(dataset.weights[:, 0, 1]),
+        rr=dataset.visibilities[rows, 0, circular_slots[:, 0]],
+        ll=dataset.visibilities[rows, 0, circular_slots[:, 1]],
+        rr_sigma=dataset.sigma_jy[rows, 0, circular_slots[:, 0]],
+        ll_sigma=dataset.sigma_jy[rows, 0, circular_slots[:, 1]],
     )
 
 

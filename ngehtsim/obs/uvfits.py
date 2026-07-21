@@ -17,10 +17,12 @@ from astropy.io import fits
 from astropy.time import Time
 
 from ngehtsim.obs.visibility_dataset import (
-    CIRCULAR_CORRELATIONS,
-    LINEAR_CORRELATIONS,
+    CIRCULAR_PRODUCT_LABELS,
+    LINEAR_PRODUCT_LABELS,
+    ReceptorTable,
     StationTable,
     VisibilityDataset,
+    standard_products_for_rows,
 )
 
 
@@ -72,6 +74,21 @@ def read_uvfits(path):
 
         baseline = _group_parameter(primary.data, "BASELINE")
         antenna1, antenna2 = _decode_baselines(baseline, station_index)
+        if layout == CIRCULAR_PRODUCT_LABELS:
+            receptor_labels, basis = ("R", "L"), "CIRCULAR"
+        else:
+            receptor_labels, basis = ("X", "Y"), "LINEAR"
+        receptors = ReceptorTable.from_station_labels(
+            len(station_table.names),
+            receptor_labels,
+            basis,
+        )
+        correlation_products, row_product_id = standard_products_for_rows(
+            receptors,
+            antenna1,
+            antenna2,
+            layout,
+        )
         uvw_m = np.column_stack((
             _group_parameter(primary.data, "UU---SIN"),
             _group_parameter(primary.data, "VV---SIN"),
@@ -90,6 +107,8 @@ def read_uvfits(path):
 
         return VisibilityDataset(
             stations=station_table,
+            receptors=receptors,
+            correlation_products=correlation_products,
             time_mjd=time_mjd,
             integration_time_s=integration_time_s,
             antenna1=antenna1,
@@ -100,10 +119,9 @@ def read_uvfits(path):
             channel_frequency_hz=frequencies,
             channel_bandwidth_hz=channel_bandwidths,
             spectral_window_id=spectral_window_id,
-            correlation_layouts=(layout,),
-            row_layout_id=np.zeros(len(time_mjd), dtype=np.intp),
+            row_product_id=row_product_id,
             visibilities=data["visibilities"],
-            weights=data["weights"],
+            sigma_jy=data["sigma_jy"],
             flags=data["flags"],
             source=str(header.get("OBJECT", "UNKNOWN")).strip(),
             ra_hours=ra_hours,
@@ -131,10 +149,10 @@ def write_uvfits(dataset, path, overwrite=False):
     if not dataset.row_count:
         raise UvfitsError("UVFITS output requires at least one visibility row.")
 
-    layout = _uvfits_layout(dataset)
+    layout, product_slots = _uvfits_layout(dataset)
     frequency_grid = _frequency_grid(dataset)
     row_order = np.lexsort((dataset.antenna2, dataset.antenna1, dataset.time_mjd))
-    primary = _primary_hdu(dataset, layout, frequency_grid, row_order)
+    primary = _primary_hdu(dataset, layout, product_slots, frequency_grid, row_order)
     antenna = _antenna_hdu(
         dataset,
         layout,
@@ -167,7 +185,7 @@ def _read_data(group_data, header, axes, hdul):
     row_count = values.shape[0]
     channel_count = if_count * frequency_count
     visibilities = np.zeros((row_count, channel_count, 4), dtype=complex)
-    weights = np.zeros((row_count, channel_count, 4), dtype=float)
+    sigma_jy = np.full((row_count, channel_count, 4), np.nan, dtype=float)
     flags = np.ones((row_count, channel_count, 4), dtype=bool)
     real = values[..., 0].reshape(row_count, channel_count, len(polarization_codes))
     imaginary = values[..., 1].reshape(row_count, channel_count, len(polarization_codes))
@@ -195,16 +213,14 @@ def _read_data(group_data, header, axes, hdul):
             real[..., source_index] + 1.0j * imaginary[..., source_index],
             0.0,
         )
-        weights[..., destination_index] = np.where(
-            valid,
-            raw_weights[..., source_index],
-            0.0,
-        )
+        sigma_values = np.full(valid.shape, np.nan, dtype=float)
+        sigma_values[valid] = 1.0 / np.sqrt(raw_weights[..., source_index][valid])
+        sigma_jy[..., destination_index] = sigma_values
         flags[..., destination_index] = ~valid
 
     return {
         "visibilities": visibilities,
-        "weights": weights,
+        "sigma_jy": sigma_jy,
         "flags": flags,
     }, channels, channel_bandwidths, spectral_window_id, layout
 
@@ -283,10 +299,10 @@ def _layout_from_stokes_codes(codes):
     if not len(codes) or any(int(code) not in _POLARIZATION_PRODUCTS for code in codes):
         raise UvfitsError("UVFITS STOKES axis must describe correlation products, not Stokes values.")
     products = {_POLARIZATION_PRODUCTS[int(code)] for code in codes}
-    if products.issubset(set(CIRCULAR_CORRELATIONS)):
-        return CIRCULAR_CORRELATIONS
-    if products.issubset(set(LINEAR_CORRELATIONS)):
-        return LINEAR_CORRELATIONS
+    if products.issubset(set(CIRCULAR_PRODUCT_LABELS)):
+        return CIRCULAR_PRODUCT_LABELS
+    if products.issubset(set(LINEAR_PRODUCT_LABELS)):
+        return LINEAR_PRODUCT_LABELS
     raise UvfitsError("UVFITS input mixes circular and linear correlation products.")
 
 
@@ -405,13 +421,17 @@ def _table_vector(values, count, name):
 
 
 def _uvfits_layout(dataset):
-    layout_ids = np.unique(dataset.row_layout_id)
-    if len(layout_ids) != 1:
-        raise UvfitsError("UVFITS output cannot represent per-row mixed correlation layouts.")
-    layout = dataset.correlation_layouts[int(layout_ids[0])]
-    if layout not in (CIRCULAR_CORRELATIONS, LINEAR_CORRELATIONS):
-        raise UvfitsError("UVFITS output requires a uniform circular or linear correlation layout.")
-    return layout
+    try:
+        return CIRCULAR_PRODUCT_LABELS, dataset.circular_product_slots()
+    except ValueError:
+        pass
+    try:
+        return LINEAR_PRODUCT_LABELS, dataset.linear_product_slots()
+    except ValueError as exc:
+        raise UvfitsError(
+            "UVFITS output requires exactly the same circular RR, LL, RL, LR or "
+            "linear XX, YY, XY, YX products for every row."
+        ) from exc
 
 
 def _frequency_grid(dataset):
@@ -457,7 +477,7 @@ def _frequency_grid(dataset):
     }
 
 
-def _primary_hdu(dataset, layout, frequency_grid, row_order):
+def _primary_hdu(dataset, layout, product_slots, frequency_grid, row_order):
     channel_indices = frequency_grid["channel_indices"]
     if_count = len(channel_indices)
     frequency_count = len(channel_indices[0])
@@ -465,13 +485,17 @@ def _primary_hdu(dataset, layout, frequency_grid, row_order):
         (dataset.row_count, 1, 1, if_count, frequency_count, 4, 3),
         dtype=np.float32,
     )
+    ordered_slots = product_slots[row_order]
     for if_index, channel_index in enumerate(channel_indices):
-        visibility = dataset.visibilities[row_order][:, channel_index, :]
-        weight = dataset.weights[row_order][:, channel_index, :]
-        valid = ~dataset.flags[row_order][:, channel_index, :]
+        row_index = row_order[:, np.newaxis, np.newaxis]
+        channel_axis = channel_index[np.newaxis, :, np.newaxis]
+        product_axis = ordered_slots[:, np.newaxis, :]
+        visibility = dataset.visibilities[row_index, channel_axis, product_axis]
+        sigma_jy = dataset.sigma_jy[row_index, channel_axis, product_axis]
+        valid = ~dataset.flags[row_index, channel_axis, product_axis]
         values[:, 0, 0, if_index, :, :, 0] = np.where(valid, visibility.real, 0.0)
         values[:, 0, 0, if_index, :, :, 1] = np.where(valid, visibility.imag, 0.0)
-        values[:, 0, 0, if_index, :, :, 2] = np.where(valid, weight, -1.0)
+        values[:, 0, 0, if_index, :, :, 2] = np.where(valid, 1.0 / np.square(sigma_jy), -1.0)
 
     reference_mjd = float(np.floor(np.min(dataset.time_mjd)))
     date_jd = reference_mjd + 2400000.5
@@ -499,7 +523,7 @@ def _primary_hdu(dataset, layout, frequency_grid, row_order):
 
 
 def _set_common_header(header, dataset, layout, frequency_grid, reference_mjd):
-    stokes_start = -1.0 if layout == CIRCULAR_CORRELATIONS else -5.0
+    stokes_start = -1.0 if layout == CIRCULAR_PRODUCT_LABELS else -5.0
     header["OBSRA"] = dataset.ra_hours * 15.0
     header["OBSDEC"] = dataset.dec_degrees
     header["OBJECT"] = dataset.source
@@ -539,7 +563,7 @@ def _antenna_hdu(dataset, layout, reference_frequency_hz, if_count):
         raise UvfitsError("UVFITS AIPS AN output supports station names up to eight ASCII characters.")
     names = np.asarray(dataset.stations.names, dtype="S8")
     count = len(names)
-    first_feed, second_feed = ("R", "L") if layout == CIRCULAR_CORRELATIONS else ("X", "Y")
+    first_feed, second_feed = ("R", "L") if layout == CIRCULAR_PRODUCT_LABELS else ("X", "Y")
     columns = fits.ColDefs((
         fits.Column(name="ANNAME", format="8A", array=names),
         fits.Column(name="STABXYZ", format="3D", unit="METERS", array=dataset.stations.position_itrs_m),
