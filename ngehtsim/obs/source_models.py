@@ -7,7 +7,7 @@ import numpy as np
 import ehtim as eh
 from astropy.constants import c as SPEED_OF_LIGHT
 
-from ngehtsim.obs.visibility_dataset import CIRCULAR_CORRELATIONS, VisibilityDataset
+from ngehtsim.obs.visibility_dataset import VisibilityDataset
 
 try:
     import ngEHTforecast.fisher as fp
@@ -62,13 +62,12 @@ def _require_native_circular_dataset(dataset):
         raise TypeError("dataset must be a VisibilityDataset instance.")
     if dataset.channel_count != 1:
         raise ValueError("Native source sampling requires exactly one spectral channel.")
-    if any(
-        dataset.correlation_layouts[index] != CIRCULAR_CORRELATIONS
-        for index in dataset.row_layout_id
-    ):
+    try:
+        return dataset.circular_product_slots()
+    except ValueError as exc:
         raise ValueError(
-            "Native source sampling requires circular RR, LL, RL, LR correlations."
-        )
+            "Native source sampling requires exactly circular RR, LL, RL, LR correlations."
+        ) from exc
 
 
 def _dataset_uv(dataset):
@@ -76,14 +75,26 @@ def _dataset_uv(dataset):
     return dataset.uvw_m[:, :2] / wavelength
 
 
+def _write_circular_samples(visibilities, slots, rows, sampled):
+    """Write RR, LL, RL, LR samples into explicitly mapped product slots."""
+
+    rows = np.asarray(rows, dtype=np.intp)
+    visibilities[rows, 0, slots[rows, 0]] = sampled[0]
+    if sampled[1] is not None:
+        visibilities[rows, 0, slots[rows, 1]] = sampled[1]
+    if sampled[2] is not None:
+        visibilities[rows, 0, slots[rows, 2]] = sampled[2]
+        visibilities[rows, 0, slots[rows, 3]] = sampled[3]
+
+
 def _with_circular_samples(dataset, sampled, context):
     visibilities = np.array(dataset.visibilities, copy=True)
-    visibilities[:, 0, 0] = sampled[0]
-    if sampled[1] is not None:
-        visibilities[:, 0, 1] = sampled[1]
-    if sampled[2] is not None:
-        visibilities[:, 0, 2] = sampled[2]
-        visibilities[:, 0, 3] = sampled[3]
+    _write_circular_samples(
+        visibilities,
+        dataset.circular_product_slots(),
+        np.arange(dataset.row_count),
+        sampled,
+    )
     return replace(
         dataset,
         visibilities=visibilities,
@@ -270,7 +281,7 @@ class EhtimMovieAdapter(object):
     def observe_dataset(self, dataset, context):
         """Sample a repeating movie onto a native circular dataset."""
 
-        _require_native_circular_dataset(dataset)
+        circular_slots = _require_native_circular_dataset(dataset)
         _validate_raster_ttype(self.input_model, context)
 
         def sample_dataset():
@@ -294,12 +305,12 @@ class EhtimMovieAdapter(object):
                     fft_pad_factor=context["fft_pad_factor"],
                     verbose=False,
                 )
-                visibilities[row_mask, 0, 0] = sampled[0]
-                if sampled[1] is not None:
-                    visibilities[row_mask, 0, 1] = sampled[1]
-                if sampled[2] is not None:
-                    visibilities[row_mask, 0, 2] = sampled[2]
-                    visibilities[row_mask, 0, 3] = sampled[3]
+                _write_circular_samples(
+                    visibilities,
+                    circular_slots,
+                    np.flatnonzero(row_mask),
+                    sampled,
+                )
 
             return replace(
                 dataset,

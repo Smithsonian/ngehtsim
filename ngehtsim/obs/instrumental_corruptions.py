@@ -7,7 +7,7 @@ from dataclasses import replace
 import numpy as np
 
 import ngehtsim.const_def as const
-from ngehtsim.obs.visibility_dataset import CIRCULAR_CORRELATIONS, StationTable, VisibilityDataset
+from ngehtsim.obs.visibility_dataset import StationTable, VisibilityDataset
 
 
 def apply_circular_leakage(visibilities, leakage1_r, leakage1_l, leakage2_r,
@@ -72,13 +72,12 @@ def apply_circular_corruptions(dataset, station_terms, stations, rng, addnoise=T
         raise TypeError("stations must be a StationTable instance.")
     if dataset.channel_count != 1:
         raise ValueError("Circular corruption currently requires exactly one channel.")
-    if any(
-        dataset.correlation_layouts[index] != CIRCULAR_CORRELATIONS
-        for index in dataset.row_layout_id
-    ):
+    try:
+        circular_slots = dataset.circular_product_slots()
+    except ValueError as exc:
         raise ValueError(
-            "Circular corruption requires RR, LL, RL, LR correlations for every row."
-        )
+            "Circular corruption requires exactly RR, LL, RL, LR correlations for every row."
+        ) from exc
 
     count = dataset.row_count
     terms = {
@@ -94,8 +93,9 @@ def apply_circular_corruptions(dataset, station_terms, stations, rng, addnoise=T
     if not np.array_equal(terms["t1"], expected_t1) or not np.array_equal(terms["t2"], expected_t2):
         raise ValueError("Station terms do not correspond to the dataset row order.")
 
+    row_index = np.arange(count)[:, np.newaxis]
     visibilities = np.array(dataset.visibilities, copy=True)
-    circular = visibilities[:, 0, :]
+    circular = np.array(visibilities[row_index, 0, circular_slots], copy=True)
     tau1 = np.asarray(terms["tau1"], dtype=float)
     tau2 = np.asarray(terms["tau2"], dtype=float)
     if np.any(tau1 < 0.0) or np.any(tau2 < 0.0):
@@ -181,16 +181,17 @@ def apply_circular_corruptions(dataset, station_terms, stations, rng, addnoise=T
         & ~np.isin(terms["t2"], tuple(flagged_sites))
         & np.asarray(terms["uptime_mask"], dtype=bool)
     )
-    flags[:, 0, :] |= ~row_mask[:, np.newaxis]
-    weights = np.array(dataset.weights, copy=True)
-    weights[:, 0, :] = 1.0 / np.square(sigma)
+    flags[row_index, 0, circular_slots] |= ~row_mask[:, np.newaxis]
+    sigma_jy = np.array(dataset.sigma_jy, copy=True)
+    sigma_jy[row_index, 0, circular_slots] = sigma
+    visibilities[row_index, 0, circular_slots] = circular
     return replace(
         dataset,
         stations=stations,
         tau1=tau1,
         tau2=tau2,
         visibilities=visibilities,
-        weights=weights,
+        sigma_jy=sigma_jy,
         flags=flags,
         ampcal=not addgains,
         phasecal=not addgains,

@@ -9,9 +9,11 @@ from astropy.time import Time
 import ehtim as eh
 
 from ngehtsim.obs.visibility_dataset import (
-    CIRCULAR_CORRELATIONS,
+    CIRCULAR_PRODUCT_LABELS,
+    ReceptorTable,
     StationTable,
     VisibilityDataset,
+    standard_products_for_rows,
 )
 
 
@@ -319,7 +321,7 @@ def ground_geometry(array, context):
 def ground_visibility_template(array, context, geometry=None):
     """Build a native visibility template for a ground-only array.
 
-    The template carries geometry and thermal weights but contains zero-valued
+    The template carries geometry and thermal uncertainties but contains zero-valued
     circular visibilities. Source sampling remains at the ``ehtim`` adapter
     boundary until native source adapters are introduced.
     """
@@ -346,8 +348,22 @@ def ground_visibility_template(array, context, geometry=None):
     scan_start_mjd = reference_mjd + (scan_times / 24.0) - (scan_half_width_s / 86400.0)
     scan_stop_mjd = reference_mjd + (scan_times / 24.0) + (scan_half_width_s / 86400.0)
 
+    stations = StationTable.from_ehtim_tarr(array.tarr)
+    receptors = ReceptorTable.from_station_labels(
+        len(stations.names),
+        ("R", "L"),
+        "CIRCULAR",
+    )
+    correlation_products, row_product_id = standard_products_for_rows(
+        receptors,
+        geometry.station1_indices,
+        geometry.station2_indices,
+        CIRCULAR_PRODUCT_LABELS,
+    )
     return VisibilityDataset(
-        stations=StationTable.from_ehtim_tarr(array.tarr),
+        stations=stations,
+        receptors=receptors,
+        correlation_products=correlation_products,
         time_mjd=time_mjd,
         integration_time_s=np.full(len(time_mjd), float(context["t_int"])),
         antenna1=geometry.station1_indices,
@@ -358,10 +374,9 @@ def ground_visibility_template(array, context, geometry=None):
         channel_frequency_hz=np.array((float(context["rf"]),)),
         channel_bandwidth_hz=np.array((float(context["bandwidth_hz"]),)),
         spectral_window_id=np.array((0,), dtype=np.intp),
-        correlation_layouts=(CIRCULAR_CORRELATIONS,),
-        row_layout_id=np.zeros(len(time_mjd), dtype=np.intp),
+        row_product_id=row_product_id,
         visibilities=np.zeros((len(time_mjd), 1, 4), dtype=complex),
-        weights=(1.0 / np.square(sigma))[:, np.newaxis, :],
+        sigma_jy=sigma[:, np.newaxis, :],
         flags=np.zeros((len(time_mjd), 1, 4), dtype=bool),
         source=str(context["ra"]) + ":" + str(context["dec"]),
         ra_hours=float(context["ra"]),

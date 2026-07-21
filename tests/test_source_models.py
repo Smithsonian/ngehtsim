@@ -732,7 +732,7 @@ def test_native_simulation_is_reproducible_with_a_fixed_seed():
     assert np.array_equal(first.dataset.time_mjd, second.dataset.time_mjd)
     assert np.array_equal(first.dataset.flags, second.dataset.flags)
     assert np.allclose(first.dataset.visibilities, second.dataset.visibilities)
-    assert np.allclose(first.dataset.weights, second.dataset.weights)
+    assert np.allclose(first.dataset.sigma_jy, second.dataset.sigma_jy)
 
 
 def test_native_simulation_retains_all_flagged_rows_and_exports_an_empty_obsdata():
