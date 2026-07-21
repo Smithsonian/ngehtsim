@@ -458,6 +458,21 @@ class VisibilityDataset:
             frcal=self.frcal,
         )
 
+    @classmethod
+    def from_uvfits(cls, path):
+        """Read a native multi-channel UVFITS dataset without using ``ehtim``."""
+
+        from ngehtsim.obs.uvfits import read_uvfits
+
+        return read_uvfits(path)
+
+    def to_uvfits(self, path, overwrite=False):
+        """Write this dataset through the native UVFITS adapter."""
+
+        from ngehtsim.obs.uvfits import write_uvfits
+
+        return write_uvfits(self, path, overwrite=overwrite)
+
 
 def _validate_scans(scan_start_mjd, scan_stop_mjd):
     if scan_start_mjd is None and scan_stop_mjd is None:
