@@ -23,7 +23,7 @@ SETTINGS = {
     "t_rest": 1200.0,
     "fringe_finder": ["naive", 0.0],
     "random_seed": 1,
-    "ttype": "direct",
+    "transform_backend": "direct",
 }
 
 
@@ -342,7 +342,7 @@ def test_native_circular_corruptions_match_legacy_generator_without_noise(monkey
         "flagday": False,
         "flagsun": False,
     }
-    direct_settings = {**SETTINGS, "ttype": "direct"}
+    direct_settings = {**SETTINGS, "transform_backend": "direct"}
     native_generator = og.obs_generator(settings=direct_settings)
     native_generator.rng = FixedRng()
     native = _native_corrupted_dataset(native_generator, _polarized_image(), **kwargs)

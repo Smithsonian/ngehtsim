@@ -28,21 +28,23 @@ Run one scenario with more repeats:
 MPLBACKEND=Agg python3 benchmarks/benchmark_synthetic_data.py --repeats 5 --warmups 1 --scenario eht2017_model_clean_reused_generator
 ```
 
-Raster scenarios use the FINUFFT-backed ``nfft`` transform by default. Compare
-it with the exact direct transform by running the same image scenario twice:
+Raster scenarios use the native FINUFFT transform through the default
+``auto`` setting. Compare it with the exact direct transform by running the
+same image scenario twice:
 
 ```bash
 MPLBACKEND=Agg python3 benchmarks/benchmark_synthetic_data.py \
-  --scenario eht2017_image_clean --ttype nfft \
-  --output benchmarks/results/eht2017_image_clean_nfft.json
+  --scenario eht2017_image_clean --transform-backend finufft \
+  --output benchmarks/results/eht2017_image_clean_finufft.json
 
 MPLBACKEND=Agg python3 benchmarks/benchmark_synthetic_data.py \
-  --scenario eht2017_image_clean --ttype direct \
+  --scenario eht2017_image_clean --transform-backend direct \
   --output benchmarks/results/eht2017_image_clean_direct.json
 ```
 
-Use ``direct`` for an odd-sized image or when an exact direct transform is
-required. The deprecated ``fast`` backend is not supported by ngehtsim.
+Use ``direct`` when an exact reference transform is required. FINUFFT supports
+odd-sized images, and the removed v1 ``fast`` and ``nfft`` backend names are
+not accepted by ngehtsim.
 
 The `eht2017_model_exact_weather` scenario measures fresh-generator
 initialization with exact-date packaged weather. It protects the fast

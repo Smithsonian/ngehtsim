@@ -7,6 +7,7 @@ import numpy as np
 import ehtim as eh
 from astropy.constants import c as SPEED_OF_LIGHT
 
+from ngehtsim.obs import raster_sampling
 from ngehtsim.obs.visibility_dataset import VisibilityDataset
 
 try:
@@ -33,28 +34,20 @@ def _run_quietly(function, verbosity):
     return function()
 
 
-def _validate_raster_ttype(input_model, context):
-    """Validate a transform backend before sampling an ehtim raster source."""
+def _sample_raster(image, uv, polrep_obs, context, *, native_path):
+    """Sample one ehtim raster without mutating its source metadata."""
 
-    ttype = context["ttype"]
-    if ttype == "fast":
-        raise ValueError(
-            "ttype='fast' is no longer supported; use ttype='nfft' or "
-            "ttype='direct'."
-        )
-    if ttype not in ("direct", "nfft"):
-        raise ValueError(
-            "ttype={0!r}; supported transform backends are 'nfft' and "
-            "'direct'.".format(ttype)
-        )
-    if ttype == "nfft" and (input_model.xdim % 2 or input_model.ydim % 2):
-        raise ValueError(
-            "ttype='nfft' requires even image dimensions; use "
-            "ttype='direct' for a {0}x{1} raster.".format(
-                input_model.xdim,
-                input_model.ydim,
-            )
-        )
+    backend = raster_sampling.resolve_transform_backend(
+        context["transform_backend"],
+        native_path=native_path,
+    )
+    return raster_sampling.sample_ehtim_raster(
+        image,
+        uv,
+        polrep_obs=polrep_obs,
+        backend=backend,
+        tolerance=context["raster_tolerance"],
+    )
 
 
 def _require_native_circular_dataset(dataset):
@@ -118,15 +111,15 @@ class EhtimImageAdapter(object):
     Parameters
     ----------
     input_model : ehtim.image.Image
-        Raster source model. The current raster Fourier transform is delegated
-        to ehtim; see the Observation utilities documentation for supported
-        transform settings and their dependency constraints.
+        Raster source model. ngehtsim samples it with its native direct or
+        FINUFFT transform implementation and never mutates this object.
 
     Notes
     -----
     :meth:`observe_dataset` samples directly into a native dataset, avoiding
     an intermediate ``ehtim.Obsdata`` data table. It currently requires one
-    channel with exactly circular RR, LL, RL, LR products.
+    channel with exactly circular RR, LL, RL, LR products.  The public
+    ``transform_backend`` setting controls its Fourier-transform backend.
     """
 
     def __init__(self, input_model):
@@ -152,20 +145,16 @@ class EhtimImageAdapter(object):
         float
             Image total flux density in Jy.
         """
-        _validate_raster_ttype(self.input_model, context)
-        _set_ehtim_metadata(self.input_model, context)
-
         def sample_observation():
-            # This reproduces ehtim.Image.observe_same_nonoise() without
-            # constructing another Obsdata object around a copied data table.
+            # The Obsdata boundary retains a direct reference transform.
             obs = obs_empty.copy()
             uv = np.column_stack((obs.data["u"], obs.data["v"]))
-            sampled = self.input_model.sample_uv(
+            sampled = _sample_raster(
+                self.input_model,
                 uv,
-                polrep_obs=obs.polrep,
-                ttype=context["ttype"],
-                fft_pad_factor=context["fft_pad_factor"],
-                verbose=context["verbosity"] > 0,
+                obs.polrep,
+                context,
+                native_path=False,
             )
             if obs.polrep == "circ":
                 obs.data["rrvis"] = sampled[0]
@@ -183,9 +172,8 @@ class EhtimImageAdapter(object):
             else:
                 raise ValueError("Unsupported ehtim observation polarization representation: {0}".format(obs.polrep))
 
-            # Match ehtim.Image.observe_same_nonoise() metadata semantics.
-            obs.source = self.input_model.source
-            obs.mjd = self.input_model.mjd
+            obs.source = context["source"]
+            obs.mjd = context["mjd"]
             obs.ampcal = True
             obs.phasecal = True
             obs.opacitycal = True
@@ -220,19 +208,18 @@ class EhtimImageAdapter(object):
         ------
         ValueError
             If the dataset is not exactly a one-channel circular layout or the
-            requested ehtim transform backend is unsupported.
+            configured native raster transform backend is unsupported.
         """
 
         _require_native_circular_dataset(dataset)
-        _validate_raster_ttype(self.input_model, context)
 
         def sample_dataset():
-            sampled = self.input_model.sample_uv(
+            sampled = _sample_raster(
+                self.input_model,
                 _dataset_uv(dataset),
-                polrep_obs="circ",
-                ttype=context["ttype"],
-                fft_pad_factor=context["fft_pad_factor"],
-                verbose=context["verbosity"] > 0,
+                "circ",
+                context,
+                native_path=True,
             )
             return _with_circular_samples(
                 dataset,
@@ -250,7 +237,8 @@ class EhtimMovieAdapter(object):
     Parameters
     ----------
     input_model : ehtim.movie.Movie
-        Raster movie sampled at each distinct observation timestamp.
+        Raster movie sampled at each distinct observation timestamp without
+        mutating the movie or its generated image frames.
 
     Notes
     -----
@@ -265,6 +253,17 @@ class EhtimMovieAdapter(object):
     def observe(self, obs_empty, context, p=None):
         """Sample movie frames onto an ehtim observation boundary object.
 
+        Parameters
+        ----------
+        obs_empty : ehtim.obsdata.Obsdata
+            Geometry-only observation rows to populate.
+        context : mapping
+            Normalized observation settings. The legacy compatibility route
+            resolves ``transform_backend="auto"`` to the direct reference
+            transform.
+        p : object, optional
+            Unused; retained for the common source-adapter interface.
+
         Returns
         -------
         ehtim.obsdata.Obsdata
@@ -273,18 +272,14 @@ class EhtimMovieAdapter(object):
         float
             Mean movie light-curve flux density in Jy.
         """
-        _validate_raster_ttype(self.input_model, context)
-        _set_ehtim_metadata(self.input_model, context)
-
         def sample_observation():
-            # This reproduces ehtim.Movie.observe_same_nonoise() without
-            # constructing another Obsdata object around each time slice.
+            # The Obsdata boundary retains the direct reference transform.
             obs = obs_empty.copy()
             obslist = obs_empty.tlist()
             obstimes = np.array([obsdata[0]["time"] for obsdata in obslist])
 
             if context["verbosity"] > 0:
-                print("Producing clean visibilities from movie with " + context["ttype"] + " FT . . . ")
+                print("Producing clean visibilities from movie with direct FT . . . ")
 
             if (obstimes < self.input_model.start_hr).any():
                 if context["verbosity"] > 0:
@@ -313,12 +308,12 @@ class EhtimMovieAdapter(object):
 
                 image = self.input_model.get_image(time)
                 uv = np.column_stack((obsdata["u"], obsdata["v"]))
-                sampled = image.sample_uv(
+                sampled = _sample_raster(
+                    image,
                     uv,
-                    polrep_obs=obs.polrep,
-                    ttype=context["ttype"],
-                    fft_pad_factor=context["fft_pad_factor"],
-                    verbose=False,
+                    obs.polrep,
+                    context,
+                    native_path=False,
                 )
 
                 if obs.polrep == "circ":
@@ -345,8 +340,8 @@ class EhtimMovieAdapter(object):
 
             if sampled_rows:
                 obs.data = np.hstack(sampled_rows)
-            obs.source = self.input_model.source
-            obs.mjd = np.floor(obs_empty.mjd)
+            obs.source = context["source"]
+            obs.mjd = context["mjd"]
             obs.ampcal = True
             obs.phasecal = True
             obs.opacitycal = True
@@ -368,7 +363,8 @@ class EhtimMovieAdapter(object):
             Geometry and correlation layout to populate.
         context : mapping
             Normalized observation settings. Dataset MJD values determine the
-            movie sampling times relative to ``context["mjd"]``.
+            movie sampling times relative to ``context["mjd"]``. The native
+            route resolves ``transform_backend="auto"`` to FINUFFT.
 
         Returns
         -------
@@ -376,10 +372,15 @@ class EhtimMovieAdapter(object):
             Dataset populated from the applicable frame for every timestamp.
         float
             Mean movie light-curve flux density in Jy.
+
+        Raises
+        ------
+        ValueError
+            If the dataset is not exactly a one-channel circular layout or the
+            configured raster transform backend is unsupported.
         """
 
         circular_slots = _require_native_circular_dataset(dataset)
-        _validate_raster_ttype(self.input_model, context)
 
         def sample_dataset():
             visibilities = np.array(dataset.visibilities, copy=True)
@@ -395,12 +396,12 @@ class EhtimMovieAdapter(object):
                             self.input_model.duration,
                         )
                 row_mask = observation_times == time
-                sampled = self.input_model.get_image(sample_time).sample_uv(
+                sampled = _sample_raster(
+                    self.input_model.get_image(sample_time),
                     uv[row_mask],
-                    polrep_obs="circ",
-                    ttype=context["ttype"],
-                    fft_pad_factor=context["fft_pad_factor"],
-                    verbose=False,
+                    "circ",
+                    context,
+                    native_path=True,
                 )
                 _write_circular_samples(
                     visibilities,

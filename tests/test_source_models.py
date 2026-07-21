@@ -7,6 +7,7 @@ import numpy as np
 import ngehtsim.obs.obs_generator as og
 import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.source_models as source_models
+import ngehtsim.obs.raster_sampling as raster_sampling
 import ngehtsim.obs.station_observation as station_observation
 from ngehtsim.obs.visibility_dataset import VisibilityDataset
 from ngehtsim.const_def import default_settings
@@ -75,6 +76,27 @@ def _polarized_movie():
     return movie
 
 
+def _position_angle_image():
+    """Build an odd-sized image that exercises raster-coordinate conventions."""
+
+    x, y = np.meshgrid(np.linspace(-1.0, 1.0, 35), np.linspace(-1.0, 1.0, 33))
+    intensity = np.exp(-3.0 * ((x - 0.2) ** 2 + (y + 0.3) ** 2))
+    image = eh.image.Image(
+        intensity,
+        8.0 * eh.RADPERUAS,
+        0.0,
+        0.0,
+        pa=0.37,
+        rf=230.0e9,
+        source="M87",
+        mjd=57849,
+    )
+    image.add_pol_image(0.15 * intensity * (1.0 + x), "Q")
+    image.add_pol_image(-0.10 * intensity * (1.0 - y), "U")
+    image.add_pol_image(0.03 * intensity, "V")
+    return image
+
+
 def _observe_without_corruptions(obsgen, input_model):
     return obsgen.observe(
         input_model,
@@ -110,8 +132,7 @@ def _legacy_image_observe(input_model, obs_empty, context):
     source_models._set_ehtim_metadata(input_model, context)
     obs = input_model.observe_same_nonoise(
         obs_empty,
-        ttype=context["ttype"],
-        fft_pad_factor=context["fft_pad_factor"],
+        ttype="direct",
     )
     F0 = input_model.total_flux()
     return obs, F0
@@ -121,8 +142,7 @@ def _legacy_movie_observe(input_model, obs_empty, context):
     source_models._set_ehtim_metadata(input_model, context)
     obs = input_model.observe_same_nonoise(
         obs_empty,
-        ttype=context["ttype"],
-        fft_pad_factor=context["fft_pad_factor"],
+        ttype="direct",
         repeat=True,
     )
     F0 = np.mean(input_model.lightcurve)
@@ -156,9 +176,51 @@ def test_adapter_rejects_unsupported_model_type():
         source_models.adapter_for(object())
 
 
-def test_default_raster_transform_backend_is_nfft():
-    assert default_settings["ttype"] == "nfft"
-    assert og.obs_generator(settings=COMPACT_OBS_SETTINGS).settings["ttype"] == "nfft"
+def test_default_raster_transform_backend_is_auto():
+    assert default_settings["transform_backend"] == "auto"
+    assert default_settings["raster_tolerance"] == pytest.approx(1.0e-12)
+    settings = og.obs_generator(settings=COMPACT_OBS_SETTINGS).settings
+    assert settings["transform_backend"] == "auto"
+    assert settings["raster_tolerance"] == pytest.approx(1.0e-12)
+
+
+@pytest.mark.parametrize(
+    ("removed_setting", "value"),
+    (("ttype", "nfft"), ("fft_pad_factor", 2)),
+)
+def test_removed_v1_raster_settings_are_rejected(removed_setting, value):
+    """Avoid silently accepting settings that no longer affect v2 sampling."""
+
+    with pytest.raises(Exception, match="is not a recognized setting"):
+        og.obs_generator(settings={**COMPACT_OBS_SETTINGS, removed_setting: value})
+
+
+@pytest.mark.parametrize("backend", ("direct", "finufft"))
+@pytest.mark.parametrize("polrep", ("circ", "stokes"))
+def test_native_raster_sampler_matches_ehtim_direct_with_position_angle(backend, polrep):
+    """Preserve ehtim's pulse, centring, position-angle, and polarization rules."""
+
+    image = _position_angle_image()
+    uv = np.array(
+        (
+            (0.0, 0.0),
+            (1.4e10, -2.1e10),
+            (-3.2e10, 0.8e10),
+            (5.6e10, 4.4e10),
+        )
+    )
+
+    expected = image.sample_uv(uv, polrep_obs=polrep, ttype="direct")
+    sampled = raster_sampling.sample_ehtim_raster(
+        image,
+        uv,
+        polrep_obs=polrep,
+        backend=backend,
+        tolerance=1.0e-12,
+    )
+
+    for actual, reference in zip(sampled, expected):
+        assert np.allclose(actual, reference, rtol=1.0e-10, atol=1.0e-11)
 
 
 def test_obs_generator_still_accepts_ehtim_model():
@@ -260,30 +322,36 @@ def test_ehtim_image_adapter_matches_legacy_full_polarization_sampling():
         _polarized_movie,
     ),
 )
-def test_ehtim_raster_nfft_matches_direct(source_factory):
-    direct_settings = {**COMPACT_OBS_SETTINGS, "ttype": "direct"}
-    nfft_settings = {**COMPACT_OBS_SETTINGS, "ttype": "nfft"}
+def test_native_finufft_raster_sampling_matches_direct(source_factory):
+    direct_settings = {**COMPACT_OBS_SETTINGS, "transform_backend": "direct"}
+    finufft_settings = {**COMPACT_OBS_SETTINGS, "transform_backend": "finufft"}
     direct_generator = og.obs_generator(settings=direct_settings)
-    nfft_generator = og.obs_generator(settings=nfft_settings)
+    finufft_generator = og.obs_generator(settings=finufft_settings)
+    template = observation_geometry.ground_visibility_template(
+        direct_generator.arr,
+        direct_generator.geometry_context(),
+    )
 
-    direct, direct_F0 = source_models.observe_source(
+    direct, direct_F0 = source_models.observe_source_dataset(
         source_factory(),
-        _empty_observation(direct_generator),
+        template,
         direct_generator.source_context(),
     )
-    nfft, nfft_F0 = source_models.observe_source(
+    finufft, finufft_F0 = source_models.observe_source_dataset(
         source_factory(),
-        _empty_observation(nfft_generator),
-        nfft_generator.source_context(),
+        template,
+        finufft_generator.source_context(),
     )
 
-    assert nfft_F0 == pytest.approx(direct_F0)
+    assert finufft_F0 == pytest.approx(direct_F0)
+    direct_obs = direct.to_ehtim_obsdata()
+    finufft_obs = finufft.to_ehtim_obsdata()
     for field in ("rrvis", "llvis", "rlvis", "lrvis"):
         assert np.allclose(
-            nfft.data[field],
-            direct.data[field],
-            rtol=1.0e-6,
-            atol=1.0e-9,
+            finufft_obs.data[field],
+            direct_obs.data[field],
+            rtol=1.0e-10,
+            atol=1.0e-11,
         )
 
 
@@ -294,10 +362,12 @@ def test_ehtim_raster_nfft_matches_direct(source_factory):
         _polarized_movie,
     ),
 )
-def test_ehtim_raster_adapter_rejects_fast_backend(source_factory):
-    obsgen = og.obs_generator(settings={**COMPACT_OBS_SETTINGS, "ttype": "fast"})
+def test_ehtim_raster_adapter_rejects_removed_backend_names(source_factory):
+    obsgen = og.obs_generator(
+        settings={**COMPACT_OBS_SETTINGS, "transform_backend": "nfft"}
+    )
 
-    with pytest.raises(ValueError, match="ttype='fast'.*nfft.*direct"):
+    with pytest.raises(ValueError, match="transform_backend='nfft'.*auto.*direct.*finufft"):
         source_models.observe_source(
             source_factory(),
             _empty_observation(obsgen),
@@ -305,25 +375,23 @@ def test_ehtim_raster_adapter_rejects_fast_backend(source_factory):
         )
 
 
-def test_ehtim_image_nfft_rejects_odd_dimensions_and_direct_remains_available():
-    nfft_generator = og.obs_generator(settings={**COMPACT_OBS_SETTINGS, "ttype": "nfft"})
+def test_native_finufft_accepts_odd_image_dimensions():
+    finufft_generator = og.obs_generator(
+        settings={**COMPACT_OBS_SETTINGS, "transform_backend": "finufft"}
+    )
     odd_image = _compact_model().make_image(160.0 * eh.RADPERUAS, 63)
-
-    with pytest.raises(ValueError, match="requires even image dimensions.*ttype='direct'"):
-        source_models.observe_source(
-            odd_image,
-            _empty_observation(nfft_generator),
-            nfft_generator.source_context(),
-        )
-
-    direct_generator = og.obs_generator(settings={**COMPACT_OBS_SETTINGS, "ttype": "direct"})
-    observation, F0 = source_models.observe_source(
-        _compact_model().make_image(160.0 * eh.RADPERUAS, 63),
-        _empty_observation(direct_generator),
-        direct_generator.source_context(),
+    template = observation_geometry.ground_visibility_template(
+        finufft_generator.arr,
+        finufft_generator.geometry_context(),
     )
 
-    assert len(observation.data) > 0
+    observation, F0 = source_models.observe_source_dataset(
+        odd_image,
+        template,
+        finufft_generator.source_context(),
+    )
+
+    assert observation.row_count > 0
     assert F0 > 0.0
 
 
@@ -384,6 +452,36 @@ def test_ehtim_image_dataset_sampler_avoids_obsdata_conversion(monkeypatch):
     monkeypatch.setattr(image, "observe_same_nonoise", unexpected_legacy_sampler)
     sampled, F0 = source_models.observe_source_dataset(
         image,
+        template,
+        obsgen.source_context(),
+    )
+
+    assert sampled.row_count == template.row_count
+    assert F0 > 0.0
+
+
+@pytest.mark.parametrize(
+    "source_factory",
+    (
+        lambda: _polarized_model().make_image(160.0 * eh.RADPERUAS, 64),
+        _polarized_movie,
+    ),
+)
+def test_native_raster_sampler_never_calls_ehtim_sample_uv(monkeypatch, source_factory):
+    """Native raster simulation must remain independent of ehtim's pyNFFT path."""
+
+    obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    template = observation_geometry.ground_visibility_template(
+        obsgen.arr,
+        obsgen.geometry_context(),
+    )
+
+    def unexpected_ehtim_sampler(*args, **kwargs):
+        raise AssertionError("Native raster sampling must not call ehtim.Image.sample_uv().")
+
+    monkeypatch.setattr(eh.image.Image, "sample_uv", unexpected_ehtim_sampler)
+    sampled, F0 = source_models.observe_source_dataset(
+        source_factory(),
         template,
         obsgen.source_context(),
     )

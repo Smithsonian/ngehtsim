@@ -38,11 +38,11 @@ def test_expanded_benchmark_scenario_is_json_serializable():
     assert "_obs_generator_kwargs" not in definition
 
 
-def test_benchmark_defaults_to_nfft_and_supports_direct_override():
+def test_benchmark_defaults_to_auto_and_supports_direct_override():
     scenario = bench.SCENARIOS[0]
 
     overridden = bench.with_transform_backend([scenario], "direct")
 
-    assert scenario["settings"]["ttype"] == "nfft"
-    assert overridden[0]["settings"]["ttype"] == "direct"
-    assert scenario["settings"]["ttype"] == "nfft"
+    assert scenario["settings"]["transform_backend"] == "auto"
+    assert overridden[0]["settings"]["transform_backend"] == "direct"
+    assert scenario["settings"]["transform_backend"] == "auto"

@@ -249,8 +249,8 @@ def test_ground_geometry_preserves_ehtim_model_visibilities():
         "mjd": context["mjd"],
         "source": "M87",
         "rf": context["rf"],
-        "ttype": "nfft",
-        "fft_pad_factor": 2,
+        "transform_backend": "auto",
+        "raster_tolerance": 1.0e-12,
         "verbosity": 0,
     }
     model = eh.model.Model().add_circ_gauss(F0=1.0, FWHM=40.0 * eh.RADPERUAS)

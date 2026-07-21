@@ -742,8 +742,8 @@ class obs_generator(object):
             "mjd": self.mjd,
             "source": self.settings["source"],
             "rf": self.freq,
-            "ttype": self.settings["ttype"],
-            "fft_pad_factor": self.settings["fft_pad_factor"],
+            "transform_backend": self.settings["transform_backend"],
+            "raster_tolerance": self.settings["raster_tolerance"],
             "verbosity": self.verbosity,
         }
 

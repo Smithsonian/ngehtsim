@@ -51,8 +51,8 @@ def test_source_context_contains_source_adapter_inputs():
     assert context["mjd"] == obsgen.mjd
     assert context["source"] == obsgen.settings["source"]
     assert context["rf"] == obsgen.freq
-    assert context["ttype"] == obsgen.settings["ttype"]
-    assert context["fft_pad_factor"] == obsgen.settings["fft_pad_factor"]
+    assert context["transform_backend"] == obsgen.settings["transform_backend"]
+    assert context["raster_tolerance"] == obsgen.settings["raster_tolerance"]
     assert context["verbosity"] == obsgen.verbosity
 
 
