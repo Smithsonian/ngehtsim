@@ -161,7 +161,7 @@ def main():
     parser.add_argument("--stats-output", type=Path, default=None)
     parser.add_argument("--list-scenarios", action="store_true")
     parser.add_argument(
-        "--ttype",
+        "--transform-backend",
         choices=bench.TRANSFORM_BACKENDS,
         default=None,
         help="Override the raster transform backend for the selected scenario.",
@@ -186,7 +186,7 @@ def main():
     weather_backends = bench.prepare_weather_backends(args.weather_backend, args.weather_store)
     scenarios = bench.with_transform_backend(
         bench.select_scenarios([args.scenario]),
-        args.ttype,
+        args.transform_backend,
     )
     scenarios = bench.expand_scenarios(scenarios, weather_backends)
     scenario = scenarios[0]

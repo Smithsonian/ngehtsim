@@ -41,6 +41,6 @@ sites:
 # other settings
 
 weather: 'random'               # way to select the weather ('random', 'exact', 'good', 'typical', or 'poor')
-ttype: 'nfft'                   # type of Fourier transform ('direct' or 'nfft')
-fft_pad_factor: 2               # zero pad the image to fft_pad_factor * image size in the FFT
+transform_backend: 'auto'       # FINUFFT for native simulation; direct for compatibility routes
+raster_tolerance: 1.0e-12       # requested relative accuracy for native FINUFFT sampling
 random_seed: 12345              # random number seed; if blank, will be auto-generated

@@ -40,19 +40,35 @@ weather mode.
 Raster Source Transform Backend
 -------------------------------
 
-Rasterized ``ehtim.Image`` and ``ehtim.Movie`` sources currently delegate
-their Fourier transform to ``ehtim``.  Consequently, ``"nfft"`` selects
-ehtim's pyNFFT-based backend; it is not a FINUFFT backend and requires a
-working pyNFFT installation.  Use ``"direct"`` for a supported, dependency-free
-reference transform:
+Rasterized ``ehtim.Image`` and ``ehtim.Movie`` sources are sampled by
+ngehtsim's native raster sampler. The default setting uses FINUFFT for the
+native ground-array simulation route, removing the pyNFFT runtime dependency.
+The source object is treated as input-only: ngehtsim does not overwrite its
+source coordinates, frequency, or metadata.
+
+``transform_backend`` accepts three values:
+
+* ``"auto"`` is the default. It selects FINUFFT for native simulation and the
+  exact direct transform for ``ehtim.Obsdata`` compatibility routes.
+* ``"finufft"`` requests the native FINUFFT backend explicitly. It is only
+  available for native ground-array simulation.
+* ``"direct"`` uses ngehtsim's exact discrete Fourier-transform reference
+  implementation. It is useful for validation and is the compatibility-route
+  default.
+
+``raster_tolerance`` specifies the requested FINUFFT relative accuracy. Its
+default, ``1e-12``, is appropriate for synthetic visibility generation:
 
 .. code-block:: python
 
-   settings = {"ttype": "direct"}
+   settings = {
+       "transform_backend": "finufft",
+       "raster_tolerance": 1.0e-12,
+   }
    obsgen = obs_generator.obs_generator(settings=settings)
 
-``"fast"`` is not a supported ngehtsim transform backend. A native FINUFFT
-sampler will replace this delegated raster path in a later v2 refactor step.
+The removed v1 settings ``ttype`` and ``fft_pad_factor`` are not accepted in
+v2. FINUFFT supports both even- and odd-sized raster dimensions.
 
 .. automodule:: ngehtsim.obs.obs_generator
    :members:

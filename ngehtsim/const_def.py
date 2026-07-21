@@ -37,8 +37,13 @@ default_settings = {'model_file': None,
                     'D_new': 10.0,
                     'tech_readiness': 1.0,
                     'weather': 'random',
-                    'ttype': 'nfft',
-                    'fft_pad_factor': 2,
+                    # Raster source transforms use FINUFFT on native ground
+                    # simulations and the direct reference transform on
+                    # ehtim.Obsdata compatibility routes.
+                    'transform_backend': 'auto',
+                    # Requested FINUFFT relative accuracy for raster source
+                    # sampling. The direct reference backend ignores it.
+                    'raster_tolerance': 1.0e-12,
                     'random_seed': None,
                     'weather_year': None,
                     'weather_day': None}

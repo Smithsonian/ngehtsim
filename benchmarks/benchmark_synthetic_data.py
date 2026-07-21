@@ -41,8 +41,8 @@ def base_settings(array, dt=6.0, t_rest=1200.0):
         "t_int": 600.0,
         "t_rest": t_rest,
         "fringe_finder": ["fringegroups", [5.0, 10.0]],
-        "ttype": "nfft",
-        "fft_pad_factor": 2,
+        "transform_backend": "auto",
+        "raster_tolerance": 1.0e-12,
         "random_seed": 12345,
     }
 
@@ -123,7 +123,7 @@ SCENARIOS = [
 ]
 
 WEATHER_BACKENDS = ("legacy", "zarr-daily", "zarr-native")
-TRANSFORM_BACKENDS = ("direct", "nfft")
+TRANSFORM_BACKENDS = ("auto", "direct", "finufft")
 
 
 def add_weather_backend_arguments(parser):
@@ -235,16 +235,19 @@ def expand_scenarios(scenarios, weather_backends):
     return expanded
 
 
-def with_transform_backend(scenarios, ttype):
+def with_transform_backend(scenarios, transform_backend):
     """Return scenario copies that use an explicit raster transform backend."""
 
-    if ttype is None:
+    if transform_backend is None:
         return list(scenarios)
 
     return [
         {
             **scenario,
-            "settings": {**scenario["settings"], "ttype": ttype},
+            "settings": {
+                **scenario["settings"],
+                "transform_backend": transform_backend,
+            },
         }
         for scenario in scenarios
     ]
@@ -437,7 +440,7 @@ def main():
     parser.add_argument("--warmups", type=int, default=1, help="Unmeasured warmup repeats per scenario.")
     parser.add_argument("--scenario", action="append", help="Scenario name to run. May be passed more than once.")
     parser.add_argument(
-        "--ttype",
+        "--transform-backend",
         choices=TRANSFORM_BACKENDS,
         default=None,
         help="Override the raster transform backend for selected scenarios.",
@@ -459,7 +462,10 @@ def main():
         return 0
 
     weather_backends = prepare_weather_backends(args.weather_backend, args.weather_store)
-    scenarios = with_transform_backend(select_scenarios(args.scenario), args.ttype)
+    scenarios = with_transform_backend(
+        select_scenarios(args.scenario),
+        args.transform_backend,
+    )
     scenarios = expand_scenarios(scenarios, weather_backends)
     output_path = args.output or default_output_path()
 
@@ -470,7 +476,7 @@ def main():
             "warmups": args.warmups,
             "scenario_names": [scenario["name"] for scenario in scenarios],
             "weather_backends": [backend["name"] for backend in weather_backends],
-            "ttype": args.ttype or "nfft",
+            "transform_backend": args.transform_backend or "auto",
         },
         "scenario_definitions": [scenario_definition(scenario) for scenario in scenarios],
         "scenarios": [run_scenario(scenario, args.repeats, args.warmups) for scenario in scenarios],
