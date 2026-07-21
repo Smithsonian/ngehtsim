@@ -49,6 +49,28 @@ def read_uvfits(path):
     Circular and linear datasets with a global STOKES axis are supported.  IF
     and frequency axes are flattened into ``VisibilityDataset``'s channel
     axis, preserving an integer spectral-window ID for each IF.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        AIPS random-groups UVFITS file.
+
+    Returns
+    -------
+    VisibilityDataset
+        Native dataset with one global circular or linear receptor layout.
+
+    Raises
+    ------
+    UvfitsError
+        If the file uses unsupported regular axes, polarization codes, scan
+        metadata, or cannot supply required row metadata.
+
+    Notes
+    -----
+    UVFITS weights are an external-format boundary detail. Positive UVFITS
+    inverse variances are converted to native ``sigma_jy`` values; invalid or
+    flagged values become flagged samples with ``NaN`` uncertainty.
     """
 
     path = Path(path)
@@ -142,6 +164,27 @@ def write_uvfits(dataset, path, overwrite=False):
     The output uses a standard global STOKES axis, a regular frequency axis,
     and optional IF spectral windows.  Rows are time-sorted so an AIPS NX scan
     table can describe native scan metadata correctly.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        Dataset with a globally uniform standard circular or linear layout.
+    path : str or pathlib.Path
+        Destination UVFITS file.
+    overwrite : bool, optional
+        Replace an existing file when ``True``.
+
+    Raises
+    ------
+    UvfitsError
+        If the receptor mapping, channel frequencies, or scan metadata cannot
+        be represented by standard UVFITS.
+
+    Notes
+    -----
+    Native ``sigma_jy`` is converted to UVFITS inverse variance only while
+    writing the random-groups payload. Mixed-receptor datasets must use
+    FITS-EHT instead.
     """
 
     if not isinstance(dataset, VisibilityDataset):

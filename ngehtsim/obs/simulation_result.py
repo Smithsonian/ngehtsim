@@ -18,6 +18,17 @@ class SimulationResult:
     ``dataset`` retains flagged rows. Consumers that need an ehtim-compatible
     view can use :meth:`to_ehtim_obsdata`, which drops those rows at the export
     boundary because ``ehtim.Obsdata`` has no sample-flag representation.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        Native simulated visibility data, including rows or individual samples
+        excluded by station availability or fringe selection.
+    station_terms : mapping of str to object
+        Row-aligned station-model products used for this realization, such as
+        opacity, SEFD, gains, leakage, and availability information. Arrays
+        are copied and made read-only; this mapping is simulation provenance,
+        not yet a stable archive schema.
     """
 
     dataset: VisibilityDataset
@@ -38,7 +49,13 @@ class SimulationResult:
 
     @property
     def row_mask(self):
-        """Rows retained after station and fringe-selection flagging."""
+        """Rows retained after station and fringe-selection flagging.
+
+        Returns
+        -------
+        numpy.ndarray of bool, shape (row,)
+            ``True`` only when no populated sample in that row is flagged.
+        """
 
         return ~np.any(
             self.dataset.flags & self.dataset.sample_present,
@@ -47,7 +64,14 @@ class SimulationResult:
 
     @property
     def unflagged_dataset(self):
-        """Return the visibility rows representable by ``ehtim.Obsdata``."""
+        """Return rows whose populated samples are all unflagged.
+
+        Returns
+        -------
+        VisibilityDataset
+            Native subset suitable for an ehtim export only when its channel
+            and correlation layout also meet ehtim's constraints.
+        """
 
         return self.dataset.select_rows(self.row_mask)
 
@@ -56,6 +80,16 @@ class SimulationResult:
 
         The empty-result case is handled only here to preserve the optional
         ehtim boundary; an empty :class:`VisibilityDataset` remains valid.
+
+        Returns
+        -------
+        ehtim.obsdata.Obsdata
+            Circular single-channel boundary object, possibly with zero rows.
+
+        Raises
+        ------
+        ValueError
+            If the unflagged dataset is not representable by ehtim.
         """
 
         unflagged = self.unflagged_dataset

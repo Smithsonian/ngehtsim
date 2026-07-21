@@ -35,6 +35,26 @@ def write_ehtfits(dataset, path, overwrite=False):
     Visibility payloads use variable-length FITS binary-table arrays. Their
     order is channel-major then product-major, with every product ID resolving
     to an ordered pair of station-local receptors.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        Native dataset to serialize. Mixed receptor layouts, flags, channels,
+        and per-component uncertainties are preserved.
+    path : str or pathlib.Path
+        Destination FITS-EHT file, conventionally with a ``.ehtfits`` suffix.
+    overwrite : bool, optional
+        Replace an existing file when ``True``.
+
+    Raises
+    ------
+    EhtfitsError
+        If the dataset contains no visibility rows.
+
+    Notes
+    -----
+    FITS-EHT is a project-owned convention, not a FITS-IDI variant. It writes
+    ``SIGMA`` rather than a statistical weight field.
     """
 
     if not isinstance(dataset, VisibilityDataset):
@@ -58,7 +78,24 @@ def write_ehtfits(dataset, path, overwrite=False):
 
 
 def read_ehtfits(path):
-    """Read a FITS-EHT file into a native :class:`VisibilityDataset`."""
+    """Read a FITS-EHT file into a native :class:`VisibilityDataset`.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        FITS-EHT archive to read.
+
+    Returns
+    -------
+    VisibilityDataset
+        Validated native dataset with its receptor/product mapping restored.
+
+    Raises
+    ------
+    EhtfitsError
+        If the primary header, schema version, required table, or variable
+        length UV payload is invalid or unsupported.
+    """
 
     with fits.open(Path(path), memmap=False) as hdul:
         header = hdul[0].header

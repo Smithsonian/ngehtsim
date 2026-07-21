@@ -237,6 +237,32 @@ def station_metadata(obs, station_context, cache=None):
 
 
 def station_metadata_for_dataset(dataset, station_context, reference_mjd=None, cache=None):
+    """Build or retrieve station metadata aligned to a native dataset.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        One-channel native dataset whose station rows are being simulated.
+    station_context : mapping
+        Resolved weather, receiver, telescope, and source-dependent station
+        inputs produced by the observation generator.
+    reference_mjd : float, optional
+        MJD used to convert native timestamps to the legacy UTC-hour convention.
+        The floor of the earliest dataset timestamp is used when omitted.
+    cache : mutable mapping, optional
+        Cache populated with metadata keyed by geometry and station context.
+
+    Returns
+    -------
+    dict
+        Internal row-aligned geometry and station metadata consumed by
+        :func:`station_terms_for_dataset`.
+
+    Raises
+    ------
+    ValueError
+        If the dataset is multi-channel or cannot supply native station rows.
+    """
     if not isinstance(dataset, VisibilityDataset):
         raise TypeError("dataset must be a VisibilityDataset instance.")
     if dataset.channel_count != 1:
@@ -532,7 +558,22 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
                   addgains=True, addleakage=False, flagwind=True, flagday=False,
                   flagsun=True, allow_mixed_basis=False, solar_angle=None,
                   verbosity=0, windspeed_sefd_modifier=None, cache=None):
-    """Calculate legacy Obsdata station terms through the native row kernel."""
+    """Calculate station terms for the legacy ``ehtim.Obsdata`` route.
+
+    Parameters mirror :func:`station_terms_for_dataset`, except that ``obs``
+    supplies the row geometry and ``array`` is updated in place with the
+    simulated circular SEFD and leakage metadata.
+
+    Returns
+    -------
+    dict
+        Row-aligned station terms for the legacy corruption path.
+
+    Raises
+    ------
+    NotImplementedError
+        If mixed-polarization station terms are requested.
+    """
 
     if allow_mixed_basis:
         raise NotImplementedError(
@@ -568,7 +609,50 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, gainamp=0.04,
                               solar_angle=None, verbosity=0,
                               windspeed_sefd_modifier=None, reference_mjd=None,
                               cache=None):
-    """Calculate native station terms and return an updated StationTable."""
+    """Calculate native station terms and return an updated station table.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        One-channel native dataset with ground or legacy-compatible station
+        rows.
+    F0 : float
+        Source total flux density in Jy, used in the current source-temperature
+        contribution to station system temperature.
+    station_context : mapping
+        Resolved weather, receiver, telescope, uptime, and feed-rotation inputs
+        from the observation generator.
+    rng : numpy.random.Generator
+        Random generator used for gain and leakage realizations.
+    gainamp, leakamp : float, optional
+        Gain-amplitude scatter in dex and one-component leakage scatter.
+    addgains, addleakage, flagwind, flagday, flagsun : bool, optional
+        Enable gain/leakage terms and wind, daylight, or solar-avoidance flags.
+    solar_angle : float, optional
+        Source-Sun angular separation in degrees when solar avoidance is used.
+    verbosity : int, optional
+        Emit station-availability messages when positive.
+    windspeed_sefd_modifier : callable, optional
+        Function mapping wind speed and loading parameters to an SEFD factor.
+    reference_mjd : float, optional
+        UTC-hour reference passed to :func:`station_metadata_for_dataset`.
+    cache : mutable mapping, optional
+        Metadata cache reused for unchanged geometry and station context.
+
+    Returns
+    -------
+    dict
+        Row-aligned station terms consumed by the circular corruption kernel.
+    StationTable
+        Updated immutable station metadata with simulated SEFD and leakage
+        values.
+
+    Notes
+    -----
+    The returned terms are currently specific to circular, one-channel
+    corruption. They are retained in :class:`SimulationResult` as provenance,
+    not yet as a stable archive interchange format.
+    """
 
     metadata = station_metadata_for_dataset(
         dataset,

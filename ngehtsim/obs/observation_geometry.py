@@ -33,7 +33,20 @@ GEOMETRY_CACHE_FIELDS = (
 
 @dataclass(frozen=True)
 class GroundGeometry:
-    """Ground-station observation rows independent of ``ehtim.Obsdata``."""
+    """Ground-station baseline rows independent of ``ehtim.Obsdata``.
+
+    Parameters
+    ----------
+    time_hours : numpy.ndarray, shape (row,)
+        UTC-hour offsets from the observation's reference MJD.
+    station1_indices, station2_indices : numpy.ndarray, shape (row,)
+        Ordered zero-based station indices for each baseline-time row.
+    uvw_m : numpy.ndarray, shape (row, 3)
+        Projected baseline coordinates in metres.
+    u, v : numpy.ndarray, shape (row,)
+        Projected coordinates in wavelengths at the requested observing
+        frequency. They are retained for the ehtim boundary adapter.
+    """
 
     time_hours: np.ndarray
     station1_indices: np.ndarray
@@ -53,7 +66,21 @@ def _readonly_float_array(values):
 
 @dataclass(frozen=True)
 class StationGeometry:
-    """Per-row ground-station elevation and parallactic angles in radians."""
+    """Per-row ground-station elevation and parallactic angles in radians.
+
+    Parameters
+    ----------
+    elevation1_rad, elevation2_rad : array_like, shape (row,)
+        Elevation of the first and second stations in radians.
+    parallactic_angle1_rad, parallactic_angle2_rad : array_like, shape (row,)
+        Parallactic angles of the first and second stations in radians.
+
+    Notes
+    -----
+    Arrays are copied and stored read-only. The ground-only kernel returns
+    ``None`` instead of this class when a station uses the spacecraft
+    placeholder coordinate convention.
+    """
 
     elevation1_rad: np.ndarray
     elevation2_rad: np.ndarray
@@ -132,6 +159,23 @@ def station_geometry_from_rows(position_itrs_m, time_mjd, antenna1, antenna2,
 
     Returns ``None`` when a row cannot be represented by the ground-only
     geometry kernel, including arrays containing spacecraft placeholders.
+
+    Parameters
+    ----------
+    position_itrs_m : array_like, shape (station, 3)
+        Station ITRS Cartesian coordinates in metres.
+    time_mjd : array_like, shape (row,)
+        UTC MJD timestamps.
+    antenna1, antenna2 : array_like, shape (row,)
+        Ordered zero-based station indices.
+    ra_hours, dec_degrees : float
+        Source right ascension in hours and declination in degrees.
+
+    Returns
+    -------
+    StationGeometry or None
+        Per-row angle arrays, or ``None`` when any station is a spacecraft
+        placeholder unsupported by the native ground-only kernel.
     """
 
     coordinates = np.asarray(position_itrs_m, dtype=float)
@@ -240,7 +284,29 @@ def ground_station_geometry(obs):
 
 
 def ground_geometry(array, context):
-    """Generate ground-array baseline rows without ``ehtim`` geometry helpers."""
+    """Generate ground-array baseline rows without ehtim geometry helpers.
+
+    Parameters
+    ----------
+    array : ehtim.array.Array
+        Ground-only telescope array. Spacecraft placeholder coordinates are
+        rejected and must use the legacy route.
+    context : mapping
+        Normalized observation settings containing ``mjd``, ``ra``, ``dec``,
+        ``rf``, ``t_start``, ``t_stop``, and ``t_rest``.
+
+    Returns
+    -------
+    GroundGeometry
+        Visible baseline-time rows with UVW coordinates in metres and in
+        wavelengths.
+
+    Raises
+    ------
+    ValueError
+        If the array contains a spacecraft placeholder or the requested time
+        range produces no baseline-time rows.
+    """
 
     if _has_space_station(array):
         raise ValueError("Ground geometry does not support spacecraft stations.")
@@ -321,9 +387,25 @@ def ground_geometry(array, context):
 def ground_visibility_template(array, context, geometry=None):
     """Build a native visibility template for a ground-only array.
 
-    The template carries geometry and thermal uncertainties but contains zero-valued
-    circular visibilities. Source sampling remains at the ``ehtim`` adapter
-    boundary until native source adapters are introduced.
+    The template carries geometry and thermal uncertainties but contains
+    zero-valued circular visibilities. Source sampling occurs separately
+    through the source-adapter layer.
+
+    Parameters
+    ----------
+    array : ehtim.array.Array
+        Ground-only telescope array.
+    context : mapping
+        Normalized observation settings including source coordinates, observing
+        frequency, bandwidth, integration time, and reference MJD.
+    geometry : GroundGeometry, optional
+        Precomputed geometry for the same array and context.
+
+    Returns
+    -------
+    VisibilityDataset
+        One-channel circular template with RR, LL, RL, LR products and thermal
+        ``sigma_jy`` values computed from station SEFDs.
     """
 
     if geometry is None:
@@ -392,7 +474,25 @@ def ground_visibility_template(array, context, geometry=None):
 
 
 def visibility_dataset_elevation_mask(dataset, el_min, el_max):
-    """Return the native ground-array elevation-selection mask."""
+    """Return the native ground-array elevation-selection mask.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        Ground-only native dataset.
+    el_min, el_max : float
+        Exclusive lower and upper elevation limits in degrees.
+
+    Returns
+    -------
+    numpy.ndarray of bool, shape (row,)
+        Rows for which both stations are strictly inside the elevation range.
+
+    Raises
+    ------
+    ValueError
+        If spacecraft stations require the legacy geometry path.
+    """
 
     if not isinstance(dataset, VisibilityDataset):
         raise TypeError("dataset must be a VisibilityDataset instance.")
@@ -419,7 +519,21 @@ def visibility_dataset_elevation_mask(dataset, el_min, el_max):
 
 
 def apply_visibility_dataset_elevation_limits(dataset, el_min, el_max):
-    """Return a native dataset restricted to the requested elevation range."""
+    """Return a native dataset restricted to the requested elevation range.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        Ground-only dataset to filter.
+    el_min, el_max : float
+        Exclusive elevation limits in degrees.
+
+    Returns
+    -------
+    VisibilityDataset
+        New dataset retaining rows selected by
+        :func:`visibility_dataset_elevation_mask`.
+    """
 
     return dataset.select_rows(visibility_dataset_elevation_mask(dataset, el_min, el_max))
 

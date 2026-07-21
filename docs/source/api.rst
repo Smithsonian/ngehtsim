@@ -7,8 +7,12 @@ Individual package documentation organized by area.
    :maxdepth: 3
 
    ./obsgen
+   ./source_models
+   ./native_visibility
+   ./native_simulation
    ./ehtfits
    ./uvfits
    ./metrics
    ./weather
    ./calibration
+   ./development
