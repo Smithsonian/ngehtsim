@@ -9,6 +9,7 @@ import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.station_observation as station_observation
 from ngehtsim.obs.visibility_dataset import VisibilityDataset
+from ngehtsim.const_def import default_settings
 
 #######################################################
 # helpers
@@ -155,6 +156,11 @@ def test_adapter_rejects_unsupported_model_type():
         source_models.adapter_for(object())
 
 
+def test_default_raster_transform_backend_is_nfft():
+    assert default_settings["ttype"] == "nfft"
+    assert og.obs_generator(settings=COMPACT_OBS_SETTINGS).settings["ttype"] == "nfft"
+
+
 def test_obs_generator_still_accepts_ehtim_model():
     obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
 
@@ -245,6 +251,80 @@ def test_ehtim_image_adapter_matches_legacy_full_polarization_sampling():
     assert direct_F0 == pytest.approx(legacy_F0)
     for field in ("rrvis", "rlvis", "lrvis", "llvis"):
         assert np.allclose(direct.data[field], legacy.data[field], atol=1.0e-12)
+
+
+@pytest.mark.parametrize(
+    "source_factory",
+    (
+        lambda: _polarized_model().make_image(160.0 * eh.RADPERUAS, 64),
+        _polarized_movie,
+    ),
+)
+def test_ehtim_raster_nfft_matches_direct(source_factory):
+    direct_settings = {**COMPACT_OBS_SETTINGS, "ttype": "direct"}
+    nfft_settings = {**COMPACT_OBS_SETTINGS, "ttype": "nfft"}
+    direct_generator = og.obs_generator(settings=direct_settings)
+    nfft_generator = og.obs_generator(settings=nfft_settings)
+
+    direct, direct_F0 = source_models.observe_source(
+        source_factory(),
+        _empty_observation(direct_generator),
+        direct_generator.source_context(),
+    )
+    nfft, nfft_F0 = source_models.observe_source(
+        source_factory(),
+        _empty_observation(nfft_generator),
+        nfft_generator.source_context(),
+    )
+
+    assert nfft_F0 == pytest.approx(direct_F0)
+    for field in ("rrvis", "llvis", "rlvis", "lrvis"):
+        assert np.allclose(
+            nfft.data[field],
+            direct.data[field],
+            rtol=1.0e-6,
+            atol=1.0e-9,
+        )
+
+
+@pytest.mark.parametrize(
+    "source_factory",
+    (
+        lambda: _polarized_model().make_image(160.0 * eh.RADPERUAS, 64),
+        _polarized_movie,
+    ),
+)
+def test_ehtim_raster_adapter_rejects_fast_backend(source_factory):
+    obsgen = og.obs_generator(settings={**COMPACT_OBS_SETTINGS, "ttype": "fast"})
+
+    with pytest.raises(ValueError, match="ttype='fast'.*nfft.*direct"):
+        source_models.observe_source(
+            source_factory(),
+            _empty_observation(obsgen),
+            obsgen.source_context(),
+        )
+
+
+def test_ehtim_image_nfft_rejects_odd_dimensions_and_direct_remains_available():
+    nfft_generator = og.obs_generator(settings={**COMPACT_OBS_SETTINGS, "ttype": "nfft"})
+    odd_image = _compact_model().make_image(160.0 * eh.RADPERUAS, 63)
+
+    with pytest.raises(ValueError, match="requires even image dimensions.*ttype='direct'"):
+        source_models.observe_source(
+            odd_image,
+            _empty_observation(nfft_generator),
+            nfft_generator.source_context(),
+        )
+
+    direct_generator = og.obs_generator(settings={**COMPACT_OBS_SETTINGS, "ttype": "direct"})
+    observation, F0 = source_models.observe_source(
+        _compact_model().make_image(160.0 * eh.RADPERUAS, 63),
+        _empty_observation(direct_generator),
+        direct_generator.source_context(),
+    )
+
+    assert len(observation.data) > 0
+    assert F0 > 0.0
 
 
 def test_ehtim_image_adapter_samples_native_visibility_dataset():

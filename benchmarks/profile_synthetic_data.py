@@ -160,6 +160,12 @@ def main():
     parser.add_argument("--profile-output", type=Path, default=None)
     parser.add_argument("--stats-output", type=Path, default=None)
     parser.add_argument("--list-scenarios", action="store_true")
+    parser.add_argument(
+        "--ttype",
+        choices=bench.TRANSFORM_BACKENDS,
+        default=None,
+        help="Override the raster transform backend for the selected scenario.",
+    )
     bench.add_weather_backend_arguments(parser)
     args = parser.parse_args()
 
@@ -178,7 +184,11 @@ def main():
         raise SystemExit("The profiler accepts exactly one --weather-backend at a time.")
 
     weather_backends = bench.prepare_weather_backends(args.weather_backend, args.weather_store)
-    scenarios = bench.expand_scenarios(bench.select_scenarios([args.scenario]), weather_backends)
+    scenarios = bench.with_transform_backend(
+        bench.select_scenarios([args.scenario]),
+        args.ttype,
+    )
+    scenarios = bench.expand_scenarios(scenarios, weather_backends)
     scenario = scenarios[0]
     profile_output, stats_output = default_output_paths(scenario["name"], args.phase)
     if args.profile_output is not None:

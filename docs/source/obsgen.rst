@@ -37,6 +37,22 @@ wind effects at each observation timestamp. SYMBA's static ``.antennas``
 format cannot represent this time dependence and is not available in native
 weather mode.
 
+Raster Source Transform Backend
+-------------------------------
+
+Rasterized ``ehtim.Image`` and ``ehtim.Movie`` sources use the FINUFFT-backed
+``"nfft"`` transform by default. It is substantially faster than a direct
+Fourier transform for typical high-resolution synthetic datasets. FINUFFT
+requires even image dimensions. Use ``"direct"`` explicitly for an odd-sized
+raster or when an exact direct transform is required:
+
+.. code-block:: python
+
+   settings = {"ttype": "direct"}
+   obsgen = obs_generator.obs_generator(settings=settings)
+
+``"fast"`` is no longer a supported ngehtsim transform backend.
+
 .. automodule:: ngehtsim.obs.obs_generator
    :members:
 
