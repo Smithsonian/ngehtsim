@@ -10,6 +10,7 @@ import ngehtsim.obs.obs_generator as og
 import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.station_observation as station_observation
+from ngehtsim.obs.station_effects import GainModel, LeakageModel, StationCorruptionModel
 from ngehtsim.obs.visibility_dataset import VisibilityDataset
 
 #######################################################
@@ -25,6 +26,24 @@ COMPACT_OBS_SETTINGS = {
     "t_rest": 1200.0,
     "random_seed": 1,
 }
+
+
+def _effects(*, thermal_noise=False, common_gain=False, feed_rotation=False,
+             leakage=False, flag_wind=False, flag_daylight=False, flag_sun=False):
+    """Build native effects without invoking retired keyword arguments."""
+
+    return StationCorruptionModel(
+        thermal_noise=thermal_noise,
+        common_gain=(
+            GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform")
+            if common_gain else None
+        ),
+        feed_rotation=feed_rotation,
+        leakage=LeakageModel(component_sigma=0.1) if leakage else None,
+        flag_wind=flag_wind,
+        flag_daylight=flag_daylight,
+        flag_sun=flag_sun,
+    )
 
 
 def _compact_model():
@@ -134,12 +153,7 @@ def test_native_station_geometry_preserves_generated_observations(monkeypatch):
     native_generator = og.obs_generator(settings=settings)
     native_obs = native_generator.make_obs(
         _compact_model(),
-        addnoise=False,
-        addgains=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
-        addFR=True,
+        effects=_effects(feed_rotation=True),
     )
 
     monkeypatch.setattr(
@@ -150,12 +164,7 @@ def test_native_station_geometry_preserves_generated_observations(monkeypatch):
     fallback_generator = og.obs_generator(settings=settings)
     fallback_obs = fallback_generator.make_obs(
         _compact_model(),
-        addnoise=False,
-        addgains=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
-        addFR=True,
+        effects=_effects(feed_rotation=True),
     )
 
     assert np.array_equal(native_obs.data["t1"], fallback_obs.data["t1"])
@@ -348,17 +357,15 @@ def test_station_terms_populates_gain_and_leakage_arrays_when_enabled():
     assert np.iscomplexobj(terms["leak2R"])
 
 
-def test_native_station_terms_match_obsdata_terms_and_station_table():
+def test_native_station_terms_preserve_weather_and_use_generic_corruption_fields():
     obsgen = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
     obs, F0 = _source_observation(obsgen)
     context = _time_varying_weather_context(obsgen, obs)
     context["tau"]["ALMA"] = np.linspace(0.1, 0.2, len(obs.data))
     context["windspeed"]["ALMA"] = np.linspace(1.0, 8.0, len(obs.data))
     kwargs = {
-        "gainamp": 0.04,
-        "leakamp": 0.1,
-        "addgains": True,
-        "addleakage": True,
+        "addgains": False,
+        "addleakage": False,
         "flagwind": True,
         "flagday": False,
         "flagsun": False,
@@ -380,8 +387,10 @@ def test_native_station_terms_match_obsdata_terms_and_station_table():
         F0,
         context,
         np.random.default_rng(17),
+        effects=_effects(common_gain=True, leakage=True, flag_wind=True),
         reference_mjd=obs.mjd,
-        **kwargs,
+        solar_angle=obsgen.solar_angle,
+        windspeed_sefd_modifier=og.windspeed_SEFD_modification,
     )
 
     assert np.array_equal(native["t1"], legacy["t1"])
@@ -409,25 +418,13 @@ def test_native_station_terms_match_obsdata_terms_and_station_table():
         "f_par2",
         "phi_off1",
         "phi_off2",
-        "gainamp1R",
-        "gainamp2R",
-        "gainphase1R",
-        "gainphase2R",
-        "gainamp1L",
-        "gainamp2L",
-        "gainphase1L",
-        "gainphase2L",
-        "leak1R",
-        "leak2R",
-        "leak1L",
-        "leak2L",
     ):
         assert np.allclose(native[field], legacy[field], atol=1.0e-10)
     assert np.array_equal(native["uptime_mask"], legacy["uptime_mask"])
     assert np.allclose(native_stations.sefd_r_jy, legacy_array.tarr["sefdr"])
     assert np.allclose(native_stations.sefd_l_jy, legacy_array.tarr["sefdl"])
-    assert np.allclose(native_stations.leakage_r, legacy_array.tarr["dr"])
-    assert np.allclose(native_stations.leakage_l, legacy_array.tarr["dl"])
+    assert {"common_gain1", "common_gain2", "leakage_matrix1", "leakage_matrix2", "path_gains"} <= set(native)
+    assert not any(name.startswith(("gainamp", "gainphase", "leak1", "leak2")) for name in native)
 
 
 def test_native_station_metadata_uses_cache_without_obsdata_conversion():

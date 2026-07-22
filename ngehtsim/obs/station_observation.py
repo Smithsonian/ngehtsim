@@ -9,6 +9,7 @@ from astropy.coordinates import EarthLocation, AltAz, get_sun
 
 import ngehtsim.const_def as const
 import ngehtsim.obs.observation_geometry as observation_geometry
+from ngehtsim.obs.station_effects import StationCorruptionModel
 from ngehtsim.obs.visibility_dataset import StationTable, VisibilityDataset
 
 ###################################################
@@ -603,9 +604,7 @@ def station_terms(obs, F0, station_context, array, rng, gainamp=0.04, leakamp=0.
     return terms
 
 
-def station_terms_for_dataset(dataset, F0, station_context, rng, gainamp=0.04,
-                              leakamp=0.1, addgains=True, addleakage=False,
-                              flagwind=True, flagday=False, flagsun=True,
+def station_terms_for_dataset(dataset, F0, station_context, rng, effects,
                               solar_angle=None, verbosity=0,
                               windspeed_sefd_modifier=None, reference_mjd=None,
                               cache=None):
@@ -623,11 +622,10 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, gainamp=0.04,
         Resolved weather, receiver, telescope, uptime, and feed-rotation inputs
         from the observation generator.
     rng : numpy.random.Generator
-        Random generator used for gain and leakage realizations.
-    gainamp, leakamp : float, optional
-        Gain-amplitude scatter in dex and one-component leakage scatter.
-    addgains, addleakage, flagwind, flagday, flagsun : bool, optional
-        Enable gain/leakage terms and wind, daylight, or solar-avoidance flags.
+        Random generator used for station-effect realizations.
+    effects : StationCorruptionModel
+        Complete native noise, calibration, corruption, and availability
+        configuration.
     solar_angle : float, optional
         Source-Sun angular separation in degrees when solar avoidance is used.
     verbosity : int, optional
@@ -642,7 +640,9 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, gainamp=0.04,
     Returns
     -------
     dict
-        Row-aligned station terms consumed by the native receptor RIME.
+        Row-aligned common-Jones, path-gain, weather, and availability terms
+        consumed by the native receptor RIME. Native terms deliberately do not
+        expose hand-specific R/L field names.
     StationTable
         Updated immutable station metadata with simulated SEFD and leakage
         values.
@@ -655,27 +655,101 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, gainamp=0.04,
     stable archive interchange format.
     """
 
+    if not isinstance(effects, StationCorruptionModel):
+        raise TypeError("effects must be a StationCorruptionModel instance.")
+    effects.validate_receptors(dataset.stations.names, dataset.receptors)
     metadata = station_metadata_for_dataset(
         dataset,
         station_context,
         reference_mjd=reference_mjd,
         cache=cache,
     )
-    return _station_terms_from_rows(
+    # Reuse the established weather and availability calculation. Its legacy
+    # hand-specific gain outputs are disabled here and never escape the native
+    # API; generic common/path gains are realized below.
+    legacy_terms, stations = _station_terms_from_rows(
         metadata["_rows"],
         metadata,
         F0,
         station_context,
         dataset.stations,
         rng,
-        gainamp=gainamp,
-        leakamp=leakamp,
-        addgains=addgains,
-        addleakage=addleakage,
-        flagwind=flagwind,
-        flagday=flagday,
-        flagsun=flagsun,
+        addgains=False,
+        leakamp=(0.0 if effects.leakage is None else effects.leakage.component_sigma),
+        addleakage=effects.leakage is not None,
+        flagwind=effects.flag_wind,
+        flagday=effects.flag_daylight,
+        flagsun=effects.flag_sun,
         solar_angle=solar_angle,
         verbosity=verbosity,
         windspeed_sefd_modifier=windspeed_sefd_modifier,
     )
+    terms = dict(legacy_terms)
+    count = dataset.row_count
+    terms["common_gain1"], terms["common_gain2"] = _sample_common_gains(
+        metadata["_rows"],
+        metadata["sites_obs"],
+        effects.common_gain,
+        rng,
+    )
+    terms["leakage_matrix1"], terms["leakage_matrix2"] = _native_leakage_matrices(
+        terms,
+        count,
+        effects.leakage is not None,
+    )
+    terms["path_gains"] = _sample_path_gains(
+        dataset,
+        metadata["_rows"].times,
+        effects,
+        rng,
+    )
+    for name in ("leak1R", "leak2R", "leak1L", "leak2L"):
+        terms.pop(name, None)
+    return terms, stations
+
+
+def _sample_common_gains(rows, sites, gain_model, rng):
+    """Return one row-end complex gain for each station/time sample."""
+
+    count = len(rows.times)
+    gain1 = np.ones(count, dtype=complex)
+    gain2 = np.ones(count, dtype=complex)
+    if gain_model is None:
+        return gain1, gain2
+    for site in sites:
+        for time in np.unique(rows.times):
+            value = gain_model.sample(rng)
+            gain1[(rows.t1 == site) & (rows.times == time)] = value
+            gain2[(rows.t2 == site) & (rows.times == time)] = value
+    return gain1, gain2
+
+
+def _native_leakage_matrices(terms, count, enabled):
+    """Convert transient legacy D-term draws into generic Jones matrices."""
+
+    matrix1 = np.broadcast_to(np.eye(2, dtype=complex), (count, 2, 2)).copy()
+    matrix2 = np.array(matrix1, copy=True)
+    if enabled:
+        matrix1[:, 0, 1] = terms["leak1R"]
+        matrix1[:, 1, 0] = terms["leak1L"]
+        matrix2[:, 0, 1] = terms["leak2R"]
+        matrix2[:, 1, 0] = terms["leak2L"]
+    return matrix1, matrix2
+
+
+def _sample_path_gains(dataset, times, effects, rng):
+    """Return independent receptor-path gains aligned to native rows."""
+
+    count = dataset.row_count
+    gains = np.ones((count, dataset.receptors.count), dtype=complex)
+    names = dataset.stations.names
+    for receptor, (station_index, feed_id) in enumerate(zip(
+        dataset.receptors.station_index,
+        dataset.receptors.feed_id,
+    )):
+        model = effects.path_gain_model(names[station_index], feed_id)
+        if model is None:
+            continue
+        for time in np.unique(times):
+            gains[times == time, receptor] = model.sample(rng)
+    return gains

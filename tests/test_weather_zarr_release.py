@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 import ngehtsim.obs.obs_generator as obs_generator_module
+from ngehtsim.obs.station_effects import StationCorruptionModel
 import ngehtsim.weather.weather as weather
 from ngehtsim.weather.zarr_store import SUPPORTED_SCHEMA_VERSIONS, ZarrWeatherStore
 
@@ -138,10 +139,12 @@ def test_obs_generator_uses_native_weather_for_observation_terms(external_store)
 
     obs = obsgen.make_obs(
         model,
-        addnoise=False,
-        addgains=False,
-        flagwind=False,
-        flagsun=False,
+        effects=StationCorruptionModel(
+            thermal_noise=False,
+            common_gain=None,
+            flag_wind=False,
+            flag_sun=False,
+        ),
     )
 
     assert len(obs.data) > 0

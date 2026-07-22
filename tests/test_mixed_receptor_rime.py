@@ -13,6 +13,7 @@ from ngehtsim.obs.receptor_configuration import (
     STANDARD_JONES_ROWS,
     resolve_receptor_configuration,
 )
+from ngehtsim.obs.station_effects import GainModel, LeakageModel, StationCorruptionModel
 
 
 SETTINGS = {
@@ -35,6 +36,24 @@ MIXED_RECEPTORS = {
     "LMT": ("Y",),
     "SMT": ("R", "X", "Y"),
 }
+
+
+def _effects(*, thermal_noise=False, common_gain=False, feed_rotation=False,
+             leakage=False, flag_wind=False, flag_daylight=False, flag_sun=False):
+    """Build the compact native effect configurations used in this module."""
+
+    return StationCorruptionModel(
+        thermal_noise=thermal_noise,
+        common_gain=(
+            GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform")
+            if common_gain else None
+        ),
+        feed_rotation=feed_rotation,
+        leakage=LeakageModel(component_sigma=0.1) if leakage else None,
+        flag_wind=flag_wind,
+        flag_daylight=flag_daylight,
+        flag_sun=flag_sun,
+    )
 
 
 def _polarized_model():
@@ -93,39 +112,16 @@ def test_rank_deficient_fringe_evidence_uses_strongest_product():
     assert _product_snr(left, right, coherency, sigma=2.0) == expected
 
 
-def test_standard_circular_rime_matches_the_legacy_circular_kernel():
-    """The generic Jones path retains the established circular calculation."""
+def test_standard_circular_rime_uses_generic_station_terms():
+    """Native circular output no longer exposes hand-specific state fields."""
 
     generator = og.obs_generator(settings=SETTINGS)
     result = generator.simulate(
         _polarized_model(),
-        addnoise=False,
-        addgains=True,
-        addFR=True,
-        addleakage=True,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(common_gain=True, feed_rotation=True, leakage=True),
     )
-    sampled, _ = source_models.observe_source_dataset(
-        _polarized_model(),
-        result.dataset,
-        generator.source_context(),
-    )
-    legacy = instrumental_corruptions.apply_circular_corruptions(
-        sampled,
-        result.station_terms,
-        result.dataset.stations,
-        np.random.default_rng(2),
-        addnoise=False,
-        addgains=True,
-        addFR=True,
-        addleakage=True,
-    )
-
-    assert np.allclose(result.dataset.visibilities, legacy.visibilities, atol=1.0e-12)
-    assert np.allclose(result.dataset.sigma_jy, legacy.sigma_jy, atol=1.0e-12)
-    assert np.array_equal(result.dataset.flags, legacy.flags)
+    assert {"common_gain1", "common_gain2", "leakage_matrix1", "leakage_matrix2", "path_gains"} <= set(result.station_terms)
+    assert not any(name.startswith(("gainamp", "gainphase", "leak1", "leak2")) for name in result.station_terms)
 
 
 def test_mixed_receptor_rime_matches_explicit_effective_jones_rows():
@@ -133,15 +129,26 @@ def test_mixed_receptor_rime_matches_explicit_effective_jones_rows():
         settings=SETTINGS,
         station_receptors=MIXED_RECEPTORS,
     )
+    effects = StationCorruptionModel(
+        thermal_noise=False,
+        common_gain=GainModel(
+            amplitude_sigma_dex=0.04,
+            phase_distribution="uniform",
+        ),
+        feed_rotation=True,
+        leakage=LeakageModel(component_sigma=0.1),
+        path_gain_overrides={
+            "ALMA": {
+                "X": GainModel(amplitude_sigma_dex=0.02),
+            },
+        },
+        flag_wind=False,
+        flag_daylight=False,
+        flag_sun=False,
+    )
     result = generator.simulate(
         _polarized_model(),
-        addnoise=False,
-        addgains=True,
-        addFR=True,
-        addleakage=True,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=effects,
     )
     dataset = result.dataset
     configuration = resolve_receptor_configuration(
@@ -159,6 +166,7 @@ def test_mixed_receptor_rime_matches_explicit_effective_jones_rows():
         dataset,
         result.station_terms,
         configuration,
+        effects,
     )
 
     expected = np.zeros_like(dataset.visibilities[:, 0])
@@ -169,6 +177,15 @@ def test_mixed_receptor_rime_matches_explicit_effective_jones_rows():
 
     assert dataset.receptors.polarization_label == ("X", "Y", "R", "L", "Y", "R", "X", "Y")
     assert np.allclose(dataset.visibilities[:, 0], expected, atol=1.0e-12)
+    alma_x = next(
+        index
+        for index, (station, feed_id) in enumerate(zip(
+            dataset.receptors.station_index,
+            dataset.receptors.feed_id,
+        ))
+        if dataset.stations.names[station] == "ALMA" and feed_id == "X"
+    )
+    assert not np.allclose(result.station_terms["path_gains"][:, alma_x], 1.0)
 
 
 def test_mixed_receptor_fringegroups_uses_generic_stokes_i_evidence():
@@ -178,13 +195,7 @@ def test_mixed_receptor_fringegroups_uses_generic_stokes_i_evidence():
     )
     result = generator.make_dataset(
         _polarized_model(),
-        addnoise=False,
-        addgains=False,
-        addFR=False,
-        addleakage=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
     assert result.dataset.row_count > 0
@@ -200,13 +211,7 @@ def test_direct_mixed_fringegroups_dataset_infers_standard_feed_responses():
     )
     result = generator.make_dataset(
         _polarized_model(),
-        addnoise=False,
-        addgains=False,
-        addFR=False,
-        addleakage=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
     direct = og.fringegroups_dataset(generator, result.dataset, 0.0, 10.0)
@@ -221,6 +226,7 @@ def test_direct_mixed_fringegroups_dataset_infers_standard_feed_responses():
             generator.station_receptors,
             generator.station_signal_paths,
         ),
+        effects=_effects(),
     )
 
     assert np.array_equal(direct, with_terms)
@@ -235,13 +241,7 @@ def test_direct_uncalibrated_mixed_fringegroups_requires_station_terms():
     )
     result = generator.make_dataset(
         _polarized_model(),
-        addnoise=False,
-        addgains=True,
-        addFR=False,
-        addleakage=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(common_gain=True),
     )
 
     with np.testing.assert_raises_regex(
@@ -260,13 +260,7 @@ def test_mixed_receptor_fpt_uses_the_same_generic_fringe_evidence():
     )
     result = generator.make_dataset(
         _polarized_model(),
-        addnoise=False,
-        addgains=False,
-        addFR=False,
-        addleakage=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
     assert result.dataset.row_count > 0

@@ -3,6 +3,7 @@
 
 import ehtim as eh
 import ngehtsim.obs.obs_generator as og
+from ngehtsim.obs.station_effects import GainModel, StationCorruptionModel
 import os
 
 #######################################################
@@ -34,7 +35,14 @@ settings = {'weather': weather_type}
 obsgen = og.obs_generator(settings)
 
 # generate and save the observation
-obs = obsgen.make_obs(im, addnoise=addnoise, addgains=addgains)
+effects = StationCorruptionModel(
+    thermal_noise=addnoise,
+    common_gain=(
+        GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform")
+        if addgains else None
+    ),
+)
+obs = obsgen.make_obs(im, effects=effects)
 obs.save_uvfits('example_dataset.uvfits')
 
 # export SYMBA-compatible input files

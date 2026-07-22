@@ -90,6 +90,72 @@ polarization basis as privileged. FPT uses the same evidence at target and
 reference frequency; it remains a detectability proxy and does not modify
 visibility phases.
 
+Native Station Corruptions
+--------------------------
+
+The v2 native API uses a single explicit model for thermal noise, flagging,
+station-common Jones terms, and per-receptor-path gains. This replaces the
+v1 ``addnoise``, ``addgains``, ``gainamp``, ``addleakage``, ``leakamp``,
+``addFR``, ``opacitycal``, ``flagwind``, ``flagday``, and ``flagsun`` keyword
+arguments on ``simulate()``, ``make_dataset()``, ``observe()``, and
+``make_obs()``.
+
+For example, this produces a noise-free, fully calibrated native dataset:
+
+.. code-block:: python
+
+   from ngehtsim.obs.station_effects import StationCorruptionModel
+
+   effects = StationCorruptionModel(
+       thermal_noise=False,
+       common_gain=None,
+       feed_rotation=False,
+       flag_wind=False,
+       flag_daylight=False,
+       flag_sun=False,
+   )
+   result = obsgen.make_dataset(model, effects=effects)
+
+Common gains act before the station-local receptor response. ``GainModel``
+objects in ``path_gain_overrides`` instead apply after that response to named
+station/feed voltage paths, and are therefore suitable for mixed feeds:
+
+.. code-block:: python
+
+   from ngehtsim.obs.station_effects import GainModel, LeakageModel, StationCorruptionModel
+
+   effects = StationCorruptionModel(
+       thermal_noise=True,
+       opacity_calibrated=True,
+       feed_rotation=True,
+       common_gain=GainModel(
+           amplitude_sigma_dex=0.04,
+           phase_distribution="uniform",
+       ),
+       leakage=LeakageModel(component_sigma=0.1),
+       path_gain_overrides={
+           "ALMA": {
+               "X": GainModel(amplitude_sigma_dex=0.02),
+               "Y": GainModel(amplitude_sigma_dex=0.02),
+           },
+       },
+   )
+   result = obsgen.make_dataset(model, effects=effects)
+
+``feed_id`` values refer to the local identifiers configured in
+``station_receptors``, rather than assuming a global polarization basis.
+``StationCorruptionModel()`` retains the native default realization: thermal
+noise, opacity calibration, feed rotation, weather/solar flagging, and a
+station-common 0.04-dex amplitude gain with uniform phase; leakage and
+independent path gains are disabled.
+
+The historical implementation is available only through explicit legacy
+entry points (``observe_legacy()``, ``make_obs_legacy()``, and their legacy
+callers). ``observe(..., backend="legacy")`` and
+``make_obs(..., backend="legacy")`` also accept legacy keywords, but native
+calls reject them so a v1 configuration cannot be accidentally interpreted by
+the v2 RIME.
+
 Mixed-receptor datasets can be written to FITS-EHT. UVFITS and
 ``ehtim.Obsdata`` export remain intentionally limited to their representable
 uniform-polarization layouts.

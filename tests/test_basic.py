@@ -6,6 +6,7 @@ import ehtim as eh
 import yaml
 import os
 import ngehtsim.obs.obs_generator as og
+from ngehtsim.obs.station_effects import StationCorruptionModel
 import ngehtsim.const_def as const
 
 #######################################################
@@ -14,13 +15,14 @@ import ngehtsim.const_def as const
 # input settings file
 yamlfile = './tests/settings.yaml'
 
-# initialize the observation generator
-obsgen = og.obs_generator(settings_file=yamlfile)
-
 # load settings file
 loader = yaml.SafeLoader
 with open(yamlfile, 'r') as fi:
     settings = yaml.load(fi, Loader=loader)
+settings["transform_backend"] = "direct"
+
+# The basic smoke test must not require the optional FINUFFT runtime.
+obsgen = og.obs_generator(settings=settings)
 
 # load input model
 infile = settings['model_file']
@@ -35,8 +37,15 @@ obs = obsgen.make_obs()
 
 
 def with_vs_without(obsgen):
-    obs1 = obsgen.make_obs(addnoise=False, addgains=False)
-    obs2 = obsgen.make_obs(input_model, addnoise=False, addgains=False)
+    effects = StationCorruptionModel(
+        thermal_noise=False,
+        common_gain=None,
+        flag_wind=False,
+        flag_daylight=False,
+        flag_sun=False,
+    )
+    obs1 = obsgen.make_obs(effects=effects)
+    obs2 = obsgen.make_obs(input_model, effects=effects)
     return obs1, obs2
 
 

@@ -40,7 +40,8 @@ class ReceptorConfiguration:
         SEFD values when calculating thermal uncertainty.
     gain_scale : numpy.ndarray, shape (receptor,)
         Fixed complex per-receptor gain. This is applied in addition to the
-        simulated stochastic station gain when ``addgains=True``.
+        common station and optional independent path gains declared by
+        :class:`ngehtsim.obs.station_effects.StationCorruptionModel`.
 
     Notes
     -----

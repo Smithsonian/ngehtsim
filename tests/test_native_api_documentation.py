@@ -33,6 +33,11 @@ from ngehtsim.obs.station_observation import (
     station_metadata_for_dataset,
     station_terms_for_dataset,
 )
+from ngehtsim.obs.station_effects import (
+    GainModel,
+    LeakageModel,
+    StationCorruptionModel,
+)
 from ngehtsim.obs.uvfits import read_uvfits, write_uvfits
 from ngehtsim.obs.visibility_dataset import (
     CorrelationProductTable,
@@ -72,6 +77,9 @@ DOCUMENTED_NATIVE_API = {
     "apply_visibility_dataset_elevation_limits": apply_visibility_dataset_elevation_limits,
     "station_metadata_for_dataset": station_metadata_for_dataset,
     "station_terms_for_dataset": station_terms_for_dataset,
+    "GainModel": GainModel,
+    "LeakageModel": LeakageModel,
+    "StationCorruptionModel": StationCorruptionModel,
     "apply_circular_leakage": apply_circular_leakage,
     "apply_circular_corruptions": apply_circular_corruptions,
     "apply_receptor_corruptions": apply_receptor_corruptions,

@@ -11,6 +11,7 @@ __all__ = [
     'obs_plotter',
     'receptor_configuration',
     'simulation_result',
+    'station_effects',
     'uvfits',
     'visibility_dataset',
 ]

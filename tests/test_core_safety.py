@@ -7,6 +7,7 @@ import ehtim as eh
 import ngehtsim.calibration.calibration as nc
 import ngehtsim.obs.obs_generator as og
 import ngehtsim.obs.source_models as source_models
+from ngehtsim.obs.station_effects import StationCorruptionModel
 
 #######################################################
 # helpers
@@ -29,15 +30,15 @@ def _compact_model():
 
 
 def _observe_without_corruptions(obsgen, input_model, **kwargs):
-    observe_kwargs = dict(
-        addnoise=False,
-        addgains=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+    effects = StationCorruptionModel(
+        thermal_noise=False,
+        common_gain=None,
+        feed_rotation=False,
+        flag_wind=False,
+        flag_daylight=False,
+        flag_sun=False,
     )
-    observe_kwargs.update(kwargs)
-    return obsgen.observe(input_model, **observe_kwargs)
+    return obsgen.observe(input_model, effects=effects, **kwargs)
 
 #######################################################
 # tests
