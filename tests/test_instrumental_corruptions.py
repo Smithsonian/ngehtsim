@@ -519,11 +519,11 @@ def test_native_circular_corruptions_flag_rows_and_support_selection():
     assert not np.any(selected.flags)
 
 
-def test_mixed_basis_output_is_rejected_until_native_support_exists():
+def test_legacy_mixed_basis_switch_is_obsolete():
     obsgen = og.obs_generator(settings=SETTINGS)
 
-    with pytest.raises(NotImplementedError, match="Mixed-polarization simulation"):
-        obsgen.make_obs(_polarized_model(), allow_mixed_basis=True)
+    with pytest.raises(ValueError, match="allow_mixed_basis is obsolete"):
+        obsgen.simulate(_polarized_model(), allow_mixed_basis=True)
 
 
 def test_station_registry_marks_roen_as_linear():

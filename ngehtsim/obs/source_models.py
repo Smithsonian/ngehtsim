@@ -9,6 +9,10 @@ from astropy.constants import c as SPEED_OF_LIGHT
 
 from ngehtsim.obs import raster_sampling
 from ngehtsim.obs.visibility_dataset import VisibilityDataset
+from ngehtsim.obs.receptor_configuration import (
+    configuration_for_dataset,
+    response_rows_for_dataset,
+)
 
 try:
     import ngEHTforecast.fisher as fp
@@ -50,17 +54,11 @@ def _sample_raster(image, uv, polrep_obs, context, *, native_path):
     )
 
 
-def _require_native_circular_dataset(dataset):
+def _require_native_single_channel_dataset(dataset):
     if not isinstance(dataset, VisibilityDataset):
         raise TypeError("dataset must be a VisibilityDataset instance.")
     if dataset.channel_count != 1:
         raise ValueError("Native source sampling requires exactly one spectral channel.")
-    try:
-        return dataset.circular_product_slots()
-    except ValueError as exc:
-        raise ValueError(
-            "Native source sampling requires exactly circular RR, LL, RL, LR correlations."
-        ) from exc
 
 
 def _dataset_uv(dataset):
@@ -68,26 +66,50 @@ def _dataset_uv(dataset):
     return dataset.uvw_m[:, :2] / wavelength
 
 
-def _write_circular_samples(visibilities, slots, rows, sampled):
-    """Write RR, LL, RL, LR samples into explicitly mapped product slots."""
+def _circular_coherency(sampled):
+    """Return circular-basis coherency matrices from ehtim sampling output."""
 
-    rows = np.asarray(rows, dtype=np.intp)
-    visibilities[rows, 0, slots[rows, 0]] = sampled[0]
-    if sampled[1] is not None:
-        visibilities[rows, 0, slots[rows, 1]] = sampled[1]
-    if sampled[2] is not None:
-        visibilities[rows, 0, slots[rows, 2]] = sampled[2]
-        visibilities[rows, 0, slots[rows, 3]] = sampled[3]
+    rr, ll, rl, lr = sampled
+    rr = np.asarray(rr, dtype=complex)
+    count = len(rr)
+    coherency = np.zeros((count, 2, 2), dtype=complex)
+    coherency[:, 0, 0] = rr
+    if ll is not None:
+        coherency[:, 1, 1] = ll
+    if rl is not None:
+        coherency[:, 0, 1] = rl
+    if lr is not None:
+        coherency[:, 1, 0] = lr
+    return coherency
 
 
-def _with_circular_samples(dataset, sampled, context):
-    visibilities = np.array(dataset.visibilities, copy=True)
-    _write_circular_samples(
-        visibilities,
-        dataset.circular_product_slots(),
-        np.arange(dataset.row_count),
-        sampled,
+def _receptor_configuration(dataset, context):
+    configuration = configuration_for_dataset(
+        dataset,
+        context.get("station_receptors"),
+        context.get("station_signal_paths"),
     )
+    response, _, _ = response_rows_for_dataset(dataset, configuration)
+    return configuration, response
+
+
+def _write_coherency_samples(visibilities, dataset, coherency, context):
+    """Project circular sky coherency into every row's receptor products."""
+
+    _, response = _receptor_configuration(dataset, context)
+    products = dataset.correlation_products
+    for row, product_ids in enumerate(dataset.row_product_id):
+        for slot, product_id in enumerate(product_ids):
+            if product_id < 0:
+                continue
+            first = response[products.receptor1_id[product_id]]
+            second = response[products.receptor2_id[product_id]]
+            visibilities[row, 0, slot] = first @ coherency[row] @ np.conj(second)
+
+
+def _with_coherency_samples(dataset, coherency, context):
+    visibilities = np.array(dataset.visibilities, copy=True)
+    _write_coherency_samples(visibilities, dataset, coherency, context)
     return replace(
         dataset,
         visibilities=visibilities,
@@ -116,10 +138,10 @@ class EhtimImageAdapter(object):
 
     Notes
     -----
-    :meth:`observe_dataset` samples directly into a native dataset, avoiding
-    an intermediate ``ehtim.Obsdata`` data table. It currently requires one
-    channel with exactly circular RR, LL, RL, LR products.  The public
-    ``transform_backend`` setting controls its Fourier-transform backend.
+    :meth:`observe_dataset` samples directly into a one-channel native
+    receptor layout, avoiding an intermediate ``ehtim.Obsdata`` data table.
+    The public ``transform_backend`` setting controls its Fourier-transform
+    backend.
     """
 
     def __init__(self, input_model):
@@ -186,8 +208,8 @@ class EhtimImageAdapter(object):
         F0 = self.input_model.total_flux()
         return obs, F0
 
-    def observe_dataset(self, dataset, context):
-        """Sample an image onto a native circular single-channel dataset.
+    def observe_dataset(self, dataset, context, return_coherency=False):
+        """Sample an image onto a native single-channel receptor dataset.
 
         Parameters
         ----------
@@ -195,6 +217,10 @@ class EhtimImageAdapter(object):
             Geometry and correlation layout to populate.
         context : mapping
             Normalized observation settings.
+        return_coherency : bool, optional
+            When true, also return the circular sky coherency matrices used to
+            populate the receptor products. This is consumed internally by the
+            native station-corruption RIME.
 
         Returns
         -------
@@ -207,11 +233,11 @@ class EhtimImageAdapter(object):
         Raises
         ------
         ValueError
-            If the dataset is not exactly a one-channel circular layout or the
-            configured native raster transform backend is unsupported.
+            If the dataset is not one channel or the configured native raster
+            transform backend is unsupported.
         """
 
-        _require_native_circular_dataset(dataset)
+        _require_native_single_channel_dataset(dataset)
 
         def sample_dataset():
             sampled = _sample_raster(
@@ -221,14 +247,16 @@ class EhtimImageAdapter(object):
                 context,
                 native_path=True,
             )
-            return _with_circular_samples(
+            coherency = _circular_coherency(sampled)
+            return _with_coherency_samples(
                 dataset,
-                sampled,
+                coherency,
                 context,
-            )
+            ), coherency
 
-        sampled_dataset = _run_quietly(sample_dataset, context["verbosity"])
-        return sampled_dataset, self.input_model.total_flux()
+        sampled_dataset, coherency = _run_quietly(sample_dataset, context["verbosity"])
+        output = (sampled_dataset, self.input_model.total_flux())
+        return output + (coherency,) if return_coherency else output
 
 
 class EhtimMovieAdapter(object):
@@ -243,8 +271,8 @@ class EhtimMovieAdapter(object):
     Notes
     -----
     The movie's own ``bounds_error`` behavior determines whether observation
-    times outside its nominal range are looped. Native sampling has the same
-    circular single-channel limitation as :class:`EhtimImageAdapter`.
+    times outside its nominal range are looped. Native sampling supports the
+    same one-channel arbitrary-receptor layouts as :class:`EhtimImageAdapter`.
     """
 
     def __init__(self, input_model):
@@ -354,8 +382,8 @@ class EhtimMovieAdapter(object):
         F0 = np.mean(self.input_model.lightcurve)
         return obs, F0
 
-    def observe_dataset(self, dataset, context):
-        """Sample a repeating movie onto a native circular dataset.
+    def observe_dataset(self, dataset, context, return_coherency=False):
+        """Sample a repeating movie onto a native receptor dataset.
 
         Parameters
         ----------
@@ -376,16 +404,16 @@ class EhtimMovieAdapter(object):
         Raises
         ------
         ValueError
-            If the dataset is not exactly a one-channel circular layout or the
-            configured raster transform backend is unsupported.
+            If the dataset is not one channel or the configured raster
+            transform backend is unsupported.
         """
 
-        circular_slots = _require_native_circular_dataset(dataset)
+        _require_native_single_channel_dataset(dataset)
 
         def sample_dataset():
-            visibilities = np.array(dataset.visibilities, copy=True)
             uv = _dataset_uv(dataset)
             observation_times = (dataset.time_mjd - float(context["mjd"])) * 24.0
+            coherency = np.zeros((dataset.row_count, 2, 2), dtype=complex)
 
             for time in np.unique(observation_times):
                 sample_time = time
@@ -403,28 +431,13 @@ class EhtimMovieAdapter(object):
                     context,
                     native_path=True,
                 )
-                _write_circular_samples(
-                    visibilities,
-                    circular_slots,
-                    np.flatnonzero(row_mask),
-                    sampled,
-                )
+                coherency[row_mask] = _circular_coherency(sampled)
 
-            return replace(
-                dataset,
-                visibilities=visibilities,
-                source=context["source"],
-                ra_hours=context["ra"],
-                dec_degrees=context["dec"],
-                ampcal=True,
-                phasecal=True,
-                opacitycal=True,
-                dcal=True,
-                frcal=True,
-            )
+            return _with_coherency_samples(dataset, coherency, context), coherency
 
-        sampled_dataset = _run_quietly(sample_dataset, context["verbosity"])
-        return sampled_dataset, np.mean(self.input_model.lightcurve)
+        sampled_dataset, coherency = _run_quietly(sample_dataset, context["verbosity"])
+        output = (sampled_dataset, np.mean(self.input_model.lightcurve))
+        return output + (coherency,) if return_coherency else output
 
 
 class EhtimModelAdapter(object):
@@ -438,7 +451,7 @@ class EhtimModelAdapter(object):
     Notes
     -----
     Unlike raster Image and Movie models, this path does not use an NFFT
-    backend. Native sampling still requires a one-channel circular layout.
+    backend. Native sampling supports one-channel arbitrary receptor layouts.
     """
 
     def __init__(self, input_model):
@@ -490,8 +503,8 @@ class EhtimModelAdapter(object):
         F0 = np.abs(self.input_model.sample_uv(0.0, 0.0))
         return obs, F0
 
-    def observe_dataset(self, dataset, context):
-        """Sample an analytic model onto a native circular dataset.
+    def observe_dataset(self, dataset, context, return_coherency=False):
+        """Sample an analytic model onto a native receptor dataset.
 
         Parameters
         ----------
@@ -503,12 +516,12 @@ class EhtimModelAdapter(object):
         Returns
         -------
         VisibilityDataset
-            Dataset with analytic model samples in its circular product slots.
+            Dataset with analytic model samples in its receptor product slots.
         float
             Zero-baseline model amplitude in Jy.
         """
 
-        _require_native_circular_dataset(dataset)
+        _require_native_single_channel_dataset(dataset)
 
         def sample_dataset():
             uv = _dataset_uv(dataset)
@@ -516,14 +529,16 @@ class EhtimModelAdapter(object):
             ll = self.input_model.sample_uv(uv[:, 0], uv[:, 1], pol="LL")
             rl = self.input_model.sample_uv(uv[:, 0], uv[:, 1], pol="RL")
             lr = self.input_model.sample_uv(uv[:, 0], uv[:, 1], pol="LR")
-            return _with_circular_samples(
+            coherency = _circular_coherency((rr, ll, rl, lr))
+            return _with_coherency_samples(
                 dataset,
-                (rr, ll, rl, lr),
+                coherency,
                 context,
-            )
+            ), coherency
 
-        sampled_dataset = _run_quietly(sample_dataset, context["verbosity"])
-        return sampled_dataset, np.abs(self.input_model.sample_uv(0.0, 0.0))
+        sampled_dataset, coherency = _run_quietly(sample_dataset, context["verbosity"])
+        output = (sampled_dataset, np.abs(self.input_model.sample_uv(0.0, 0.0)))
+        return output + (coherency,) if return_coherency else output
 
 
 class FisherForecastAdapter(object):
@@ -622,7 +637,7 @@ def observe_source(input_model, obs_empty, context, p=None):
     return adapter_for(input_model).observe(obs_empty, context, p=p)
 
 
-def observe_source_dataset(input_model, dataset, context):
+def observe_source_dataset(input_model, dataset, context, return_coherency=False):
     """Sample a supported source model onto a native visibility dataset.
 
     Parameters
@@ -633,6 +648,9 @@ def observe_source_dataset(input_model, dataset, context):
         Native geometry and correlation layout to populate.
     context : mapping
         Normalized observation settings.
+    return_coherency : bool, optional
+        Return the sampled circular sky coherency as a third value. The public
+        default retains the established two-value return contract.
 
     Returns
     -------
@@ -656,4 +674,4 @@ def observe_source_dataset(input_model, dataset, context):
             "Native VisibilityDataset sampling currently supports ehtim Image, Movie, "
             "and Model inputs only."
         )
-    return adapter.observe_dataset(dataset, context)
+    return adapter.observe_dataset(dataset, context, return_coherency=return_coherency)

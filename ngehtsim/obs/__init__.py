@@ -9,6 +9,7 @@ __all__ = [
     'ehtfits',
     'obs_generator',
     'obs_plotter',
+    'receptor_configuration',
     'simulation_result',
     'uvfits',
     'visibility_dataset',

@@ -24,6 +24,11 @@ import ngehtsim.obs.fringe_selection as fringe_selection
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.station_observation as station_observation
+from ngehtsim.obs.receptor_configuration import (
+    configuration_for_dataset,
+    resolve_receptor_configuration,
+    response_rows_for_dataset,
+)
 from ngehtsim.obs.simulation_result import SimulationResult
 
 ###################################################
@@ -99,6 +104,10 @@ class obs_generator(object):
                                                                     If None, use the packaged binary weather data.
       weather_cadence (str): ``"daily"`` for the established scalar weather behavior or ``"native"``
                              for linearly interpolated three-hour Zarr weather during observation generation.
+      station_receptors (dict): Optional mapping from station name to an ordered sequence of native
+                                receptor labels or feed specifications. Unspecified stations use ``("R", "L")``.
+      station_signal_paths (dict): Optional nested mapping of calibrated station/feed path properties.
+                                   A path can define ``jones_vector``, ``sefd_scale``, and ``gain_scale``.
     """
 
     # initialize class instantiation
@@ -106,7 +115,8 @@ class obs_generator(object):
                  surf_rms_overrides=None, receiver_configuration_overrides=None, bandwidth_overrides=None,
                  T_R_overrides=None, sideband_ratio_overrides=None, lo_freq_overrides=None, hi_freq_overrides=None,
                  ap_eff_overrides=None, wind_loading_overrides=None, custom_receivers=None, station_uptimes=None,
-                 array=None, ephem='ephemeris/space', weather_store=None, weather_cadence='daily'):
+                 array=None, ephem='ephemeris/space', weather_store=None, weather_cadence='daily',
+                 station_receptors=None, station_signal_paths=None):
 
         #############################
         # astropy cache
@@ -129,6 +139,8 @@ class obs_generator(object):
         wind_loading_overrides = {} if wind_loading_overrides is None else wind_loading_overrides
         custom_receivers = {} if custom_receivers is None else custom_receivers
         station_uptimes = {} if station_uptimes is None else station_uptimes
+        station_receptors = {} if station_receptors is None else station_receptors
+        station_signal_paths = {} if station_signal_paths is None else station_signal_paths
         if weather_store is not None and not isinstance(weather_store, ZarrWeatherStore):
             raise TypeError("weather_store must be a ZarrWeatherStore instance or None.")
         if weather_cadence not in ('daily', 'native'):
@@ -154,6 +166,8 @@ class obs_generator(object):
         self.wind_loading_overrides = copy.deepcopy(wind_loading_overrides)
         self.custom_receivers = copy.deepcopy(custom_receivers)
         self.station_uptimes = copy.deepcopy(station_uptimes)
+        self.station_receptors = copy.deepcopy(station_receptors)
+        self.station_signal_paths = copy.deepcopy(station_signal_paths)
         self.array = array
         self.ephem = ephem
         self.weather_store = weather_store
@@ -732,6 +746,8 @@ class obs_generator(object):
             "t_start": self.settings["t_start"],
             "t_stop": self.settings["t_start"] + self.settings["dt"],
             "mjd": self.mjd,
+            "station_receptors": self.station_receptors,
+            "station_signal_paths": self.station_signal_paths,
         }
 
     # build context for source-model adapters
@@ -745,6 +761,8 @@ class obs_generator(object):
             "transform_backend": self.settings["transform_backend"],
             "raster_tolerance": self.settings["raster_tolerance"],
             "verbosity": self.verbosity,
+            "station_receptors": self.station_receptors,
+            "station_signal_paths": self.station_signal_paths,
         }
 
     ###################################################
@@ -838,8 +856,9 @@ class obs_generator(object):
         del p  # Native Fisher-forecast sampling is intentionally not supported.
         input_model = self._resolve_input_model(input_model, "simulate")
         if allow_mixed_basis:
-            raise NotImplementedError(
-                "Mixed-polarization simulation will be added to the native RIME path."
+            raise ValueError(
+                "allow_mixed_basis is obsolete for native simulation; configure "
+                "station_receptors and station_signal_paths instead."
             )
         if "space" in self.sites:
             raise NotImplementedError(
@@ -867,10 +886,16 @@ class obs_generator(object):
         if template.row_count == 0:
             return SimulationResult(template, {})
 
-        sampled, F0 = source_models.observe_source_dataset(
+        receptor_configuration = resolve_receptor_configuration(
+            template.stations.names,
+            self.station_receptors,
+            self.station_signal_paths,
+        )
+        sampled, F0, sky_coherency = source_models.observe_source_dataset(
             input_model,
             template,
             self.source_context(),
+            return_coherency=True,
         )
         station_terms, stations = station_observation.station_terms_for_dataset(
             sampled,
@@ -890,10 +915,12 @@ class obs_generator(object):
             reference_mjd=self.mjd,
             cache=self.station_term_cache,
         )
-        corrupted = instrumental_corruptions.apply_circular_corruptions(
+        corrupted = instrumental_corruptions.apply_receptor_corruptions(
             sampled,
+            sky_coherency,
             station_terms,
             stations,
+            receptor_configuration,
             self.rng,
             addnoise=addnoise,
             addgains=addgains,
@@ -1330,7 +1357,8 @@ class obs_generator(object):
         # return observation object
         return obs
 
-    def _native_selection_mask(self, dataset, input_model=None, simulation_kwargs=None):
+    def _native_selection_mask(self, dataset, station_terms, input_model=None,
+                               simulation_kwargs=None):
         """Return the native row-selection mask for availability and fringe finding."""
 
         mask = ~np.any(dataset.flags & dataset.sample_present, axis=(1, 2))
@@ -1362,15 +1390,18 @@ class obs_generator(object):
 
         snr_algorithm, snr_args = self.settings["fringe_finder"]
         snr_algorithm = snr_algorithm.lower()
+        receptor_configuration = resolve_receptor_configuration(
+            dataset.stations.names,
+            self.station_receptors,
+            self.station_signal_paths,
+        )
+        fringe_rows = _fringe_rows_from_dataset(
+            dataset,
+            station_terms=station_terms,
+            receptor_configuration=receptor_configuration,
+        )
         if snr_algorithm == "naive":
-            circular_slots = dataset.circular_product_slots()
-            rows = np.arange(dataset.row_count)
-            pseudo_i_amplitude = 0.5 * (
-                np.abs(dataset.visibilities[rows, 0, circular_slots[:, 0]])
-                + np.abs(dataset.visibilities[rows, 0, circular_slots[:, 1]])
-            )
-            pseudo_i_sigma = dataset.sigma_jy[rows, 0, circular_slots[:, 0]] / np.sqrt(2.0)
-            mask &= (pseudo_i_amplitude / pseudo_i_sigma) > snr_args
+            mask &= fringe_rows.detectability_snr > snr_args
         elif snr_algorithm == "fringegroups":
             selected_indices = np.flatnonzero(mask)
             selected = dataset.take_rows(selected_indices)
@@ -1379,6 +1410,8 @@ class obs_generator(object):
                 selected,
                 snr_args[0],
                 snr_args[1],
+                station_terms=_take_station_terms(station_terms, selected_indices),
+                receptor_configuration=receptor_configuration,
             )
         elif snr_algorithm == "fpt":
             if input_model is None or simulation_kwargs is None:
@@ -1389,6 +1422,8 @@ class obs_generator(object):
             mask &= self._native_fpt_selection_mask(
                 dataset,
                 input_model,
+                station_terms,
+                receptor_configuration,
                 snr_ref,
                 tint_ref,
                 freq_ref,
@@ -1402,8 +1437,9 @@ class obs_generator(object):
             raise ValueError("Unknown algorithm for fringe_finder.")
         return mask
 
-    def _native_fpt_selection_mask(self, target_dataset, target_model, snr_ref,
-                                   tint_ref, freq_ref, model_ref, simulation_kwargs,
+    def _native_fpt_selection_mask(self, target_dataset, target_model,
+                                   target_station_terms, target_receptor_configuration,
+                                   snr_ref, tint_ref, freq_ref, model_ref, simulation_kwargs,
                                    target_available_sites, target_row_available,
                                    unready_sites):
         """Run the FPT reference simulation without constructing ``ehtim.Obsdata``."""
@@ -1428,8 +1464,20 @@ class obs_generator(object):
             and site not in unready_sites
         ]
         return fringe_selection.fpt_fringe_group_mask(
-            _fringe_rows_from_dataset(target_dataset),
-            _fringe_rows_from_dataset(reference_dataset),
+            _fringe_rows_from_dataset(
+                target_dataset,
+                station_terms=target_station_terms,
+                receptor_configuration=target_receptor_configuration,
+            ),
+            _fringe_rows_from_dataset(
+                reference_dataset,
+                station_terms=reference_result.station_terms,
+                receptor_configuration=resolve_receptor_configuration(
+                    reference_dataset.stations.names,
+                    reference_generator.station_receptors,
+                    reference_generator.station_signal_paths,
+                ),
+            ),
             snr_ref,
             tint_ref,
             freq_ref / (self.freq / 1.0e9),
@@ -1480,6 +1528,7 @@ class obs_generator(object):
 
         mask = self._native_selection_mask(
             result.dataset,
+            result.station_terms,
             input_model=input_model,
             simulation_kwargs=simulation_kwargs,
         )
@@ -2168,14 +2217,97 @@ def fringegroups(obsgen, obs, snr_ref, tint_ref):
     )
 
 
-def _fringe_rows_from_dataset(dataset):
-    """Extract circular parallel-hand fringe-selection inputs from a native dataset."""
+def _take_station_terms(station_terms, row_indices):
+    """Return row-aligned station terms restricted to selected native rows."""
+
+    row_indices = np.asarray(row_indices, dtype=np.intp)
+    count = len(station_terms["t1"])
+    selected = {}
+    for name, values in station_terms.items():
+        values_array = np.asarray(values)
+        if values_array.shape == (count,):
+            selected[name] = values_array[row_indices]
+        else:
+            selected[name] = values
+    return selected
+
+
+def _fringe_rows_from_dataset(dataset, station_terms=None, receptor_configuration=None):
+    """Extract basis-agnostic fringe evidence from a native dataset.
+
+    Supplying station terms and a receptor configuration enables weighted
+    Stokes-I reconstruction in the common sky basis. Fully calibrated mixed
+    datasets can infer their standard R/L/X/Y responses. The circular RR/LL
+    path remains available for narrow compatibility callers that provide
+    neither.
+    """
 
     if dataset.channel_count != 1:
         raise ValueError("Native fringe selection requires exactly one spectral channel.")
-    circular_slots = dataset.circular_product_slots()
-    rows = np.arange(dataset.row_count)
     names = np.asarray(dataset.stations.names)
+    if station_terms is not None or receptor_configuration is not None:
+        if station_terms is None or receptor_configuration is None:
+            raise ValueError(
+                "Native mixed-receptor fringe selection requires station_terms and receptor_configuration."
+            )
+        left, right = instrumental_corruptions.receptor_rows_for_station_terms(
+            dataset,
+            station_terms,
+            receptor_configuration,
+        )
+        present = dataset.sample_present[:, 0] & ~dataset.flags[:, 0]
+        snr = fringe_selection.receptor_fringe_snr(
+            dataset.visibilities[:, 0],
+            dataset.sigma_jy[:, 0],
+            left,
+            right,
+            present,
+        )
+        return fringe_selection.FringeRows(
+            time=dataset.time_mjd,
+            station1=names[dataset.antenna1],
+            station2=names[dataset.antenna2],
+            integration_time_s=dataset.integration_time_s,
+            fringe_snr=snr,
+        )
+
+    try:
+        circular_slots = dataset.circular_product_slots()
+    except ValueError:
+        if not all((dataset.ampcal, dataset.phasecal, dataset.dcal, dataset.frcal)):
+            raise ValueError(
+                "Mixed-receptor fringe selection needs station_terms and "
+                "receptor_configuration when the dataset is uncalibrated."
+            )
+        configuration = configuration_for_dataset(dataset)
+        response, _, gain_scale = response_rows_for_dataset(dataset, configuration)
+        left = np.zeros((dataset.row_count, dataset.product_slot_count, 2), dtype=complex)
+        right = np.zeros_like(left)
+        products = dataset.correlation_products
+        for row, product_ids in enumerate(dataset.row_product_id):
+            for slot, product_id in enumerate(product_ids):
+                if product_id < 0:
+                    continue
+                receptor1 = products.receptor1_id[product_id]
+                receptor2 = products.receptor2_id[product_id]
+                left[row, slot] = gain_scale[receptor1] * response[receptor1]
+                right[row, slot] = gain_scale[receptor2] * response[receptor2]
+        present = dataset.sample_present[:, 0] & ~dataset.flags[:, 0]
+        snr = fringe_selection.receptor_fringe_snr(
+            dataset.visibilities[:, 0],
+            dataset.sigma_jy[:, 0],
+            left,
+            right,
+            present,
+        )
+        return fringe_selection.FringeRows(
+            time=dataset.time_mjd,
+            station1=names[dataset.antenna1],
+            station2=names[dataset.antenna2],
+            integration_time_s=dataset.integration_time_s,
+            fringe_snr=snr,
+        )
+    rows = np.arange(dataset.row_count)
     return fringe_selection.FringeRows(
         time=dataset.time_mjd,
         station1=names[dataset.antenna1],
@@ -2188,13 +2320,18 @@ def _fringe_rows_from_dataset(dataset):
     )
 
 
-def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref):
-    """Apply the fringe-group proxy directly to a native circular dataset."""
+def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref, station_terms=None,
+                         receptor_configuration=None):
+    """Apply the fringe-group proxy directly to a native receptor dataset."""
 
     if dataset.row_count == 0:
         return np.zeros(0, dtype=bool)
 
-    rows = _fringe_rows_from_dataset(dataset)
+    rows = _fringe_rows_from_dataset(
+        dataset,
+        station_terms=station_terms,
+        receptor_configuration=receptor_configuration,
+    )
     available_sites = [site for site in obsgen.sites if obsgen.bands[site] is not None]
     return fringe_selection.fringe_group_mask(
         rows,
@@ -2239,6 +2376,8 @@ def _fpt_reference_generator(obsgen, snr_ref, tint_ref, freq_ref, model_ref,
         wind_loading_overrides=copy.deepcopy(obsgen.wind_loading_overrides),
         custom_receivers=copy.deepcopy(obsgen.custom_receivers),
         station_uptimes=copy.deepcopy(obsgen.station_uptimes),
+        station_receptors=copy.deepcopy(getattr(obsgen, "station_receptors", {})),
+        station_signal_paths=copy.deepcopy(getattr(obsgen, "station_signal_paths", {})),
         array=getattr(obsgen, 'array', None),
         ephem=ephem,
         weather_store=obsgen.weather_store,

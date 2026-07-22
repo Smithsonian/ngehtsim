@@ -37,6 +37,63 @@ wind effects at each observation timestamp. SYMBA's static ``.antennas``
 format cannot represent this time dependence and is not available in native
 weather mode.
 
+Mixed-Receptor Native Simulation
+--------------------------------
+
+The native simulator can generate a different receptor inventory at every
+station. Configure this through constructor arguments, rather than a YAML
+setting, so feed and calibration definitions remain explicit Python data:
+
+.. code-block:: python
+
+   obsgen = obs_generator.obs_generator(
+       settings=settings,
+       station_receptors={
+           "ALMA": ("X", "Y"),
+           "APEX": ("R", "L"),
+           "CUSTOM": ("R", "X", "Y"),
+           "SINGLE": ("Y",),
+       },
+   )
+
+Standard ``R``, ``L``, ``X``, and ``Y`` labels receive their conventional
+Jones rows in a common circular sky basis. Each recorded baseline contains the
+full Cartesian product of the two stations' available voltage streams, so a
+single-feed or three-feed station does not require a special data shape.
+
+For a non-standard calibrated signal path, provide a feed mapping and its
+explicit Jones row, relative SEFD, and fixed gain:
+
+.. code-block:: python
+
+   import numpy as np
+
+   obsgen = obs_generator.obs_generator(
+       settings=settings,
+       station_receptors={"CUSTOM": ({"feed_id": "P"},)},
+       station_signal_paths={
+           "CUSTOM": {
+               "P": {
+                   "jones_vector": (1.0, 0.3j),
+                   "sefd_scale": 1.15,
+                   "gain_scale": 0.98 * np.exp(0.1j),
+               },
+           },
+       },
+   )
+
+Native fringe selection reconstructs Stokes I when the available feed products
+have rank two. A rank-deficient baseline, such as one containing a single-feed
+station, uses its strongest individual product as the fringe-detection proxy.
+This follows the HOPS fringe-group criterion without treating a particular
+polarization basis as privileged. FPT uses the same evidence at target and
+reference frequency; it remains a detectability proxy and does not modify
+visibility phases.
+
+Mixed-receptor datasets can be written to FITS-EHT. UVFITS and
+``ehtim.Obsdata`` export remain intentionally limited to their representable
+uniform-polarization layouts.
+
 Raster Source Transform Backend
 -------------------------------
 
