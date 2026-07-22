@@ -19,9 +19,11 @@ The native ground-array geometry kernel produces baseline rows, elevation
 selection masks, and a circular visibility template without constructing an
 ``ehtim.Obsdata`` object. Spacecraft stations retain the legacy geometry path.
 The station-term kernel then evaluates weather, SEFD, uptime, gains, leakage,
-and feed-rotation quantities on those rows. Its current corruption application
-is circular and one-channel; mixed-receptor station corruptions are a planned
-native extension rather than an implicit conversion.
+and feed-rotation quantities on those rows. The one-channel corruption kernel
+uses a circular-sky Jones RIME and projects the result into every configured
+station-local receptor path. This supports circular, linear, mixed, single-
+feed, and over-complete feed inventories without converting the archived data
+to an assumed global basis.
 
 .. currentmodule:: ngehtsim.obs.observation_geometry
 
@@ -50,8 +52,10 @@ Fringe and Corruption Primitives
 
 The fringe functions are deterministic detectability and fringe-selection
 primitives. Frequency phase transfer (FPT) is currently a selection proxy; it
-does not alter visibility phases. Circular corruption functions currently
-require a one-channel dataset containing exactly RR, LL, RL, and LR products.
+does not alter visibility phases. Native fringe evidence reconstructs Stokes I
+from any rank-two receptor layout, with a strongest-product fallback when a
+baseline cannot constrain the full coherency. This is independent of whether
+the recorded feeds are circular, linear, or mixed.
 
 .. currentmodule:: ngehtsim.obs.simulation_result
 
@@ -67,8 +71,14 @@ require a one-channel dataset containing exactly RR, LL, RL, and LR products.
 
 .. autofunction:: fpt_fringe_group_mask
 
+.. autofunction:: receptor_fringe_snr
+
 .. currentmodule:: ngehtsim.obs.instrumental_corruptions
 
 .. autofunction:: apply_circular_leakage
 
 .. autofunction:: apply_circular_corruptions
+
+.. autofunction:: apply_receptor_corruptions
+
+.. autofunction:: receptor_rows_for_station_terms

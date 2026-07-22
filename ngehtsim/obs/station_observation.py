@@ -642,16 +642,17 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, gainamp=0.04,
     Returns
     -------
     dict
-        Row-aligned station terms consumed by the circular corruption kernel.
+        Row-aligned station terms consumed by the native receptor RIME.
     StationTable
         Updated immutable station metadata with simulated SEFD and leakage
         values.
 
     Notes
     -----
-    The returned terms are currently specific to circular, one-channel
-    corruption. They are retained in :class:`SimulationResult` as provenance,
-    not yet as a stable archive interchange format.
+    The terms are evaluated in the common circular sky frame and are projected
+    into configured native receptor paths by the one-channel corruption RIME.
+    They are retained in :class:`SimulationResult` as provenance, not yet as a
+    stable archive interchange format.
     """
 
     metadata = station_metadata_for_dataset(

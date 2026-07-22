@@ -47,5 +47,16 @@ for lossless interchange of native mixed-receptor data.
 
 .. autofunction:: standard_products_for_rows
 
+.. autofunction:: receptor_products_for_rows
+
 .. autoclass:: VisibilityDataset
    :members:
+
+.. currentmodule:: ngehtsim.obs.receptor_configuration
+
+.. autoclass:: ReceptorConfiguration
+   :members:
+
+.. autofunction:: resolve_receptor_configuration
+
+.. autofunction:: configuration_for_dataset

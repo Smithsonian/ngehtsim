@@ -407,6 +407,81 @@ def standard_products_for_rows(receptors, antenna1, antenna2, product_labels):
     )
 
 
+def receptor_products_for_rows(receptors, antenna1, antenna2):
+    """Build every station-feed correlation available on each visibility row.
+
+    Unlike :func:`standard_products_for_rows`, this function does not assume a
+    shared two-feed polarization layout.  Each row contains the Cartesian
+    product of the first and second station's receptor inventories.  Dense
+    product slots are padded with ``-1`` for short rows; callers must mark the
+    corresponding data, uncertainty, and flag slots as absent.
+
+    For conventional shared R/L or X/Y inventories, the diagonal products are
+    ordered first followed by the cross products.  This preserves the historic
+    ``RR, LL, RL, LR`` and ``XX, YY, XY, YX`` order respectively.
+
+    Parameters
+    ----------
+    receptors : ReceptorTable
+        Station-local receptor inventory.
+    antenna1, antenna2 : array_like, shape (row,)
+        Ordered station indices for every visibility row.
+
+    Returns
+    -------
+    CorrelationProductTable
+        Unique receptor-pair definitions.
+    numpy.ndarray
+        Product IDs with shape ``(row, max_product_slot)``. Padding is ``-1``.
+    """
+
+    if not isinstance(receptors, ReceptorTable):
+        raise TypeError("receptors must be a ReceptorTable.")
+    antenna1 = _integer_array(antenna1, "antenna1")
+    antenna2 = _integer_array(antenna2, "antenna2")
+    if antenna1.ndim != 1 or antenna2.shape != antenna1.shape:
+        raise ValueError("antenna1 and antenna2 must be matching one-dimensional arrays.")
+
+    per_row_pairs = []
+    maximum = 0
+    labels = np.asarray(receptors.polarization_label, dtype=object)
+    for station1, station2 in zip(antenna1, antenna2):
+        first = np.flatnonzero(receptors.station_index == station1)
+        second = np.flatnonzero(receptors.station_index == station2)
+        if not len(first) or not len(second):
+            raise ValueError("Every visibility station must own at least one receptor.")
+        diagonal = [
+            (left, right)
+            for left in first for right in second
+            if labels[left] == labels[right]
+        ]
+        all_pairs = [(left, right) for left in first for right in second]
+        ordered = diagonal + [pair for pair in all_pairs if pair not in diagonal]
+        per_row_pairs.append(ordered)
+        maximum = max(maximum, len(ordered))
+
+    product_id_by_pair = {}
+    first_receptor = []
+    second_receptor = []
+    row_product_id = np.full((len(antenna1), maximum), -1, dtype=np.intp)
+    for row, pairs in enumerate(per_row_pairs):
+        for slot, pair in enumerate(pairs):
+            product_id = product_id_by_pair.get(pair)
+            if product_id is None:
+                product_id = len(first_receptor)
+                product_id_by_pair[pair] = product_id
+                first_receptor.append(pair[0])
+                second_receptor.append(pair[1])
+            row_product_id[row, slot] = product_id
+    return (
+        CorrelationProductTable(
+            receptor1_id=np.asarray(first_receptor, dtype=np.intp),
+            receptor2_id=np.asarray(second_receptor, dtype=np.intp),
+        ),
+        row_product_id,
+    )
+
+
 @dataclass(frozen=True)
 class VisibilityDataset:
     """Native visibility data with explicit station-receptor correlations.

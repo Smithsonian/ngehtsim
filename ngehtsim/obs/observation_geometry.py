@@ -10,11 +10,12 @@ import ehtim as eh
 
 from ngehtsim.obs.visibility_dataset import (
     CIRCULAR_PRODUCT_LABELS,
-    ReceptorTable,
     StationTable,
     VisibilityDataset,
+    receptor_products_for_rows,
     standard_products_for_rows,
 )
+from ngehtsim.obs.receptor_configuration import resolve_receptor_configuration
 
 
 GEOMETRY_CACHE_FIELDS = (
@@ -28,6 +29,8 @@ GEOMETRY_CACHE_FIELDS = (
     "t_start",
     "t_stop",
     "mjd",
+    "station_receptors",
+    "station_signal_paths",
 )
 
 
@@ -130,7 +133,7 @@ def _cache_value(value):
 
 
 def geometry_cache_key(context):
-    return tuple((field, _cache_value(context[field])) for field in GEOMETRY_CACHE_FIELDS)
+    return tuple((field, _cache_value(context.get(field))) for field in GEOMETRY_CACHE_FIELDS)
 
 ###################################################
 # empty observation construction
@@ -388,7 +391,7 @@ def ground_visibility_template(array, context, geometry=None):
     """Build a native visibility template for a ground-only array.
 
     The template carries geometry and thermal uncertainties but contains
-    zero-valued circular visibilities. Source sampling occurs separately
+    zero-valued native visibility products. Source sampling occurs separately
     through the source-adapter layer.
 
     Parameters
@@ -404,24 +407,12 @@ def ground_visibility_template(array, context, geometry=None):
     Returns
     -------
     VisibilityDataset
-        One-channel circular template with RR, LL, RL, LR products and thermal
-        ``sigma_jy`` values computed from station SEFDs.
+        One-channel template containing every requested station-feed product
+        and thermal ``sigma_jy`` values computed from station SEFDs.
     """
 
     if geometry is None:
         geometry = ground_geometry(array, context)
-
-    sefd1r = array.tarr["sefdr"][geometry.station1_indices]
-    sefd2r = array.tarr["sefdr"][geometry.station2_indices]
-    sefd1l = array.tarr["sefdl"][geometry.station1_indices]
-    sefd2l = array.tarr["sefdl"][geometry.station2_indices]
-    denominator = 2.0 * float(context["bandwidth_hz"]) * float(context["t_int"])
-    sigma = np.column_stack((
-        np.sqrt(sefd1r * sefd2r / denominator) / 0.88,
-        np.sqrt(sefd1l * sefd2l / denominator) / 0.88,
-        np.sqrt(sefd1r * sefd2l / denominator) / 0.88,
-        np.sqrt(sefd1l * sefd2r / denominator) / 0.88,
-    ))
 
     scan_half_width_s = 0.5 * float(context["t_int"])
     scan_times = np.unique(geometry.time_hours)
@@ -431,17 +422,47 @@ def ground_visibility_template(array, context, geometry=None):
     scan_stop_mjd = reference_mjd + (scan_times / 24.0) + (scan_half_width_s / 86400.0)
 
     stations = StationTable.from_ehtim_tarr(array.tarr)
-    receptors = ReceptorTable.from_station_labels(
-        len(stations.names),
-        ("R", "L"),
-        "CIRCULAR",
+    configuration = resolve_receptor_configuration(
+        stations.names,
+        context.get("station_receptors"),
+        context.get("station_signal_paths"),
     )
-    correlation_products, row_product_id = standard_products_for_rows(
-        receptors,
-        geometry.station1_indices,
-        geometry.station2_indices,
-        CIRCULAR_PRODUCT_LABELS,
+    receptors = configuration.receptors
+    receptor_labels = np.asarray(receptors.polarization_label, dtype=object)
+    standard_circular = all(
+        tuple(receptor_labels[receptors.station_index == index]) == ("R", "L")
+        for index in range(len(stations.names))
     )
+    if standard_circular:
+        correlation_products, row_product_id = standard_products_for_rows(
+            receptors,
+            geometry.station1_indices,
+            geometry.station2_indices,
+            CIRCULAR_PRODUCT_LABELS,
+        )
+    else:
+        correlation_products, row_product_id = receptor_products_for_rows(
+            receptors,
+            geometry.station1_indices,
+            geometry.station2_indices,
+        )
+    slots = row_product_id.shape[1]
+    visibilities = np.zeros((len(time_mjd), 1, slots), dtype=complex)
+    sigma = np.full((len(time_mjd), 1, slots), np.nan, dtype=float)
+    flags = np.ones((len(time_mjd), 1, slots), dtype=bool)
+    denominator = 2.0 * float(context["bandwidth_hz"]) * float(context["t_int"])
+    for row, product_ids in enumerate(row_product_id):
+        for slot, product_id in enumerate(product_ids):
+            if product_id < 0:
+                continue
+            receptor1 = correlation_products.receptor1_id[product_id]
+            receptor2 = correlation_products.receptor2_id[product_id]
+            station1 = receptors.station_index[receptor1]
+            station2 = receptors.station_index[receptor2]
+            sefd1 = array.tarr["sefdr"][station1] * configuration.sefd_scale[receptor1]
+            sefd2 = array.tarr["sefdr"][station2] * configuration.sefd_scale[receptor2]
+            sigma[row, 0, slot] = np.sqrt(sefd1 * sefd2 / denominator) / 0.88
+            flags[row, 0, slot] = False
     return VisibilityDataset(
         stations=stations,
         receptors=receptors,
@@ -457,9 +478,9 @@ def ground_visibility_template(array, context, geometry=None):
         channel_bandwidth_hz=np.array((float(context["bandwidth_hz"]),)),
         spectral_window_id=np.array((0,), dtype=np.intp),
         row_product_id=row_product_id,
-        visibilities=np.zeros((len(time_mjd), 1, 4), dtype=complex),
-        sigma_jy=sigma[:, np.newaxis, :],
-        flags=np.zeros((len(time_mjd), 1, 4), dtype=bool),
+        visibilities=visibilities,
+        sigma_jy=sigma,
+        flags=flags,
         source=str(context["ra"]) + ":" + str(context["dec"]),
         ra_hours=float(context["ra"]),
         dec_degrees=float(context["dec"]),

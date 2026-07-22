@@ -11,11 +11,11 @@ than ehtim's pyNFFT path. The ``transform_backend`` and ``raster_tolerance``
 settings are described in :doc:`obsgen`; neither adapter mutates the source
 object supplied by the caller.
 
-For native datasets, the current adapter supports one-channel circular RR,
-LL, RL, LR products. Mixed-receptor source sampling requires the forthcoming
-native source-structure model and is rejected rather than assigned an implicit
-polarization conversion. The Image and Movie raster-transform backend is
-described in :doc:`obsgen`.
+For native datasets, the adapters sample one spectral channel into arbitrary
+station/feed products through an explicit Jones measurement equation. The
+source coherency is sampled in a common circular sky basis, then projected into
+the configured R/L, X/Y, mixed, single-feed, or custom receptor paths. The
+Image and Movie raster-transform backend is described in :doc:`obsgen`.
 
 The lower-level functions below are useful when building integrations around
 the native data model. Typical users should call ``obs_generator.make_obs()``.

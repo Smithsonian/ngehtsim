@@ -5,8 +5,13 @@ from __future__ import annotations
 import inspect
 
 from ngehtsim.obs.ehtfits import read_ehtfits, write_ehtfits
-from ngehtsim.obs.fringe_selection import FringeRows, fpt_fringe_group_mask, fringe_group_mask
-from ngehtsim.obs.instrumental_corruptions import apply_circular_corruptions, apply_circular_leakage
+from ngehtsim.obs.fringe_selection import FringeRows, fpt_fringe_group_mask, fringe_group_mask, receptor_fringe_snr
+from ngehtsim.obs.instrumental_corruptions import (
+    apply_circular_corruptions,
+    apply_circular_leakage,
+    apply_receptor_corruptions,
+    receptor_rows_for_station_terms,
+)
 from ngehtsim.obs.observation_geometry import (
     GroundGeometry,
     StationGeometry,
@@ -35,6 +40,12 @@ from ngehtsim.obs.visibility_dataset import (
     StationTable,
     VisibilityDataset,
     standard_products_for_rows,
+    receptor_products_for_rows,
+)
+from ngehtsim.obs.receptor_configuration import (
+    ReceptorConfiguration,
+    configuration_for_dataset,
+    resolve_receptor_configuration,
 )
 
 
@@ -43,6 +54,10 @@ DOCUMENTED_NATIVE_API = {
     "ReceptorTable": ReceptorTable,
     "CorrelationProductTable": CorrelationProductTable,
     "standard_products_for_rows": standard_products_for_rows,
+    "receptor_products_for_rows": receptor_products_for_rows,
+    "ReceptorConfiguration": ReceptorConfiguration,
+    "configuration_for_dataset": configuration_for_dataset,
+    "resolve_receptor_configuration": resolve_receptor_configuration,
     "VisibilityDataset": VisibilityDataset,
     "read_ehtfits": read_ehtfits,
     "write_ehtfits": write_ehtfits,
@@ -59,9 +74,12 @@ DOCUMENTED_NATIVE_API = {
     "station_terms_for_dataset": station_terms_for_dataset,
     "apply_circular_leakage": apply_circular_leakage,
     "apply_circular_corruptions": apply_circular_corruptions,
+    "apply_receptor_corruptions": apply_receptor_corruptions,
+    "receptor_rows_for_station_terms": receptor_rows_for_station_terms,
     "FringeRows": FringeRows,
     "fringe_group_mask": fringe_group_mask,
     "fpt_fringe_group_mask": fpt_fringe_group_mask,
+    "receptor_fringe_snr": receptor_fringe_snr,
     "EhtimImageAdapter": EhtimImageAdapter,
     "EhtimMovieAdapter": EhtimMovieAdapter,
     "EhtimModelAdapter": EhtimModelAdapter,
