@@ -18,12 +18,13 @@ Ground Geometry and Station Terms
 The native ground-array geometry kernel produces baseline rows, elevation
 selection masks, and a circular visibility template without constructing an
 ``ehtim.Obsdata`` object. Spacecraft stations retain the legacy geometry path.
-The station-term kernel then evaluates weather, SEFD, uptime, gains, leakage,
-and feed-rotation quantities on those rows. The one-channel corruption kernel
-uses a circular-sky Jones RIME and projects the result into every configured
-station-local receptor path. This supports circular, linear, mixed, single-
-feed, and over-complete feed inventories without converting the archived data
-to an assumed global basis.
+The station-term kernel evaluates weather, SEFD, uptime, and station geometry
+on those rows. ``StationCorruptionModel`` separately declares the realization
+of common station Jones terms and per-path gains. The one-channel corruption
+kernel uses a circular-sky Jones RIME and projects the result into every
+configured station-local receptor path. This supports circular, linear,
+mixed, single-feed, and over-complete feed inventories without converting the
+archived data to an assumed global basis.
 
 .. currentmodule:: ngehtsim.obs.observation_geometry
 
@@ -46,6 +47,17 @@ to an assumed global basis.
 .. autofunction:: station_metadata_for_dataset
 
 .. autofunction:: station_terms_for_dataset
+
+.. currentmodule:: ngehtsim.obs.station_effects
+
+.. autoclass:: GainModel
+   :members:
+
+.. autoclass:: LeakageModel
+   :members:
+
+.. autoclass:: StationCorruptionModel
+   :members:
 
 Fringe and Corruption Primitives
 --------------------------------

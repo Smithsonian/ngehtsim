@@ -30,6 +30,7 @@ from ngehtsim.obs.receptor_configuration import (
     response_rows_for_dataset,
 )
 from ngehtsim.obs.simulation_result import SimulationResult
+from ngehtsim.obs.station_effects import StationCorruptionModel
 
 ###################################################
 # helpers
@@ -840,26 +841,47 @@ class obs_generator(object):
             print("No input model passed to {0}; using the configured model.".format(caller))
         return self.im
 
-    def simulate(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
-                 leakamp=0.1, opacitycal=True, addFR=True, addleakage=False,
-                 flagwind=True, flagday=False, flagsun=True,
-                 allow_mixed_basis=False, el_min=const.el_min, el_max=const.el_max,
-                 p=None):
+    def simulate(self, input_model=None, effects=None, el_min=const.el_min,
+                 el_max=const.el_max):
         """Simulate a ground-array observation into a native result object.
 
         This is the primary v2 simulation API. It retains all rows, including
         rows rejected by station-based flagging, in ``result.dataset.flags``.
         ``ehtim`` source classes are accepted as input adapters, but no
         ``ehtim.Obsdata`` is constructed during simulation.
+
+        Parameters
+        ----------
+        input_model : ehtim Image, Movie, or Model, optional
+            Source model to sample. The generator's configured model is used
+            when omitted.
+        effects : StationCorruptionModel, optional
+            Declarative native thermal-noise, calibration, flagging, and
+            station/receptor corruption configuration. The default preserves
+            the native v2 defaults.
+        el_min, el_max : float, optional
+            Inclusive ground-station elevation limits in degrees.
+
+        Returns
+        -------
+        SimulationResult
+            Full native geometry, correlations, flags, and station-term
+            provenance before fringe-selection flags are applied.
+
+        Raises
+        ------
+        NotImplementedError
+            If spacecraft geometry is requested. Use ``observe_legacy`` or
+            ``make_obs_legacy`` for the retained legacy spacecraft route.
+        TypeError
+            If the source has no native adapter or ``effects`` is not a
+            :class:`StationCorruptionModel`.
         """
 
-        del p  # Native Fisher-forecast sampling is intentionally not supported.
         input_model = self._resolve_input_model(input_model, "simulate")
-        if allow_mixed_basis:
-            raise ValueError(
-                "allow_mixed_basis is obsolete for native simulation; configure "
-                "station_receptors and station_signal_paths instead."
-            )
+        effects = StationCorruptionModel() if effects is None else effects
+        if not isinstance(effects, StationCorruptionModel):
+            raise TypeError("effects must be a StationCorruptionModel instance.")
         if "space" in self.sites:
             raise NotImplementedError(
                 "Native spacecraft geometry is not implemented; use observe_legacy() "
@@ -883,14 +905,14 @@ class obs_generator(object):
             el_min=el_min,
             el_max=el_max,
         )
-        if template.row_count == 0:
-            return SimulationResult(template, {})
-
         receptor_configuration = resolve_receptor_configuration(
             template.stations.names,
             self.station_receptors,
             self.station_signal_paths,
         )
+        effects.validate_receptors(template.stations.names, template.receptors)
+        if template.row_count == 0:
+            return SimulationResult(template, {})
         sampled, F0, sky_coherency = source_models.observe_source_dataset(
             input_model,
             template,
@@ -902,13 +924,7 @@ class obs_generator(object):
             F0,
             self.station_context((sampled.time_mjd - self.mjd) * 24.0),
             self.rng,
-            gainamp=gainamp,
-            leakamp=leakamp,
-            addgains=addgains,
-            addleakage=addleakage,
-            flagwind=flagwind,
-            flagday=flagday,
-            flagsun=flagsun,
+            effects=effects,
             solar_angle=self.solar_angle,
             verbosity=self.verbosity,
             windspeed_sefd_modifier=windspeed_SEFD_modification,
@@ -921,12 +937,8 @@ class obs_generator(object):
             station_terms,
             stations,
             receptor_configuration,
+            effects,
             self.rng,
-            addnoise=addnoise,
-            addgains=addgains,
-            opacitycal=opacitycal,
-            addFR=addFR,
-            addleakage=addleakage,
         )
         return SimulationResult(corrupted, station_terms)
 
@@ -1357,7 +1369,7 @@ class obs_generator(object):
         # return observation object
         return obs
 
-    def _native_selection_mask(self, dataset, station_terms, input_model=None,
+    def _native_selection_mask(self, dataset, station_terms, effects, input_model=None,
                                simulation_kwargs=None):
         """Return the native row-selection mask for availability and fringe finding."""
 
@@ -1399,6 +1411,7 @@ class obs_generator(object):
             dataset,
             station_terms=station_terms,
             receptor_configuration=receptor_configuration,
+            effects=effects,
         )
         if snr_algorithm == "naive":
             mask &= fringe_rows.detectability_snr > snr_args
@@ -1412,6 +1425,7 @@ class obs_generator(object):
                 snr_args[1],
                 station_terms=_take_station_terms(station_terms, selected_indices),
                 receptor_configuration=receptor_configuration,
+                effects=effects,
             )
         elif snr_algorithm == "fpt":
             if input_model is None or simulation_kwargs is None:
@@ -1424,6 +1438,7 @@ class obs_generator(object):
                 input_model,
                 station_terms,
                 receptor_configuration,
+                effects,
                 snr_ref,
                 tint_ref,
                 freq_ref,
@@ -1438,7 +1453,7 @@ class obs_generator(object):
         return mask
 
     def _native_fpt_selection_mask(self, target_dataset, target_model,
-                                   target_station_terms, target_receptor_configuration,
+                                   target_station_terms, target_receptor_configuration, target_effects,
                                    snr_ref, tint_ref, freq_ref, model_ref, simulation_kwargs,
                                    target_available_sites, target_row_available,
                                    unready_sites):
@@ -1468,6 +1483,7 @@ class obs_generator(object):
                 target_dataset,
                 station_terms=target_station_terms,
                 receptor_configuration=target_receptor_configuration,
+                effects=target_effects,
             ),
             _fringe_rows_from_dataset(
                 reference_dataset,
@@ -1477,6 +1493,7 @@ class obs_generator(object):
                     reference_generator.station_receptors,
                     reference_generator.station_signal_paths,
                 ),
+                effects=simulation_kwargs["effects"],
             ),
             snr_ref,
             tint_ref,
@@ -1490,34 +1507,40 @@ class obs_generator(object):
             ),
         )
 
-    def make_dataset(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
-                     leakamp=0.1, opacitycal=True, addFR=True, addleakage=False,
-                     flagwind=True, flagday=False, flagsun=True,
-                     allow_mixed_basis=False, el_min=const.el_min,
-                     el_max=const.el_max, p=None):
+    def make_dataset(self, input_model=None, effects=None, el_min=const.el_min,
+                     el_max=const.el_max):
         """Generate a fully selected native :class:`SimulationResult`.
 
         Station, availability, technical-readiness, and fringe-selection
         failures are represented in ``result.dataset.flags`` rather than by
         deleting rows from the internal data model.
+
+        Parameters
+        ----------
+        input_model : ehtim Image, Movie, or Model, optional
+            Source model to sample. The generator's configured model is used
+            when omitted.
+        effects : StationCorruptionModel, optional
+            Declarative native station-effect configuration. The same model
+            is used for target and reference simulations when FPT selection
+            is configured.
+        el_min, el_max : float, optional
+            Inclusive ground-station elevation limits in degrees.
+
+        Returns
+        -------
+        SimulationResult
+            Native dataset with all rejected samples retained and flagged.
         """
 
         input_model = self._resolve_input_model(input_model, "make_dataset")
+        effects = StationCorruptionModel() if effects is None else effects
+        if not isinstance(effects, StationCorruptionModel):
+            raise TypeError("effects must be a StationCorruptionModel instance.")
         simulation_kwargs = {
-            "addnoise": addnoise,
-            "addgains": addgains,
-            "gainamp": gainamp,
-            "leakamp": leakamp,
-            "opacitycal": opacitycal,
-            "addFR": addFR,
-            "addleakage": addleakage,
-            "flagwind": flagwind,
-            "flagday": flagday,
-            "flagsun": flagsun,
-            "allow_mixed_basis": allow_mixed_basis,
+            "effects": effects,
             "el_min": el_min,
             "el_max": el_max,
-            "p": p,
         }
         result = self.simulate(
             input_model=input_model,
@@ -1529,6 +1552,7 @@ class obs_generator(object):
         mask = self._native_selection_mask(
             result.dataset,
             result.station_terms,
+            effects,
             input_model=input_model,
             simulation_kwargs=simulation_kwargs,
         )
@@ -1543,100 +1567,114 @@ class obs_generator(object):
             )
         return SimulationResult(replace(result.dataset, flags=flags), result.station_terms)
 
-    def observe(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
-                leakamp=0.1, opacitycal=True, addFR=True, addleakage=False,
-                flagwind=True, flagday=False, flagsun=True,
-                allow_mixed_basis=False, el_min=const.el_min,
-                el_max=const.el_max, p=None, backend="native"):
+    def observe(self, input_model=None, effects=None, el_min=const.el_min,
+                el_max=const.el_max, backend="native", **legacy_kwargs):
         """Generate a raw ``ehtim.Obsdata`` export from the selected backend.
 
-        ``backend="native"`` is the default and constructs no ``Obsdata``
-        until export. ``backend="legacy"`` explicitly selects the retained
-        legacy implementation for capabilities not yet available natively.
+        ``backend="native"`` is the default and accepts the v2 ``effects``
+        model. ``backend="legacy"`` forwards keyword arguments to the
+        explicitly retained legacy implementation.
+
+        Parameters
+        ----------
+        input_model : supported source object, optional
+            Native inputs are ehtim Image, Movie, and Model objects. The
+            legacy route additionally accepts its historical source adapters.
+        effects : StationCorruptionModel, optional
+            Native station-effect configuration. It cannot be combined with
+            ``backend="legacy"``.
+        el_min, el_max : float, optional
+            Ground-station elevation limits in degrees.
+        backend : {"native", "legacy"}, optional
+            ``"native"`` exports the v2 simulation result. ``"legacy"``
+            calls :meth:`observe_legacy` and accepts only its legacy
+            corruption keywords.
+        **legacy_kwargs
+            Arguments accepted by :meth:`observe_legacy` only when
+            ``backend="legacy"`` is selected.
+
+        Returns
+        -------
+        ehtim.obsdata.Obsdata
+            Selected raw observation in ehtim's representable circular layout.
         """
 
         if backend == "legacy":
+            if effects is not None:
+                raise TypeError(
+                    "effects= is only supported by the native observation backend."
+                )
             input_model = self._resolve_input_model(input_model, "observe_legacy")
             return self.observe_legacy(
                 input_model,
-                addnoise=addnoise,
-                addgains=addgains,
-                gainamp=gainamp,
-                leakamp=leakamp,
-                opacitycal=opacitycal,
-                addFR=addFR,
-                addleakage=addleakage,
-                flagwind=flagwind,
-                flagday=flagday,
-                flagsun=flagsun,
-                allow_mixed_basis=allow_mixed_basis,
                 el_min=el_min,
                 el_max=el_max,
-                p=p,
+                **legacy_kwargs
             )
         if backend != "native":
             raise ValueError("backend must be either 'native' or 'legacy'.")
+        if legacy_kwargs:
+            raise TypeError(
+                "Native observe() accepts effects= rather than legacy corruption "
+                "keywords; use observe_legacy() for the old interface."
+            )
         return self.simulate(
             input_model=input_model,
-            addnoise=addnoise,
-            addgains=addgains,
-            gainamp=gainamp,
-            leakamp=leakamp,
-            opacitycal=opacitycal,
-            addFR=addFR,
-            addleakage=addleakage,
-            flagwind=flagwind,
-            flagday=flagday,
-            flagsun=flagsun,
-            allow_mixed_basis=allow_mixed_basis,
+            effects=effects,
             el_min=el_min,
             el_max=el_max,
-            p=p,
         ).to_ehtim_obsdata()
 
-    def make_obs(self, input_model=None, addnoise=True, addgains=True, gainamp=0.04,
-                 leakamp=0.1, opacitycal=True, addFR=True, addleakage=False,
-                 flagwind=True, flagday=False, flagsun=True,
-                 allow_mixed_basis=False, el_min=const.el_min,
-                 el_max=const.el_max, p=None, backend="native"):
-        """Generate an ``ehtim.Obsdata`` export of a selected observation."""
+    def make_obs(self, input_model=None, effects=None, el_min=const.el_min,
+                 el_max=const.el_max, backend="native", **legacy_kwargs):
+        """Generate an ``ehtim.Obsdata`` export of a selected observation.
+
+        Parameters
+        ----------
+        input_model : supported source object, optional
+            Native inputs are ehtim Image, Movie, and Model objects. The
+            legacy route additionally accepts its historical source adapters.
+        effects : StationCorruptionModel, optional
+            Native station-effect configuration. It cannot be combined with
+            ``backend="legacy"``.
+        el_min, el_max : float, optional
+            Ground-station elevation limits in degrees.
+        backend : {"native", "legacy"}, optional
+            ``"native"`` runs :meth:`make_dataset`; ``"legacy"`` calls
+            :meth:`make_obs_legacy`.
+        **legacy_kwargs
+            Arguments accepted by :meth:`make_obs_legacy` only when
+            ``backend="legacy"`` is selected.
+
+        Returns
+        -------
+        ehtim.obsdata.Obsdata
+            Selected observation in ehtim's representable circular layout.
+        """
 
         if backend == "legacy":
+            if effects is not None:
+                raise TypeError(
+                    "effects= is only supported by the native observation backend."
+                )
             return self.make_obs_legacy(
                 input_model=input_model,
-                addnoise=addnoise,
-                addgains=addgains,
-                gainamp=gainamp,
-                leakamp=leakamp,
-                opacitycal=opacitycal,
-                addFR=addFR,
-                addleakage=addleakage,
-                flagwind=flagwind,
-                flagday=flagday,
-                flagsun=flagsun,
-                allow_mixed_basis=allow_mixed_basis,
                 el_min=el_min,
                 el_max=el_max,
-                p=p,
+                **legacy_kwargs
             )
         if backend != "native":
             raise ValueError("backend must be either 'native' or 'legacy'.")
+        if legacy_kwargs:
+            raise TypeError(
+                "Native make_obs() accepts effects= rather than legacy corruption "
+                "keywords; use make_obs_legacy() for the old interface."
+            )
         return self.make_dataset(
             input_model=input_model,
-            addnoise=addnoise,
-            addgains=addgains,
-            gainamp=gainamp,
-            leakamp=leakamp,
-            opacitycal=opacitycal,
-            addFR=addFR,
-            addleakage=addleakage,
-            flagwind=flagwind,
-            flagday=flagday,
-            flagsun=flagsun,
-            allow_mixed_basis=allow_mixed_basis,
+            effects=effects,
             el_min=el_min,
             el_max=el_max,
-            p=p,
         ).to_ehtim_obsdata()
 
     # generate multifrequency observation, assuming that FPT will be used wherever possible
@@ -2232,10 +2270,11 @@ def _take_station_terms(station_terms, row_indices):
     return selected
 
 
-def _fringe_rows_from_dataset(dataset, station_terms=None, receptor_configuration=None):
+def _fringe_rows_from_dataset(dataset, station_terms=None, receptor_configuration=None,
+                              effects=None):
     """Extract basis-agnostic fringe evidence from a native dataset.
 
-    Supplying station terms and a receptor configuration enables weighted
+    Supplying station terms, a receptor configuration, and effects enables weighted
     Stokes-I reconstruction in the common sky basis. Fully calibrated mixed
     datasets can infer their standard R/L/X/Y responses. The circular RR/LL
     path remains available for narrow compatibility callers that provide
@@ -2245,15 +2284,17 @@ def _fringe_rows_from_dataset(dataset, station_terms=None, receptor_configuratio
     if dataset.channel_count != 1:
         raise ValueError("Native fringe selection requires exactly one spectral channel.")
     names = np.asarray(dataset.stations.names)
-    if station_terms is not None or receptor_configuration is not None:
-        if station_terms is None or receptor_configuration is None:
+    if station_terms is not None or receptor_configuration is not None or effects is not None:
+        if station_terms is None or receptor_configuration is None or effects is None:
             raise ValueError(
-                "Native mixed-receptor fringe selection requires station_terms and receptor_configuration."
+                "Native mixed-receptor fringe selection requires station_terms, "
+                "receptor_configuration, and effects."
             )
         left, right = instrumental_corruptions.receptor_rows_for_station_terms(
             dataset,
             station_terms,
             receptor_configuration,
+            effects,
         )
         present = dataset.sample_present[:, 0] & ~dataset.flags[:, 0]
         snr = fringe_selection.receptor_fringe_snr(
@@ -2321,8 +2362,33 @@ def _fringe_rows_from_dataset(dataset, station_terms=None, receptor_configuratio
 
 
 def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref, station_terms=None,
-                         receptor_configuration=None):
-    """Apply the fringe-group proxy directly to a native receptor dataset."""
+                         receptor_configuration=None, effects=None):
+    """Apply the fringe-group proxy directly to a native receptor dataset.
+
+    Parameters
+    ----------
+    obsgen : obs_generator
+        Generator supplying station availability and frequency metadata.
+    dataset : VisibilityDataset
+        One-channel native visibility data to evaluate.
+    snr_ref : float
+        Strong-baseline signal-to-noise threshold.
+    tint_ref : float
+        Strong-baseline coherence time in seconds.
+    station_terms : mapping, optional
+        Row-aligned native station realization. It must be supplied together
+        with ``receptor_configuration`` and ``effects`` for uncalibrated or
+        mixed-receptor data.
+    receptor_configuration : ReceptorConfiguration, optional
+        Resolved Jones-row configuration matching ``dataset.receptors``.
+    effects : StationCorruptionModel, optional
+        Effect model that produced ``station_terms``.
+
+    Returns
+    -------
+    numpy.ndarray, dtype bool
+        Per-row fringe-group selection mask.
+    """
 
     if dataset.row_count == 0:
         return np.zeros(0, dtype=bool)
@@ -2331,6 +2397,7 @@ def fringegroups_dataset(obsgen, dataset, snr_ref, tint_ref, station_terms=None,
         dataset,
         station_terms=station_terms,
         receptor_configuration=receptor_configuration,
+        effects=effects,
     )
     available_sites = [site for site in obsgen.sites if obsgen.bands[site] is not None]
     return fringe_selection.fringe_group_mask(

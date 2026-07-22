@@ -7,6 +7,7 @@ from ngehtsim.obs.obs_generator import obs_generator
 import ngehtsim.obs.observation_geometry as observation_geometry
 from ngehtsim.obs.obs_generator import make_array
 import ngehtsim.obs.source_models as source_models
+from ngehtsim.obs.station_effects import StationCorruptionModel
 from ngehtsim.obs.visibility_dataset import VisibilityDataset
 
 
@@ -195,11 +196,13 @@ def test_obs_generator_outputs_scan_averaging_ready_data():
 
     obs = obsgen.make_obs(
         model,
-        addnoise=False,
-        addgains=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=StationCorruptionModel(
+            thermal_noise=False,
+            common_gain=None,
+            flag_wind=False,
+            flag_daylight=False,
+            flag_sun=False,
+        ),
     )
     scan_averaged = obs.avg_coherent(0.0, scan_avg=True)
 

@@ -9,6 +9,7 @@ import numpy as np
 import ngehtsim.const_def as const
 from ngehtsim.obs.visibility_dataset import StationTable, VisibilityDataset
 from ngehtsim.obs.receptor_configuration import response_rows_for_dataset
+from ngehtsim.obs.station_effects import StationCorruptionModel
 
 
 def apply_circular_leakage(visibilities, leakage1_r, leakage1_l, leakage2_r,
@@ -257,9 +258,7 @@ def apply_circular_corruptions(dataset, station_terms, stations, rng, addnoise=T
 
 
 def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
-                               receptor_configuration, rng, addnoise=True,
-                               addgains=True, opacitycal=True, addFR=True,
-                               addleakage=False):
+                               receptor_configuration, effects, rng):
     """Apply a one-channel Jones RIME to arbitrary station-feed products.
 
     ``sky_coherency`` is sampled in the common circular sky basis and has one
@@ -275,11 +274,9 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
         One-channel native visibility layout to populate.
     sky_coherency : array_like, shape (row, 2, 2)
         Source coherency matrices in the circular ``(R, L)`` sky basis.
-    station_terms, stations, receptor_configuration, rng
+    station_terms, stations, receptor_configuration, effects, rng
         Native station-term realization, updated station table, resolved
-        receptor paths, and random generator.
-    addnoise, addgains, opacitycal, addFR, addleakage : bool, optional
-        Enable the corresponding station and thermal-noise effects.
+        receptor paths, station-effect model, and random generator.
 
     Returns
     -------
@@ -291,6 +288,8 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
         raise TypeError("dataset must be a VisibilityDataset instance.")
     if not isinstance(stations, StationTable):
         raise TypeError("stations must be a StationTable instance.")
+    if not isinstance(effects, StationCorruptionModel):
+        raise TypeError("effects must be a StationCorruptionModel instance.")
     if dataset.channel_count != 1:
         raise ValueError("Native receptor corruption requires exactly one channel.")
     sky_coherency = np.asarray(sky_coherency, dtype=complex)
@@ -310,19 +309,6 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
             "par2", "phi_off1", "phi_off2", "uptime_mask",
         )
     }
-    if addgains:
-        terms.update({
-            name: _term_array(station_terms, name, count)
-            for name in (
-                "gainamp1R", "gainamp2R", "gainphase1R", "gainphase2R",
-                "gainamp1L", "gainamp2L", "gainphase1L", "gainphase2L",
-            )
-        })
-    if addleakage:
-        terms.update({
-            name: _term_array(station_terms, name, count)
-            for name in ("leak1R", "leak1L", "leak2R", "leak2L")
-        })
     expected_t1 = np.asarray(dataset.stations.names)[dataset.antenna1]
     expected_t2 = np.asarray(dataset.stations.names)[dataset.antenna2]
     if not np.array_equal(terms["t1"], expected_t1) or not np.array_equal(terms["t2"], expected_t2):
@@ -332,17 +318,11 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
     if np.any(tau1 < 0.0) or np.any(tau2 < 0.0):
         raise ValueError("Station opacity terms must be non-negative.")
 
-    jones1, jones2, _, _ = _circular_station_jones(
-        terms,
-        count,
-        addgains=addgains,
-        addFR=addFR,
-        addleakage=addleakage,
-    )
+    jones1, jones2 = _native_station_jones(terms, count, station_terms, effects)
     output_coherency = jones1 @ sky_coherency @ np.swapaxes(np.conj(jones2), -1, -2)
-    if not opacitycal:
+    if not effects.opacity_calibrated:
         output_coherency *= np.sqrt(np.exp(-tau1 - tau2))[:, np.newaxis, np.newaxis]
-    receiver_gain1, receiver_gain2 = _receiver_gain_vectors(terms, count, addgains)
+    path_gains = _path_gain_array(station_terms, count, dataset.receptors.count)
 
     visibilities = np.array(dataset.visibilities, copy=True)
     sigma_jy = np.array(dataset.sigma_jy, copy=True)
@@ -355,7 +335,7 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
         dataset.integration_time_s,
         tau1,
         tau2,
-        opacitycal,
+        effects.opacity_calibrated,
     )[:, 0]
     flagged_sites = set(station_terms["flagsites"])
     row_available = (
@@ -369,27 +349,21 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
                 continue
             receptor1 = products.receptor1_id[product_id]
             receptor2 = products.receptor2_id[product_id]
-            first = gain_scale[receptor1] * response[receptor1]
-            second = gain_scale[receptor2] * response[receptor2]
+            first = path_gains[row, receptor1] * gain_scale[receptor1] * response[receptor1]
+            second = path_gains[row, receptor2] * gain_scale[receptor2] * response[receptor2]
             value = first @ output_coherency[row] @ np.conj(second)
-            # Thermal receiver noise is injected after the deterministic feed
-            # rotation and leakage response. Propagate only the amplitude
-            # gains through each mixed feed; this exactly preserves the
-            # legacy R/L uncertainty calculation.
             gain_magnitude = (
-                _path_gain_magnitude(
-                    response[receptor1], gain_scale[receptor1], receiver_gain1[row]
-                )
-                * _path_gain_magnitude(
-                    response[receptor2], gain_scale[receptor2], receiver_gain2[row]
-                )
+                np.abs(station_terms["common_gain1"][row])
+                * np.abs(path_gains[row, receptor1] * gain_scale[receptor1])
+                * np.abs(station_terms["common_gain2"][row])
+                * np.abs(path_gains[row, receptor2] * gain_scale[receptor2])
             )
             sigma = (
                 base_sigma[row]
                 * np.sqrt(sefd_scale[receptor1] * sefd_scale[receptor2])
                 * gain_magnitude
             )
-            if addnoise:
+            if effects.thermal_noise:
                 value += sigma * (rng.normal() + 1.0j * rng.normal())
             visibilities[row, 0, slot] = value
             sigma_jy[row, 0, slot] = sigma
@@ -403,23 +377,21 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
         visibilities=visibilities,
         sigma_jy=sigma_jy,
         flags=flags,
-        ampcal=not addgains,
-        phasecal=not addgains,
-        opacitycal=opacitycal,
-        dcal=not addleakage,
-        frcal=not addFR,
+        ampcal=effects.common_gain is None and not effects.path_gain_overrides,
+        phasecal=effects.common_gain is None and not effects.path_gain_overrides,
+        opacitycal=effects.opacity_calibrated,
+        dcal=effects.leakage is None,
+        frcal=not effects.feed_rotation,
     )
 
 
-def _circular_station_jones(terms, count, *, addgains, addFR, addleakage):
-    """Build per-row circular station Jones matrices from legacy terms."""
+def _native_station_jones(terms, count, station_terms, effects):
+    """Build native common-frame station Jones matrices from generic terms."""
 
     identity = np.broadcast_to(np.eye(2, dtype=complex), (count, 2, 2)).copy()
     jones1 = np.array(identity, copy=True)
     jones2 = np.array(identity, copy=True)
-    gain1 = np.ones(count, dtype=complex)
-    gain2 = np.ones(count, dtype=complex)
-    if addFR:
+    if effects.feed_rotation:
         rotation1 = (
             terms["f_par1"] * terms["par1"]
             + terms["f_el1"] * terms["el1"]
@@ -438,73 +410,38 @@ def _circular_station_jones(terms, count, *, addgains, addFR, addleakage):
         jones1[:, 1, 1] = np.exp(1.0j * rotation1)
         jones2[:, 0, 0] = np.exp(-1.0j * rotation2)
         jones2[:, 1, 1] = np.exp(1.0j * rotation2)
-    if addleakage:
-        leakage = {
-            name: _term_array(terms, name, count)
-            for name in ("leak1R", "leak1L", "leak2R", "leak2L")
-        }
-        d1 = np.broadcast_to(np.eye(2, dtype=complex), (count, 2, 2)).copy()
-        d2 = np.broadcast_to(np.eye(2, dtype=complex), (count, 2, 2)).copy()
-        d1[:, 0, 1] = leakage["leak1R"]
-        d1[:, 1, 0] = leakage["leak1L"]
-        d2[:, 0, 1] = leakage["leak2R"]
-        d2[:, 1, 0] = leakage["leak2L"]
-        jones1 = d1 @ jones1
-        jones2 = d2 @ jones2
-    if addgains:
-        gain_terms = {
-            name: _term_array(terms, name, count)
-            for name in (
-                "gainamp1R", "gainamp2R", "gainphase1R", "gainphase2R",
-                "gainamp1L", "gainamp2L", "gainphase1L", "gainphase2L",
-            )
-        }
-        gain1r = gain_terms["gainamp1R"] * np.exp(1.0j * gain_terms["gainphase1R"])
-        gain1l = gain_terms["gainamp1L"] * np.exp(1.0j * gain_terms["gainphase1L"])
-        gain2r = gain_terms["gainamp2R"] * np.exp(1.0j * gain_terms["gainphase2R"])
-        gain2l = gain_terms["gainamp2L"] * np.exp(1.0j * gain_terms["gainphase2L"])
-        g1 = np.zeros((count, 2, 2), dtype=complex)
-        g2 = np.zeros((count, 2, 2), dtype=complex)
-        g1[:, 0, 0] = gain1r
-        g1[:, 1, 1] = gain1l
-        g2[:, 0, 0] = gain2r
-        g2[:, 1, 1] = gain2l
-        jones1 = g1 @ jones1
-        jones2 = g2 @ jones2
-        gain1 = np.sqrt(np.abs(gain1r * gain1l))
-        gain2 = np.sqrt(np.abs(gain2r * gain2l))
-    return jones1, jones2, gain1, gain2
+    jones1 = _matrix_term(station_terms, "leakage_matrix1", count) @ jones1
+    jones2 = _matrix_term(station_terms, "leakage_matrix2", count) @ jones2
+    gain1 = _term_array(station_terms, "common_gain1", count)
+    gain2 = _term_array(station_terms, "common_gain2", count)
+    return gain1[:, np.newaxis, np.newaxis] * jones1, gain2[:, np.newaxis, np.newaxis] * jones2
 
 
-def _receiver_gain_vectors(terms, count, addgains):
-    """Return circular-basis amplitude gains used for thermal uncertainties."""
+def _matrix_term(station_terms, name, count):
+    """Return one validated row-aligned two-by-two station matrix term."""
 
-    if not addgains:
-        return np.ones((count, 2), dtype=complex), np.ones((count, 2), dtype=complex)
-    gain_names = (
-        "gainamp1R", "gainamp2R", "gainphase1R", "gainphase2R",
-        "gainamp1L", "gainamp2L", "gainphase1L", "gainphase2L",
-    )
-    gain_terms = {name: _term_array(terms, name, count) for name in gain_names}
-    first = np.column_stack((
-        gain_terms["gainamp1R"] * np.exp(1.0j * gain_terms["gainphase1R"]),
-        gain_terms["gainamp1L"] * np.exp(1.0j * gain_terms["gainphase1L"]),
-    ))
-    second = np.column_stack((
-        gain_terms["gainamp2R"] * np.exp(1.0j * gain_terms["gainphase2R"]),
-        gain_terms["gainamp2L"] * np.exp(1.0j * gain_terms["gainphase2L"]),
-    ))
-    return first, second
+    try:
+        values = np.asarray(station_terms[name], dtype=complex)
+    except KeyError as exc:
+        raise ValueError("Missing station term: {0}.".format(name)) from exc
+    if values.shape != (count, 2, 2):
+        raise ValueError("Station term {0} must have shape (row, 2, 2).".format(name))
+    return values
 
 
-def _path_gain_magnitude(response, fixed_gain, circular_gains):
-    """Return a receptor-path thermal gain relative to its nominal response."""
+def _path_gain_array(station_terms, count, receptor_count):
+    """Return validated row/receptor gains for all native signal paths."""
 
-    response = np.asarray(response, dtype=complex)
-    return np.abs(fixed_gain) * np.linalg.norm(response * circular_gains) / np.linalg.norm(response)
+    try:
+        values = np.asarray(station_terms["path_gains"], dtype=complex)
+    except KeyError as exc:
+        raise ValueError("Missing station term: path_gains.") from exc
+    if values.shape != (count, receptor_count):
+        raise ValueError("path_gains must have shape (row, receptor).")
+    return values
 
 
-def receptor_rows_for_station_terms(dataset, station_terms, receptor_configuration):
+def receptor_rows_for_station_terms(dataset, station_terms, receptor_configuration, effects):
     """Return effective receptor Jones rows for generic fringe selection.
 
     The rows include the same simulated station gain, leakage, and feed
@@ -521,6 +458,8 @@ def receptor_rows_for_station_terms(dataset, station_terms, receptor_configurati
         :func:`station_terms_for_dataset`.
     receptor_configuration : ReceptorConfiguration
         Resolved station-local receptor paths matching ``dataset.receptors``.
+    effects : StationCorruptionModel
+        Native station-effect configuration that produced the realization.
 
     Returns
     -------
@@ -531,6 +470,8 @@ def receptor_rows_for_station_terms(dataset, station_terms, receptor_configurati
 
     if dataset.channel_count != 1:
         raise ValueError("Native receptor fringe selection requires one channel.")
+    if not isinstance(effects, StationCorruptionModel):
+        raise TypeError("effects must be a StationCorruptionModel instance.")
     response, _, gain_scale = response_rows_for_dataset(dataset, receptor_configuration)
     count = dataset.row_count
     required = (
@@ -538,24 +479,8 @@ def receptor_rows_for_station_terms(dataset, station_terms, receptor_configurati
         "par1", "par2", "phi_off1", "phi_off2",
     )
     terms = {name: _term_array(station_terms, name, count) for name in required}
-    gain_names = (
-        "gainamp1R", "gainamp2R", "gainphase1R", "gainphase2R",
-        "gainamp1L", "gainamp2L", "gainphase1L", "gainphase2L",
-    )
-    leakage_names = ("leak1R", "leak1L", "leak2R", "leak2L")
-    addgains = all(name in station_terms for name in gain_names)
-    addleakage = all(name in station_terms for name in leakage_names)
-    if addgains:
-        terms.update({name: _term_array(station_terms, name, count) for name in gain_names})
-    if addleakage:
-        terms.update({name: _term_array(station_terms, name, count) for name in leakage_names})
-    jones1, jones2, _, _ = _circular_station_jones(
-        terms,
-        count,
-        addgains=addgains,
-        addFR=not dataset.frcal,
-        addleakage=addleakage,
-    )
+    jones1, jones2 = _native_station_jones(terms, count, station_terms, effects)
+    path_gains = _path_gain_array(station_terms, count, dataset.receptors.count)
     left = np.zeros((dataset.row_count, dataset.visibilities.shape[2], 2), dtype=complex)
     right = np.zeros_like(left)
     products = dataset.correlation_products
@@ -565,8 +490,16 @@ def receptor_rows_for_station_terms(dataset, station_terms, receptor_configurati
                 continue
             receptor1 = products.receptor1_id[product_id]
             receptor2 = products.receptor2_id[product_id]
-            left[row, slot] = gain_scale[receptor1] * (response[receptor1] @ jones1[row])
-            right[row, slot] = gain_scale[receptor2] * (response[receptor2] @ jones2[row])
+            left[row, slot] = (
+                path_gains[row, receptor1]
+                * gain_scale[receptor1]
+                * (response[receptor1] @ jones1[row])
+            )
+            right[row, slot] = (
+                path_gains[row, receptor2]
+                * gain_scale[receptor2]
+                * (response[receptor2] @ jones2[row])
+            )
     return left, right
 
 

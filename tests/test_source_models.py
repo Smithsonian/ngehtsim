@@ -9,6 +9,7 @@ import ngehtsim.obs.observation_geometry as observation_geometry
 import ngehtsim.obs.source_models as source_models
 import ngehtsim.obs.raster_sampling as raster_sampling
 import ngehtsim.obs.station_observation as station_observation
+from ngehtsim.obs.station_effects import GainModel, LeakageModel, StationCorruptionModel
 from ngehtsim.obs.visibility_dataset import VisibilityDataset
 from ngehtsim.const_def import default_settings
 
@@ -25,6 +26,24 @@ COMPACT_OBS_SETTINGS = {
     "t_rest": 1200.0,
     "random_seed": 1,
 }
+
+
+def _effects(*, thermal_noise=False, common_gain=False, feed_rotation=False,
+             leakage=False, flag_wind=False, flag_daylight=False, flag_sun=False):
+    """Build native station effects without retired keyword arguments."""
+
+    return StationCorruptionModel(
+        thermal_noise=thermal_noise,
+        common_gain=(
+            GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform")
+            if common_gain else None
+        ),
+        feed_rotation=feed_rotation,
+        leakage=LeakageModel(component_sigma=0.1) if leakage else None,
+        flag_wind=flag_wind,
+        flag_daylight=flag_daylight,
+        flag_sun=flag_sun,
+    )
 
 
 def _compact_model():
@@ -100,11 +119,7 @@ def _position_angle_image():
 def _observe_without_corruptions(obsgen, input_model):
     return obsgen.observe(
         input_model,
-        addnoise=False,
-        addgains=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
 
@@ -666,13 +681,7 @@ def test_obs_generator_routes_supported_sources_through_native_path(monkeypatch,
     monkeypatch.setattr(station_observation, "station_terms", unexpected_legacy_path)
     obs = obsgen.observe(
         source_factory(),
-        addnoise=False,
-        addgains=False,
-        addFR=False,
-        addleakage=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
     assert len(obs.data) > 0
@@ -697,11 +706,7 @@ def test_native_simulate_does_not_construct_obsdata(monkeypatch, source_factory)
     )
     result = og.obs_generator(settings=COMPACT_OBS_SETTINGS).simulate(
         source_factory(),
-        addnoise=False,
-        addgains=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
     assert isinstance(result.dataset, VisibilityDataset)
@@ -733,13 +738,7 @@ def test_native_fpt_selection_stays_native_and_uses_one_readiness_draw(monkeypat
     original = (source.ra, source.dec, source.mjd, source.source, source.rf)
     result = og.obs_generator(settings=settings).make_dataset(
         source,
-        addnoise=False,
-        addgains=False,
-        addFR=False,
-        addleakage=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
     names = np.asarray(result.dataset.stations.names)
@@ -759,13 +758,7 @@ def test_native_fpt_make_obs_exports_only_after_selection():
 
     obs = og.obs_generator(settings=settings).make_obs(
         _compact_model(),
-        addnoise=False,
-        addgains=False,
-        addFR=False,
-        addleakage=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
     assert len(obs.data) > 0
@@ -777,13 +770,7 @@ def test_native_simulation_keeps_terms_in_the_result_not_the_generator():
     generator = og.obs_generator(settings=settings, weight=1)
     result = generator.make_dataset(
         _polarized_model(),
-        addnoise=False,
-        addgains=True,
-        addFR=True,
-        addleakage=True,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(common_gain=True, feed_rotation=True, leakage=True),
     )
 
     for name in (
@@ -795,21 +782,13 @@ def test_native_simulation_keeps_terms_in_the_result_not_the_generator():
         "Tb2",
         "SEFD1",
         "SEFD2",
-        "gainamp1R",
-        "gainamp2R",
-        "gainamp1L",
-        "gainamp2L",
-        "gainphase1R",
-        "gainphase2R",
-        "gainphase1L",
-        "gainphase2L",
-        "leak1R",
-        "leak2R",
-        "leak1L",
-        "leak2L",
+        "common_gain1",
+        "common_gain2",
+        "leakage_matrix1",
+        "leakage_matrix2",
     ):
         assert name in result.station_terms
-        assert len(result.station_terms[name]) == result.dataset.row_count
+        assert result.station_terms[name].shape[0] == result.dataset.row_count
     assert not result.station_terms["tau1"].flags.writeable
     assert not hasattr(generator, "timestamps")
     assert not hasattr(generator, "SEFD1")
@@ -819,12 +798,14 @@ def test_native_simulation_is_reproducible_with_a_fixed_seed():
     settings = dict(COMPACT_OBS_SETTINGS)
     settings["fringe_finder"] = ["naive", 0.0]
     first = og.obs_generator(settings=settings).make_dataset(
-        _polarized_model(), addnoise=True, addgains=True, addFR=True,
-        addleakage=True, flagwind=False, flagday=False, flagsun=False,
+        _polarized_model(), effects=_effects(
+            thermal_noise=True, common_gain=True, feed_rotation=True, leakage=True,
+        ),
     )
     second = og.obs_generator(settings=settings).make_dataset(
-        _polarized_model(), addnoise=True, addgains=True, addFR=True,
-        addleakage=True, flagwind=False, flagday=False, flagsun=False,
+        _polarized_model(), effects=_effects(
+            thermal_noise=True, common_gain=True, feed_rotation=True, leakage=True,
+        ),
     )
 
     assert np.array_equal(first.dataset.time_mjd, second.dataset.time_mjd)
@@ -847,13 +828,7 @@ def test_native_simulation_retains_all_flagged_rows_and_exports_an_empty_obsdata
 
     result = obsgen.simulate(
         _compact_model(),
-        addnoise=False,
-        addgains=False,
-        addFR=False,
-        addleakage=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
     assert result.dataset.row_count > 0
@@ -881,11 +856,7 @@ def test_native_source_adapters_do_not_mutate_input_metadata(source_factory):
 
     og.obs_generator(settings=COMPACT_OBS_SETTINGS).simulate(
         source,
-        addnoise=False,
-        addgains=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
 
     assert (source.ra, source.dec, source.mjd, source.source, source.rf) == original
@@ -899,11 +870,7 @@ def test_make_obs_exports_updated_station_terms_without_mutating_configuration()
 
     result = generator.make_dataset(
         _compact_model(),
-        addnoise=False,
-        addgains=False,
-        flagwind=False,
-        flagday=False,
-        flagsun=False,
+        effects=_effects(),
     )
     obs = result.to_ehtim_obsdata()
 

@@ -4,6 +4,7 @@
 import ngehtsim.obs.obs_generator as og
 import ngehtsim.obs.obs_plotter as op
 import ngehtsim.metrics as cm
+from ngehtsim.obs.station_effects import StationCorruptionModel
 import matplotlib.pyplot as plt
 
 #######################################################
@@ -28,7 +29,9 @@ obs.save_uvfits('./tests/data_generation_flagging/example_datafile.uvfits')
 obsgen_flagged = og.obs_generator(settings_file=yamlfile)
 
 # generate the observation
-obs_flagged = obsgen_flagged.make_obs(flagday=True)
+obs_flagged = obsgen_flagged.make_obs(
+    effects=StationCorruptionModel(flag_daylight=True),
+)
 
 # save it as a uvfits file
 obs_flagged.save_uvfits('./tests/data_generation_flagging/example_datafile_flagged.uvfits')
@@ -58,7 +61,9 @@ obsgen_flagged2 = og.obs_generator(settings_file=yamlfile,
                                    wind_loading_overrides=wind_loading_overrides)
 
 # generate the observation
-obs_flagged2 = obsgen_flagged2.make_obs(flagday=True)
+obs_flagged2 = obsgen_flagged2.make_obs(
+    effects=StationCorruptionModel(flag_daylight=True),
+)
 
 # save it as a uvfits file
 obs_flagged2.save_uvfits('./tests/data_generation_flagging/example_datafile_flagged2.uvfits')
