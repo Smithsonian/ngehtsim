@@ -9,6 +9,7 @@ __all__ = [
     'ehtfits',
     'obs_generator',
     'obs_plotter',
+    'observation_template',
     'receptor_configuration',
     'simulation_result',
     'station_effects',

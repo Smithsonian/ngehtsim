@@ -198,7 +198,7 @@ def test_obs_generator_outputs_scan_averaging_ready_data():
         model,
         effects=StationCorruptionModel(
             thermal_noise=False,
-            common_gain=None,
+            station_gain=None,
             flag_wind=False,
             flag_daylight=False,
             flag_sun=False,

@@ -19,10 +19,10 @@ The native ground-array geometry kernel produces baseline rows, elevation
 selection masks, and a circular visibility template without constructing an
 ``ehtim.Obsdata`` object. Spacecraft stations retain the legacy geometry path.
 The station-term kernel evaluates weather, SEFD, uptime, and station geometry
-on those rows. ``StationCorruptionModel`` separately declares the realization
-of common station Jones terms and per-path gains. The one-channel corruption
-kernel uses a circular-sky Jones RIME and projects the result into every
-configured station-local receptor path. This supports circular, linear,
+on those rows. ``StationCorruptionModel`` separately declares a station-common
+gain ``G`` and optional two-feed gain ratios ``R = G_A / G_B``. The one-channel
+corruption kernel uses a circular-sky Jones RIME and projects the result into
+every configured station-local receptor path. This supports circular, linear,
 mixed, single-feed, and over-complete feed inventories without converting the
 archived data to an assumed global basis.
 
@@ -48,9 +48,17 @@ archived data to an assumed global basis.
 
 .. autofunction:: station_terms_for_dataset
 
+.. autofunction:: template_station_terms_for_dataset
+
 .. currentmodule:: ngehtsim.obs.station_effects
 
+.. autoclass:: RealizationCadence
+   :members:
+
 .. autoclass:: GainModel
+   :members:
+
+.. autoclass:: GainRatioModel
    :members:
 
 .. autoclass:: LeakageModel
@@ -58,6 +66,18 @@ archived data to an assumed global basis.
 
 .. autoclass:: StationCorruptionModel
    :members:
+
+Observation Templates
+---------------------
+
+.. currentmodule:: ngehtsim.obs.observation_template
+
+.. autoclass:: ObservationTemplate
+   :members:
+
+.. autofunction:: read_observation_template
+
+.. autofunction:: simulate_observation_template
 
 Fringe and Corruption Primitives
 --------------------------------

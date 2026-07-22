@@ -28,15 +28,15 @@ COMPACT_OBS_SETTINGS = {
 }
 
 
-def _effects(*, thermal_noise=False, common_gain=False, feed_rotation=False,
+def _effects(*, thermal_noise=False, station_gain=False, feed_rotation=False,
              leakage=False, flag_wind=False, flag_daylight=False, flag_sun=False):
     """Build native station effects without retired keyword arguments."""
 
     return StationCorruptionModel(
         thermal_noise=thermal_noise,
-        common_gain=(
+        station_gain=(
             GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform")
-            if common_gain else None
+            if station_gain else None
         ),
         feed_rotation=feed_rotation,
         leakage=LeakageModel(component_sigma=0.1) if leakage else None,
@@ -770,7 +770,7 @@ def test_native_simulation_keeps_terms_in_the_result_not_the_generator():
     generator = og.obs_generator(settings=settings, weight=1)
     result = generator.make_dataset(
         _polarized_model(),
-        effects=_effects(common_gain=True, feed_rotation=True, leakage=True),
+        effects=_effects(station_gain=True, feed_rotation=True, leakage=True),
     )
 
     for name in (
@@ -799,12 +799,12 @@ def test_native_simulation_is_reproducible_with_a_fixed_seed():
     settings["fringe_finder"] = ["naive", 0.0]
     first = og.obs_generator(settings=settings).make_dataset(
         _polarized_model(), effects=_effects(
-            thermal_noise=True, common_gain=True, feed_rotation=True, leakage=True,
+            thermal_noise=True, station_gain=True, feed_rotation=True, leakage=True,
         ),
     )
     second = og.obs_generator(settings=settings).make_dataset(
         _polarized_model(), effects=_effects(
-            thermal_noise=True, common_gain=True, feed_rotation=True, leakage=True,
+            thermal_noise=True, station_gain=True, feed_rotation=True, leakage=True,
         ),
     )
 

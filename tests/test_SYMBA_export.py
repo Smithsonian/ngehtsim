@@ -37,7 +37,7 @@ obsgen = og.obs_generator(settings)
 # generate and save the observation
 effects = StationCorruptionModel(
     thermal_noise=addnoise,
-    common_gain=(
+    station_gain=(
         GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform")
         if addgains else None
     ),

@@ -43,7 +43,7 @@ class FixedRng:
         return np.zeros(size, dtype=int)
 
 
-def _effects(*, thermal_noise=False, common_gain=False, opacity_calibrated=True,
+def _effects(*, thermal_noise=False, station_gain=False, opacity_calibrated=True,
              feed_rotation=False, leakage=False, flag_wind=False,
              flag_daylight=False, flag_sun=False):
     """Build native station effects without legacy simulation keywords."""
@@ -52,9 +52,9 @@ def _effects(*, thermal_noise=False, common_gain=False, opacity_calibrated=True,
         thermal_noise=thermal_noise,
         opacity_calibrated=opacity_calibrated,
         feed_rotation=feed_rotation,
-        common_gain=(
+        station_gain=(
             GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform")
-            if common_gain else None
+            if station_gain else None
         ),
         leakage=LeakageModel(component_sigma=0.1) if leakage else None,
         flag_wind=flag_wind,
@@ -134,7 +134,7 @@ def test_circular_leakage_matches_jones_matrix():
 
 def test_circular_generator_matches_composed_station_jones_matrices():
     generator = og.obs_generator(settings=SETTINGS, weight=1)
-    effects = _effects(common_gain=True, feed_rotation=True, leakage=True)
+    effects = _effects(station_gain=True, feed_rotation=True, leakage=True)
     simulated = generator.simulate(
         _polarized_model(),
         effects=effects,
@@ -200,13 +200,13 @@ def test_thermal_noise_uses_reported_gain_corrupted_sigmas():
     clean_generator.rng = FixedRng()
     clean = clean_generator.simulate(
         _polarized_model(),
-        effects=_effects(common_gain=True),
+        effects=_effects(station_gain=True),
     )
     noisy_generator = og.obs_generator(settings=SETTINGS)
     noisy_generator.rng = FixedRng()
     noisy = noisy_generator.simulate(
         _polarized_model(),
-        effects=_effects(thermal_noise=True, common_gain=True),
+        effects=_effects(thermal_noise=True, station_gain=True),
     )
 
     clean_sigma = clean.dataset.sigma_jy

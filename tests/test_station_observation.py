@@ -28,15 +28,15 @@ COMPACT_OBS_SETTINGS = {
 }
 
 
-def _effects(*, thermal_noise=False, common_gain=False, feed_rotation=False,
+def _effects(*, thermal_noise=False, station_gain=False, feed_rotation=False,
              leakage=False, flag_wind=False, flag_daylight=False, flag_sun=False):
     """Build native effects without invoking retired keyword arguments."""
 
     return StationCorruptionModel(
         thermal_noise=thermal_noise,
-        common_gain=(
+        station_gain=(
             GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform")
-            if common_gain else None
+            if station_gain else None
         ),
         feed_rotation=feed_rotation,
         leakage=LeakageModel(component_sigma=0.1) if leakage else None,
@@ -387,7 +387,7 @@ def test_native_station_terms_preserve_weather_and_use_generic_corruption_fields
         F0,
         context,
         np.random.default_rng(17),
-        effects=_effects(common_gain=True, leakage=True, flag_wind=True),
+        effects=_effects(station_gain=True, leakage=True, flag_wind=True),
         reference_mjd=obs.mjd,
         solar_angle=obsgen.solar_angle,
         windspeed_sefd_modifier=og.windspeed_SEFD_modification,
@@ -423,7 +423,13 @@ def test_native_station_terms_preserve_weather_and_use_generic_corruption_fields
     assert np.array_equal(native["uptime_mask"], legacy["uptime_mask"])
     assert np.allclose(native_stations.sefd_r_jy, legacy_array.tarr["sefdr"])
     assert np.allclose(native_stations.sefd_l_jy, legacy_array.tarr["sefdl"])
-    assert {"common_gain1", "common_gain2", "leakage_matrix1", "leakage_matrix2", "path_gains"} <= set(native)
+    assert {
+        "common_gain1",
+        "common_gain2",
+        "leakage_matrix1",
+        "leakage_matrix2",
+        "gain_ratio_factors",
+    } <= set(native)
     assert not any(name.startswith(("gainamp", "gainphase", "leak1", "leak2")) for name in native)
 
 

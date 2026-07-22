@@ -9,7 +9,11 @@ from astropy.coordinates import EarthLocation, AltAz, get_sun
 
 import ngehtsim.const_def as const
 import ngehtsim.obs.observation_geometry as observation_geometry
-from ngehtsim.obs.station_effects import StationCorruptionModel
+from ngehtsim.obs.station_effects import (
+    LeakageModel,
+    StationCorruptionModel,
+    realization_group_ids,
+)
 from ngehtsim.obs.visibility_dataset import StationTable, VisibilityDataset
 
 ###################################################
@@ -640,12 +644,13 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, effects,
     Returns
     -------
     dict
-        Row-aligned common-Jones, path-gain, weather, and availability terms
+        Row-aligned common-gain, gain-ratio, weather, and availability terms
         consumed by the native receptor RIME. Native terms deliberately do not
         expose hand-specific R/L field names.
     StationTable
-        Updated immutable station metadata with simulated SEFD and leakage
-        values.
+        Updated immutable station metadata with weather-derived SEFD values.
+        Leakage realizations remain row-aligned provenance terms because their
+        cadence need not be track-constant.
 
     Notes
     -----
@@ -666,7 +671,7 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, effects,
     )
     # Reuse the established weather and availability calculation. Its legacy
     # hand-specific gain outputs are disabled here and never escape the native
-    # API; generic common/path gains are realized below.
+    # API; generic common gains and two-feed gain ratios are realized below.
     legacy_terms, stations = _station_terms_from_rows(
         metadata["_rows"],
         metadata,
@@ -675,8 +680,8 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, effects,
         dataset.stations,
         rng,
         addgains=False,
-        leakamp=(0.0 if effects.leakage is None else effects.leakage.component_sigma),
-        addleakage=effects.leakage is not None,
+        leakamp=0.0,
+        addleakage=False,
         flagwind=effects.flag_wind,
         flagday=effects.flag_daylight,
         flagsun=effects.flag_sun,
@@ -687,19 +692,20 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, effects,
     terms = dict(legacy_terms)
     count = dataset.row_count
     terms["common_gain1"], terms["common_gain2"] = _sample_common_gains(
+        dataset,
         metadata["_rows"],
         metadata["sites_obs"],
-        effects.common_gain,
+        effects.station_gain,
         rng,
     )
-    terms["leakage_matrix1"], terms["leakage_matrix2"] = _native_leakage_matrices(
-        terms,
-        count,
-        effects.leakage is not None,
-    )
-    terms["path_gains"] = _sample_path_gains(
+    terms["leakage_matrix1"], terms["leakage_matrix2"] = _sample_leakage_matrices(
         dataset,
-        metadata["_rows"].times,
+        metadata,
+        effects.leakage,
+        rng,
+    )
+    terms["gain_ratio_factors"] = _sample_gain_ratio_factors(
+        dataset,
         effects,
         rng,
     )
@@ -708,48 +714,325 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, effects,
     return terms, stations
 
 
-def _sample_common_gains(rows, sites, gain_model, rng):
-    """Return one row-end complex gain for each station/time sample."""
+def template_station_terms_for_dataset(dataset, rng, effects, *,
+                                       station_resolver=None, mount_types=None,
+                                       feed_angles_deg=None):
+    """Realize native station terms for an imported observation template.
+
+    This function is the station-corruption counterpart to an
+    ``observe_same`` workflow.  It deliberately does *not* query ngehtsim
+    weather, receiver, or station databases: the template's row times,
+    opacity, station metadata, and per-sample uncertainty are retained.  The
+    returned terms therefore contain only geometry needed for optional feed
+    rotation and the requested stochastic common-gain, gain-ratio, and
+    leakage processes.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        One-channel imported template.  Its station labels are retained in
+        the simulated output.
+    rng : numpy.random.Generator
+        Random generator used for the station-corruption realization.
+    effects : StationCorruptionModel
+        Corruption configuration.  Gain cadences are evaluated against the
+        template's exact timestamps and stored scan intervals.
+    station_resolver : mapping, optional
+        Explicit mapping from template station labels to ngehtsim canonical
+        station names for mount/feed-angle metadata lookup.  No built-in
+        station-code mapping is used.  This mapping never renames the output
+        stations.
+    mount_types : mapping, optional
+        Explicit mapping from template station label to a mount type from
+        :data:`ngehtsim.const_def.mount_type_dict`.  It overrides the mount
+        selected through ``station_resolver``.
+    feed_angles_deg : mapping, optional
+        Explicit constant feed-angle offsets in degrees, keyed by template
+        station label.  It overrides resolved metadata and defaults to zero.
+
+    Returns
+    -------
+    dict
+        Row-aligned provenance terms consumable by
+        :func:`ngehtsim.obs.instrumental_corruptions.apply_receptor_corruptions`.
+        The terms retain template opacity and contain no weather-derived
+        availability or SEFD realization.
+    StationTable
+        The unchanged template station table.
+
+    Raises
+    ------
+    ValueError
+        If a mapping names an unknown template station, feed rotation lacks
+        an explicit or resolved mount type, or the template is unsuitable for
+        the native one-channel ground-station kernel.
+
+    Notes
+    -----
+    A resolver is intentionally opt-in.  For example, a UVFITS label ``AA``
+    has no implied relationship to ``ALMA`` unless the caller supplies
+    ``{"AA": "ALMA"}``.
+    """
+
+    if not isinstance(dataset, VisibilityDataset):
+        raise TypeError("dataset must be a VisibilityDataset instance.")
+    if not isinstance(effects, StationCorruptionModel):
+        raise TypeError("effects must be a StationCorruptionModel instance.")
+    if dataset.channel_count != 1:
+        raise ValueError("Template station terms currently require exactly one channel.")
+    effects.validate_receptors(dataset.stations.names, dataset.receptors)
+
+    station_names = tuple(dataset.stations.names)
+    resolver = _template_station_mapping(station_resolver, station_names, "station_resolver")
+    requested_mounts = _template_station_mapping(mount_types, station_names, "mount_types")
+    requested_angles = _template_station_mapping(
+        feed_angles_deg,
+        station_names,
+        "feed_angles_deg",
+    )
+    rows = _station_rows_from_dataset(dataset, reference_mjd=None)
+    count = dataset.row_count
+    geometry = observation_geometry.station_geometry_from_rows(
+        dataset.stations.position_itrs_m,
+        dataset.time_mjd,
+        dataset.antenna1,
+        dataset.antenna2,
+        dataset.ra_hours,
+        dataset.dec_degrees,
+    )
+    if geometry is None:
+        raise ValueError(
+            "Template station terms do not yet support spacecraft station coordinates."
+        )
+
+    f_el1 = np.zeros(count, dtype=float)
+    f_el2 = np.zeros(count, dtype=float)
+    f_par1 = np.zeros(count, dtype=float)
+    f_par2 = np.zeros(count, dtype=float)
+    phi_off1 = np.zeros(count, dtype=float)
+    phi_off2 = np.zeros(count, dtype=float)
+    if effects.feed_rotation:
+        for station in station_names:
+            resolved = resolver.get(station)
+            mount_type = requested_mounts.get(station)
+            if mount_type is None and resolved is not None:
+                mount_type = const.known_mount_types.get(resolved)
+            if mount_type is None:
+                raise ValueError(
+                    "Feed rotation for template station {0!r} requires mount_types "
+                    "or station_resolver metadata.".format(station)
+                )
+            try:
+                mount = const.mount_type_dict[str(mount_type)]
+            except KeyError as exc:
+                raise ValueError(
+                    "Unsupported mount type {0!r} for template station {1!r}.".format(
+                        mount_type,
+                        station,
+                    )
+                ) from exc
+            feed_angle = requested_angles.get(station)
+            if feed_angle is None and resolved is not None:
+                feed_angle = const.known_feed_angles.get(resolved)
+            if feed_angle is None:
+                feed_angle = 0.0
+            if not np.isfinite(feed_angle):
+                raise ValueError(
+                    "feed_angles_deg for template station {0!r} must be finite.".format(
+                        station,
+                    )
+                )
+            first = rows.t1 == station
+            second = rows.t2 == station
+            f_el1[first] = mount["f_el"]
+            f_el2[second] = mount["f_el"]
+            f_par1[first] = mount["f_par"]
+            f_par2[second] = mount["f_par"]
+            phi_off1[first] = float(feed_angle)
+            phi_off2[second] = float(feed_angle)
+
+    site_indices = {name: index for index, name in enumerate(station_names)}
+    sefd = 0.5 * (dataset.stations.sefd_r_jy + dataset.stations.sefd_l_jy)
+    first_indices = np.asarray([site_indices[name] for name in rows.t1], dtype=np.intp)
+    second_indices = np.asarray([site_indices[name] for name in rows.t2], dtype=np.intp)
+    metadata = {"_rows": rows, "sites_obs": np.unique(np.concatenate((rows.t1, rows.t2)))}
+    common_gain1, common_gain2 = _sample_common_gains(
+        dataset,
+        rows,
+        metadata["sites_obs"],
+        effects.station_gain,
+        rng,
+    )
+    leakage_matrix1, leakage_matrix2 = _sample_leakage_matrices(
+        dataset,
+        metadata,
+        effects.leakage,
+        rng,
+    )
+    return {
+        "t1": np.asarray(rows.t1),
+        "t2": np.asarray(rows.t2),
+        "times": np.asarray(rows.times, dtype=float),
+        "tau1": np.asarray(dataset.tau1, dtype=float),
+        "tau2": np.asarray(dataset.tau2, dtype=float),
+        "SEFD1": sefd[first_indices],
+        "SEFD2": sefd[second_indices],
+        "bw1": np.full(count, dataset.channel_bandwidth_hz[0], dtype=float),
+        "bw2": np.full(count, dataset.channel_bandwidth_hz[0], dtype=float),
+        "el1": np.asarray(geometry.elevation1_rad, dtype=float),
+        "el2": np.asarray(geometry.elevation2_rad, dtype=float),
+        "par1": np.asarray(geometry.parallactic_angle1_rad, dtype=float),
+        "par2": np.asarray(geometry.parallactic_angle2_rad, dtype=float),
+        "f_el1": f_el1,
+        "f_el2": f_el2,
+        "f_par1": f_par1,
+        "f_par2": f_par2,
+        "phi_off1": phi_off1,
+        "phi_off2": phi_off2,
+        "flagsites": tuple(),
+        "uptime_mask": np.ones(count, dtype=bool),
+        "common_gain1": common_gain1,
+        "common_gain2": common_gain2,
+        "leakage_matrix1": leakage_matrix1,
+        "leakage_matrix2": leakage_matrix2,
+        "gain_ratio_factors": _sample_gain_ratio_factors(dataset, effects, rng),
+    }, dataset.stations
+
+
+def _template_station_mapping(mapping, station_names, name):
+    """Normalize a user-only template station metadata mapping."""
+
+    if mapping is None:
+        return {}
+    try:
+        normalized = {str(key): value for key, value in dict(mapping).items()}
+    except (TypeError, ValueError) as exc:
+        raise TypeError("{0} must be a mapping or None.".format(name)) from exc
+    unknown = set(normalized) - set(station_names)
+    if unknown:
+        raise ValueError(
+            "{0} references unknown template stations: {1}.".format(
+                name,
+                ", ".join(sorted(unknown)),
+            )
+        )
+    return normalized
+
+
+def _sample_common_gains(dataset, rows, sites, gain_model, rng):
+    """Return common gains with independently grouped amplitude and phase."""
 
     count = len(rows.times)
     gain1 = np.ones(count, dtype=complex)
     gain2 = np.ones(count, dtype=complex)
     if gain_model is None:
         return gain1, gain2
-    for site in sites:
-        for time in np.unique(rows.times):
-            value = gain_model.sample(rng)
-            gain1[(rows.t1 == site) & (rows.times == time)] = value
-            gain2[(rows.t2 == site) & (rows.times == time)] = value
+    amplitude = _station_group_values(
+        dataset,
+        rows,
+        sites,
+        gain_model.amplitude_cadence,
+        gain_model.sample_amplitude,
+        rng,
+        1.0,
+    )
+    phase = _station_group_values(
+        dataset,
+        rows,
+        sites,
+        gain_model.phase_cadence,
+        gain_model.sample_phase,
+        rng,
+        0.0,
+    )
+    gain1 = amplitude[0] * np.exp(1.0j * phase[0])
+    gain2 = amplitude[1] * np.exp(1.0j * phase[1])
     return gain1, gain2
 
 
-def _native_leakage_matrices(terms, count, enabled):
-    """Convert transient legacy D-term draws into generic Jones matrices."""
+def _station_group_values(dataset, rows, sites, cadence, sampler, rng, default):
+    """Draw one scalar per station/cadence group for both row endpoints."""
 
-    matrix1 = np.broadcast_to(np.eye(2, dtype=complex), (count, 2, 2)).copy()
-    matrix2 = np.array(matrix1, copy=True)
-    if enabled:
-        matrix1[:, 0, 1] = terms["leak1R"]
-        matrix1[:, 1, 0] = terms["leak1L"]
-        matrix2[:, 0, 1] = terms["leak2R"]
-        matrix2[:, 1, 0] = terms["leak2L"]
-    return matrix1, matrix2
+    group_ids = realization_group_ids(dataset, cadence)
+    first = np.full(dataset.row_count, default, dtype=float)
+    second = np.full(dataset.row_count, default, dtype=float)
+    for site in sites:
+        for group_id in np.unique(group_ids):
+            value = sampler(rng)
+            first[(rows.t1 == site) & (group_ids == group_id)] = value
+            second[(rows.t2 == site) & (group_ids == group_id)] = value
+    return first, second
 
 
-def _sample_path_gains(dataset, times, effects, rng):
-    """Return independent receptor-path gains aligned to native rows."""
+def _sample_gain_ratio_factors(dataset, effects, rng):
+    """Return symmetric per-receptor factors derived from every ratio ``R``.
+
+    A two-feed ratio is sampled in logarithmic amplitude and unwrapped phase,
+    then assigned as ``sqrt(R)`` to feed A and ``1/sqrt(R)`` to feed B.  The
+    returned factors are row-aligned because the two processes can use any
+    supported realization cadence.
+    """
 
     count = dataset.row_count
-    gains = np.ones((count, dataset.receptors.count), dtype=complex)
+    factors = np.ones((count, dataset.receptors.count), dtype=complex)
     names = dataset.stations.names
-    for receptor, (station_index, feed_id) in enumerate(zip(
-        dataset.receptors.station_index,
-        dataset.receptors.feed_id,
-    )):
-        model = effects.path_gain_model(names[station_index], feed_id)
-        if model is None:
-            continue
-        for time in np.unique(times):
-            gains[times == time, receptor] = model.sample(rng)
-    return gains
+    for station, model in effects.gain_ratio_overrides.items():
+        station_index = names.index(station)
+        receptor_indices = np.flatnonzero(dataset.receptors.station_index == station_index)
+        feed_index = {
+            dataset.receptors.feed_id[index]: index
+            for index in receptor_indices
+        }
+        amplitude_groups = realization_group_ids(dataset, model.amplitude_cadence)
+        phase_groups = realization_group_ids(dataset, model.phase_cadence)
+        log_amplitude = _row_group_values(
+            amplitude_groups,
+            model.sample_log_amplitude,
+            rng,
+        )
+        phase = _row_group_values(phase_groups, model.sample_phase, rng)
+        factor_a = 10.0 ** (0.5 * log_amplitude) * np.exp(0.5j * phase)
+        factor_b = 10.0 ** (-0.5 * log_amplitude) * np.exp(-0.5j * phase)
+        factors[:, feed_index[model.feed_a]] = factor_a
+        factors[:, feed_index[model.feed_b]] = factor_b
+    return factors
+
+
+def _row_group_values(group_ids, sampler, rng):
+    """Expand one independent scalar draw per dense row-group identifier."""
+
+    values = np.empty(len(group_ids), dtype=float)
+    for group_id in np.unique(group_ids):
+        values[group_ids == group_id] = sampler(rng)
+    return values
+
+
+def _sample_leakage_matrices(dataset, metadata, leakage_model, rng):
+    """Return cadence-aware station-frame circular leakage matrices."""
+
+    count = dataset.row_count
+    matrix1 = np.broadcast_to(np.eye(2, dtype=complex), (count, 2, 2)).copy()
+    matrix2 = np.array(matrix1, copy=True)
+    if leakage_model is None:
+        return matrix1, matrix2
+    if not isinstance(leakage_model, LeakageModel):
+        raise TypeError("leakage_model must be a LeakageModel or None.")
+    group_ids = realization_group_ids(dataset, leakage_model.cadence)
+    rows = metadata["_rows"]
+    for site in metadata["sites_obs"]:
+        first = rows.t1 == site
+        second = rows.t2 == site
+        for group_id in np.unique(group_ids):
+            d_a = leakage_model.component_sigma * (
+                rng.normal(0.0, 1.0) + 1.0j * rng.normal(0.0, 1.0)
+            )
+            d_b = leakage_model.component_sigma * (
+                rng.normal(0.0, 1.0) + 1.0j * rng.normal(0.0, 1.0)
+            )
+            first_group = first & (group_ids == group_id)
+            second_group = second & (group_ids == group_id)
+            matrix1[first_group, 0, 1] = d_a
+            matrix1[first_group, 1, 0] = d_b
+            matrix2[second_group, 0, 1] = d_a
+            matrix2[second_group, 1, 0] = d_b
+    return matrix1, matrix2

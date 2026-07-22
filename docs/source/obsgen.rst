@@ -94,7 +94,7 @@ Native Station Corruptions
 --------------------------
 
 The v2 native API uses a single explicit model for thermal noise, flagging,
-station-common Jones terms, and per-receptor-path gains. This replaces the
+station-common Jones terms and optional symmetric two-feed gain ratios. This replaces the
 v1 ``addnoise``, ``addgains``, ``gainamp``, ``addleakage``, ``leakamp``,
 ``addFR``, ``opacitycal``, ``flagwind``, ``flagday``, and ``flagsun`` keyword
 arguments on ``simulate()``, ``make_dataset()``, ``observe()``, and
@@ -108,7 +108,7 @@ For example, this produces a noise-free, fully calibrated native dataset:
 
    effects = StationCorruptionModel(
        thermal_noise=False,
-       common_gain=None,
+       station_gain=None,
        feed_rotation=False,
        flag_wind=False,
        flag_daylight=False,
@@ -116,28 +116,32 @@ For example, this produces a noise-free, fully calibrated native dataset:
    )
    result = obsgen.make_dataset(model, effects=effects)
 
-Common gains act before the station-local receptor response. ``GainModel``
-objects in ``path_gain_overrides`` instead apply after that response to named
-station/feed voltage paths, and are therefore suitable for mixed feeds:
+For a two-feed station, ngehtsim models the feed gains with a station-common
+complex gain ``G`` and an ordered gain ratio ``R = G_A / G_B``.  The RIME then
+uses ``G_A = G sqrt(R)`` and ``G_B = G / sqrt(R)``.  ``GainModel`` controls
+the common process and ``GainRatioModel`` controls ``R``; both expose separate
+amplitude and unwrapped-phase cadences:
 
 .. code-block:: python
 
-   from ngehtsim.obs.station_effects import GainModel, LeakageModel, StationCorruptionModel
+   from ngehtsim.obs.station_effects import (
+       GainModel,
+       GainRatioModel,
+       LeakageModel,
+       StationCorruptionModel,
+   )
 
    effects = StationCorruptionModel(
        thermal_noise=True,
        opacity_calibrated=True,
        feed_rotation=True,
-       common_gain=GainModel(
+       station_gain=GainModel(
            amplitude_sigma_dex=0.04,
            phase_distribution="uniform",
        ),
        leakage=LeakageModel(component_sigma=0.1),
-       path_gain_overrides={
-           "ALMA": {
-               "X": GainModel(amplitude_sigma_dex=0.02),
-               "Y": GainModel(amplitude_sigma_dex=0.02),
-           },
+       gain_ratio_overrides={
+           "ALMA": GainRatioModel("X", "Y", amplitude_sigma_dex=0.02),
        },
    )
    result = obsgen.make_dataset(model, effects=effects)
@@ -146,8 +150,8 @@ station/feed voltage paths, and are therefore suitable for mixed feeds:
 ``station_receptors``, rather than assuming a global polarization basis.
 ``StationCorruptionModel()`` retains the native default realization: thermal
 noise, opacity calibration, feed rotation, weather/solar flagging, and a
-station-common 0.04-dex amplitude gain with uniform phase; leakage and
-independent path gains are disabled.
+station-common 0.04-dex amplitude gain with uniform phase.  Leakage and gain
+ratios are disabled unless explicitly requested.
 
 The historical implementation is available only through explicit legacy
 entry points (``observe_legacy()``, ``make_obs_legacy()``, and their legacy

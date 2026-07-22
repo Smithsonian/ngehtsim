@@ -1,9 +1,10 @@
 """Declarative station-corruption settings for native simulations.
 
-The native simulator separates effects that act on the common two-component
-sky field from gains attached to individual recorded voltage paths.  This is
-necessary for mixed-receptor arrays: an X/Y, R/L, or custom feed inventory
-cannot be described reliably by historical hand-specific keyword arguments.
+The native simulator separates station-common voltage gains from differential
+two-feed gain ratios.  For a two-feed station with feed gains ``G_A`` and
+``G_B``, it realizes a common gain ``G`` and ratio ``R`` as
+``G_A = G sqrt(R)`` and ``G_B = G / sqrt(R)``.  Gain phases are generated as
+real-valued process variables before being wrapped into complex voltages.
 """
 
 from __future__ import annotations
@@ -16,56 +17,241 @@ import numpy as np
 
 
 @dataclass(frozen=True)
-class GainModel:
-    """Random complex-gain distribution for a station or receptor path.
+class RealizationCadence:
+    """Grouping rule for a stochastic station-corruption realization.
 
     Parameters
     ----------
-    amplitude_sigma_dex : float, optional
-        Standard deviation of the logarithmic gain amplitude in dex. A value
-        of zero leaves amplitudes unchanged.
-    phase_distribution : {"none", "uniform"}, optional
-        ``"uniform"`` draws an independent phase uniformly on ``[-pi, pi)``
-        at every station/time sample. ``"none"`` leaves phases unchanged.
+    kind : {"integration", "scan", "track", "interval"}, optional
+        ``"integration"`` realizes one value for every distinct integration
+        time, ``"scan"`` shares one value throughout every stored scan,
+        ``"track"`` shares one value throughout the dataset, and
+        ``"interval"`` uses fixed-width time bins.
+    interval_seconds : float, optional
+        Positive bin width required when ``kind="interval"``.
+    origin_mjd : float, optional
+        UTC MJD defining the zero edge of ``"interval"`` bins. Omitting it
+        anchors bins at the earliest dataset time.
 
     Notes
     -----
-    A future time-correlated phase process can extend this compact model
-    without changing the station/receptor distinction in the native RIME.
+    Scan cadence deliberately requires explicit scan metadata. ngehtsim never
+    infers scans from timestamp gaps because that would silently change the
+    physical correlation assumed for gain errors.
+    """
+
+    kind: str = "track"
+    interval_seconds: float | None = None
+    origin_mjd: float | None = None
+
+    def __post_init__(self):
+        if self.kind not in ("integration", "scan", "track", "interval"):
+            raise ValueError(
+                "kind must be one of 'integration', 'scan', 'track', or 'interval'."
+            )
+        if self.kind == "interval":
+            if self.interval_seconds is None or not np.isfinite(self.interval_seconds):
+                raise ValueError("interval cadence requires a finite interval_seconds value.")
+            if self.interval_seconds <= 0.0:
+                raise ValueError("interval_seconds must be positive.")
+        elif self.interval_seconds is not None:
+            raise ValueError("interval_seconds is only valid for interval cadence.")
+        if self.origin_mjd is not None and not np.isfinite(self.origin_mjd):
+            raise ValueError("origin_mjd must be finite when supplied.")
+
+    @classmethod
+    def integration(cls):
+        """Return a cadence with one draw per distinct integration time."""
+
+        return cls("integration")
+
+    @classmethod
+    def scan(cls):
+        """Return a cadence with one draw per stored observation scan."""
+
+        return cls("scan")
+
+    @classmethod
+    def track(cls):
+        """Return a cadence with one draw over the entire observation."""
+
+        return cls("track")
+
+    @classmethod
+    def interval(cls, seconds, origin_mjd=None):
+        """Return a cadence using fixed-width bins of ``seconds``."""
+
+        return cls("interval", interval_seconds=float(seconds), origin_mjd=origin_mjd)
+
+
+def realization_group_ids(dataset, cadence):
+    """Return an integer realization group for every native visibility row.
+
+    Parameters
+    ----------
+    dataset : VisibilityDataset
+        Dataset whose UTC timestamps and optional scan metadata define the
+        realization groups.
+    cadence : RealizationCadence
+        Requested grouping rule.
+
+    Returns
+    -------
+    numpy.ndarray, shape (row,)
+        Dense non-negative group IDs. Equal IDs share one stochastic draw for
+        a given station.
+
+    Raises
+    ------
+    ValueError
+        If scan cadence is requested without complete, unambiguous scan
+        metadata.
+    """
+
+    if not isinstance(cadence, RealizationCadence):
+        raise TypeError("cadence must be a RealizationCadence instance.")
+    time_mjd = np.asarray(dataset.time_mjd, dtype=float)
+    if cadence.kind == "track":
+        return np.zeros(dataset.row_count, dtype=np.intp)
+    if cadence.kind == "integration":
+        _, inverse = np.unique(time_mjd, return_inverse=True)
+        return inverse.astype(np.intp, copy=False)
+    if cadence.kind == "interval":
+        if not dataset.row_count:
+            return np.zeros(0, dtype=np.intp)
+        origin = np.min(time_mjd) if cadence.origin_mjd is None else cadence.origin_mjd
+        values = np.floor(((time_mjd - origin) * 86400.0) / cadence.interval_seconds)
+        _, inverse = np.unique(values.astype(np.int64), return_inverse=True)
+        return inverse.astype(np.intp, copy=False)
+
+    if dataset.scan_start_mjd is None or dataset.scan_stop_mjd is None:
+        raise ValueError(
+            "scan cadence requires dataset scan metadata; provide scan intervals or "
+            "choose integration, track, or interval cadence."
+        )
+    starts = np.asarray(dataset.scan_start_mjd, dtype=float)
+    stops = np.asarray(dataset.scan_stop_mjd, dtype=float)
+    memberships = (time_mjd[:, np.newaxis] >= starts[np.newaxis, :]) & (
+        time_mjd[:, np.newaxis] <= stops[np.newaxis, :]
+    )
+    count = np.sum(memberships, axis=1)
+    if np.any(count != 1):
+        raise ValueError(
+            "scan cadence requires every visibility row to belong to exactly one scan."
+        )
+    return np.argmax(memberships, axis=1).astype(np.intp)
+
+
+@dataclass(frozen=True)
+class GainModel:
+    """Stochastic station-common complex voltage gain ``G``.
+
+    Amplitude and phase are sampled separately so they can have different
+    realization cadences. The amplitude is a base-10 logarithmic multiplier;
+    a zero mean and zero standard deviation therefore leaves it unchanged.
+
+    Parameters
+    ----------
+    amplitude_sigma_dex, amplitude_mean_dex : float, optional
+        Standard deviation and mean of ``log10(abs(G))``.
+    phase_distribution : {"none", "uniform", "normal"}, optional
+        Distribution about ``phase_mean_rad``. ``"uniform"`` is uniform on
+        ``[-pi, pi)``; ``"normal"`` uses ``phase_sigma_rad``.
+    phase_sigma_rad : float, optional
+        Standard deviation for ``phase_distribution="normal"``.
+    amplitude_cadence, phase_cadence : RealizationCadence, optional
+        Draw grouping for the two independent processes. Both default to one
+        realization per stored scan.
     """
 
     amplitude_sigma_dex: float = 0.0
     phase_distribution: str = "none"
+    amplitude_mean_dex: float = 0.0
+    phase_mean_rad: float = 0.0
+    phase_sigma_rad: float = 0.0
+    amplitude_cadence: RealizationCadence = field(default_factory=RealizationCadence.scan)
+    phase_cadence: RealizationCadence = field(default_factory=RealizationCadence.scan)
 
     def __post_init__(self):
-        if (
-            not np.isfinite(self.amplitude_sigma_dex)
-            or self.amplitude_sigma_dex < 0.0
-        ):
-            raise ValueError("amplitude_sigma_dex must be finite and non-negative.")
-        if self.phase_distribution not in ("none", "uniform"):
-            raise ValueError("phase_distribution must be either 'none' or 'uniform'.")
+        _validate_gain_fields(self)
+        _validate_cadences(self)
+
+    def sample_amplitude(self, rng):
+        """Draw one positive voltage-amplitude multiplier."""
+
+        return 10.0 ** (
+            self.amplitude_mean_dex
+            + (self.amplitude_sigma_dex * rng.normal(0.0, 1.0))
+        )
+
+    def sample_phase(self, rng):
+        """Draw one unwrapped station-gain phase in radians."""
+
+        return _sample_phase(self, rng)
 
     def sample(self, rng):
-        """Draw one complex gain from this model.
+        """Draw one complex gain using independent amplitude and phase draws."""
 
-        Parameters
-        ----------
-        rng : numpy.random.Generator
-            Random generator used to produce the realization.
+        return self.sample_amplitude(rng) * np.exp(1.0j * self.sample_phase(rng))
 
-        Returns
-        -------
-        complex
-            Drawn gain multiplier.
-        """
 
-        amplitude = 10.0 ** (self.amplitude_sigma_dex * rng.normal(0.0, 1.0))
-        if self.phase_distribution == "uniform":
-            phase = rng.uniform(-np.pi, np.pi)
-        else:
-            phase = 0.0
-        return amplitude * np.exp(1.0j * phase)
+@dataclass(frozen=True)
+class GainRatioModel:
+    """Stochastic two-feed complex gain ratio ``R = G_A / G_B``.
+
+    ``feed_a`` and ``feed_b`` are ordered explicitly. The native RIME applies
+    the symmetric factors ``sqrt(R)`` and ``1/sqrt(R)`` to them, respectively;
+    no calibration reference feed or reference station is introduced.
+
+    Parameters
+    ----------
+    feed_a : str
+        Feed ID defining the numerator of ``R = G_A / G_B``.
+    feed_b : str
+        Feed ID defining the denominator of ``R = G_A / G_B``.
+    amplitude_sigma_dex : float, optional
+        Standard deviation of ``log10(abs(R))``.
+    amplitude_mean_dex : float, optional
+        Mean of ``log10(abs(R))``.
+    phase_distribution : {"none", "uniform", "normal"}, optional
+        Distribution about ``phase_mean_rad`` for the unwrapped ratio phase.
+    phase_mean_rad : float, optional
+        Mean unwrapped phase of ``R`` in radians.
+    phase_sigma_rad : float, optional
+        Standard deviation when ``phase_distribution="normal"``.
+    amplitude_cadence : RealizationCadence, optional
+        Grouping for logarithmic ratio-amplitude draws. The default is one
+        realization per track.
+    phase_cadence : RealizationCadence, optional
+        Grouping for unwrapped ratio-phase draws. The default is one
+        realization per track.
+    """
+
+    feed_a: str
+    feed_b: str
+    amplitude_sigma_dex: float = 0.0
+    phase_distribution: str = "none"
+    amplitude_mean_dex: float = 0.0
+    phase_mean_rad: float = 0.0
+    phase_sigma_rad: float = 0.0
+    amplitude_cadence: RealizationCadence = field(default_factory=RealizationCadence.track)
+    phase_cadence: RealizationCadence = field(default_factory=RealizationCadence.track)
+
+    def __post_init__(self):
+        if not self.feed_a or not self.feed_b or self.feed_a == self.feed_b:
+            raise ValueError("feed_a and feed_b must be distinct non-empty feed IDs.")
+        _validate_gain_fields(self)
+        _validate_cadences(self)
+
+    def sample_log_amplitude(self, rng):
+        """Draw one unwrapped ``log10(abs(R))`` realization."""
+
+        return self.amplitude_mean_dex + (self.amplitude_sigma_dex * rng.normal(0.0, 1.0))
+
+    def sample_phase(self, rng):
+        """Draw one unwrapped ratio phase in radians."""
+
+        return _sample_phase(self, rng)
 
 
 @dataclass(frozen=True)
@@ -77,61 +263,55 @@ class LeakageModel:
     component_sigma : float, optional
         Standard deviation assigned independently to the real and imaginary
         parts of each off-diagonal circular-basis leakage term.
+    cadence : RealizationCadence, optional
+        Realization grouping for the complete complex leakage matrix. The
+        default is one stable D-term realization per track.
     """
 
     component_sigma: float = 0.0
+    cadence: RealizationCadence = field(default_factory=RealizationCadence.track)
 
     def __post_init__(self):
         if not np.isfinite(self.component_sigma) or self.component_sigma < 0.0:
             raise ValueError("component_sigma must be finite and non-negative.")
+        if not isinstance(self.cadence, RealizationCadence):
+            raise TypeError("cadence must be a RealizationCadence instance.")
 
 
 @dataclass(frozen=True)
 class StationCorruptionModel:
     """Complete native station-effect configuration for one simulation.
 
+    The default realization adds independent thermal noise, opacity
+    calibration, feed rotation, weather/solar flagging, and a station-common
+    gain with independent amplitude and phase draws per scan. Gain ratios are
+    disabled unless explicitly configured for a two-feed station.
+
     Parameters
     ----------
     thermal_noise : bool, optional
-        Add independent complex thermal noise using each product's propagated
-        ``sigma_jy`` uncertainty.
-    opacity_calibrated : bool, optional
-        When true, retain the established opacity-calibrated visibility and
-        uncertainty convention. When false, attenuate the signal instead.
-    feed_rotation : bool, optional
-        Apply mount and feed-angle rotation in the common circular sky frame.
-    common_gain : GainModel or None, optional
-        Station-wide gain drawn once per station/time sample and applied to
-        every local receptor path. ``None`` disables common gains.
+        Add independent complex thermal noise per integration, channel, and
+        correlation product.
+    opacity_calibrated, feed_rotation : bool, optional
+        Select the opacity convention and physical feed-rotation calculation.
+    station_gain : GainModel or None, optional
+        Common complex station voltage-gain process ``G``. ``None`` disables
+        station-common gain corruption.
+    gain_ratio_overrides : mapping, optional
+        Mapping ``{station: GainRatioModel}`` for two-feed station gain ratios.
+        The model's ordered ``feed_a`` and ``feed_b`` define ``R = G_A / G_B``.
     leakage : LeakageModel or None, optional
-        Station-frame circular leakage realization. ``None`` disables leakage.
-    path_gain_overrides : mapping, optional
-        Nested mapping ``{station: {feed_id: GainModel}}``. Each configured
-        gain is applied after the station-frame Jones response to the named
-        local voltage path. It supplements ``common_gain``.
+        Circular station-frame leakage realization.
     flag_wind, flag_daylight, flag_sun : bool, optional
         Enable weather, daytime, and solar-avoidance availability masks.
-
-    Notes
-    -----
-    ``StationCorruptionModel()`` preserves the historical native defaults:
-    thermal noise, opacity calibration, feed rotation, and a station-common
-    0.04-dex gain with uniformly random phase; leakage remains disabled.
     """
 
     thermal_noise: bool = True
     opacity_calibrated: bool = True
     feed_rotation: bool = True
-    common_gain: GainModel | None = field(
-        default_factory=lambda: GainModel(
-            amplitude_sigma_dex=0.04,
-            phase_distribution="uniform",
-        )
-    )
+    station_gain: GainModel | None = field(default_factory=GainModel)
+    gain_ratio_overrides: Mapping[str, GainRatioModel] = field(default_factory=dict)
     leakage: LeakageModel | None = None
-    path_gain_overrides: Mapping[str, Mapping[str, GainModel]] = field(
-        default_factory=dict
-    )
     flag_wind: bool = True
     flag_daylight: bool = False
     flag_sun: bool = True
@@ -147,81 +327,91 @@ class StationCorruptionModel:
         ):
             if not isinstance(getattr(self, name), bool):
                 raise TypeError("{0} must be a bool.".format(name))
-        if self.common_gain is not None and not isinstance(self.common_gain, GainModel):
-            raise TypeError("common_gain must be a GainModel or None.")
+        if self.station_gain is not None and not isinstance(self.station_gain, GainModel):
+            raise TypeError("station_gain must be a GainModel or None.")
         if self.leakage is not None and not isinstance(self.leakage, LeakageModel):
             raise TypeError("leakage must be a LeakageModel or None.")
-        if not isinstance(self.path_gain_overrides, Mapping):
-            raise TypeError("path_gain_overrides must be a mapping.")
+        if not isinstance(self.gain_ratio_overrides, Mapping):
+            raise TypeError("gain_ratio_overrides must be a mapping.")
         normalized = {}
-        for station, paths in self.path_gain_overrides.items():
-            if not isinstance(paths, Mapping):
-                raise TypeError("Each path_gain_overrides station value must be a mapping.")
-            normalized_paths = {}
-            for feed_id, model in paths.items():
-                if not isinstance(model, GainModel):
-                    raise TypeError("Each path gain override must be a GainModel.")
-                normalized_paths[str(feed_id)] = model
-            normalized[str(station)] = MappingProxyType(normalized_paths)
+        for station, model in self.gain_ratio_overrides.items():
+            if not isinstance(model, GainRatioModel):
+                raise TypeError("Each gain-ratio override must be a GainRatioModel.")
+            normalized[str(station)] = model
         object.__setattr__(
             self,
-            "path_gain_overrides",
+            "gain_ratio_overrides",
             MappingProxyType(normalized),
         )
 
     def validate_receptors(self, station_names, receptors):
-        """Validate path overrides against a resolved native receptor table.
+        """Validate declared gain ratios against a resolved receptor inventory.
 
-        Parameters
-        ----------
-        station_names : iterable of str
-            Ordered native station names.
-        receptors : ReceptorTable
-            Resolved station/feed inventory for the native dataset.
-
-        Raises
-        ------
-        ValueError
-            If an override references an unknown station or feed.
+        Gain ratios are valid only for a station containing exactly the two
+        declared feeds. A single-feed station uses only ``station_gain``;
+        datasets with more than two feeds remain usable without a ratio model
+        but reject a requested ratio until a general multi-feed parameterization
+        is introduced.
         """
 
         names = tuple(str(name) for name in station_names)
-        unknown_stations = set(self.path_gain_overrides) - set(names)
+        unknown_stations = set(self.gain_ratio_overrides) - set(names)
         if unknown_stations:
             raise ValueError(
-                "Path gain overrides reference unknown stations: {0}.".format(
+                "Gain-ratio overrides reference unknown stations: {0}.".format(
                     ", ".join(sorted(unknown_stations))
                 )
             )
-        for station, paths in self.path_gain_overrides.items():
+        for station, model in self.gain_ratio_overrides.items():
             station_index = names.index(station)
-            valid_feeds = {
+            feed_ids = tuple(
                 receptors.feed_id[index]
                 for index in np.flatnonzero(receptors.station_index == station_index)
-            }
-            unknown_feeds = set(paths) - valid_feeds
-            if unknown_feeds:
+            )
+            if len(feed_ids) == 1:
                 raise ValueError(
-                    "Path gain overrides reference unknown feeds for {0}: {1}.".format(
-                        station,
-                        ", ".join(sorted(unknown_feeds)),
-                    )
+                    "Station {0} has one feed and cannot define a gain ratio.".format(station)
+                )
+            if len(feed_ids) != 2:
+                raise NotImplementedError(
+                    "Gain ratios currently support exactly two feeds per station; "
+                    "{0} has {1}.".format(station, len(feed_ids))
+                )
+            if set(feed_ids) != {model.feed_a, model.feed_b}:
+                raise ValueError(
+                    "Gain-ratio feeds for {0} must match its two configured feeds.".format(station)
                 )
 
-    def path_gain_model(self, station, feed_id):
-        """Return the optional independent gain model for one voltage path.
+    def gain_ratio_model(self, station):
+        """Return the optional two-feed gain-ratio model for ``station``."""
 
-        Parameters
-        ----------
-        station : str
-            Station name.
-        feed_id : str
-            Local feed identifier.
+        return self.gain_ratio_overrides.get(str(station))
 
-        Returns
-        -------
-        GainModel or None
-            Override model, or ``None`` when the path has no independent gain.
-        """
 
-        return self.path_gain_overrides.get(str(station), {}).get(str(feed_id))
+def _validate_gain_fields(model):
+    for name in ("amplitude_mean_dex", "amplitude_sigma_dex", "phase_mean_rad", "phase_sigma_rad"):
+        value = getattr(model, name)
+        if not np.isfinite(value):
+            raise ValueError("{0} must be finite.".format(name))
+    if model.amplitude_sigma_dex < 0.0:
+        raise ValueError("amplitude_sigma_dex must be non-negative.")
+    if model.phase_sigma_rad < 0.0:
+        raise ValueError("phase_sigma_rad must be non-negative.")
+    if model.phase_distribution not in ("none", "uniform", "normal"):
+        raise ValueError("phase_distribution must be 'none', 'uniform', or 'normal'.")
+    if model.phase_distribution != "normal" and model.phase_sigma_rad != 0.0:
+        raise ValueError("phase_sigma_rad is only valid for normal phase distribution.")
+
+
+def _validate_cadences(model):
+    for name in ("amplitude_cadence", "phase_cadence"):
+        if not isinstance(getattr(model, name), RealizationCadence):
+            raise TypeError("{0} must be a RealizationCadence instance.".format(name))
+
+
+def _sample_phase(model, rng):
+    if model.phase_distribution == "none":
+        return model.phase_mean_rad
+    if model.phase_distribution == "uniform":
+        return model.phase_mean_rad + rng.uniform(-np.pi, np.pi)
+    return model.phase_mean_rad + (model.phase_sigma_rad * rng.normal(0.0, 1.0))
