@@ -205,14 +205,26 @@ class GainRatioModel:
 
     Parameters
     ----------
-    feed_a, feed_b : str
-        Ordered feed IDs defining ``R = G_A / G_B``.
-    amplitude_sigma_dex, amplitude_mean_dex, phase_mean_rad,
-    phase_distribution, phase_sigma_rad : optional
-        Corresponding gain-ratio process parameters. The amplitude describes
-        ``log10(abs(R))`` and the phase describes ``arg(R)``.
-    amplitude_cadence, phase_cadence : RealizationCadence, optional
-        The two process cadences. Both default to one realization per track.
+    feed_a : str
+        Feed ID defining the numerator of ``R = G_A / G_B``.
+    feed_b : str
+        Feed ID defining the denominator of ``R = G_A / G_B``.
+    amplitude_sigma_dex : float, optional
+        Standard deviation of ``log10(abs(R))``.
+    amplitude_mean_dex : float, optional
+        Mean of ``log10(abs(R))``.
+    phase_distribution : {"none", "uniform", "normal"}, optional
+        Distribution about ``phase_mean_rad`` for the unwrapped ratio phase.
+    phase_mean_rad : float, optional
+        Mean unwrapped phase of ``R`` in radians.
+    phase_sigma_rad : float, optional
+        Standard deviation when ``phase_distribution="normal"``.
+    amplitude_cadence : RealizationCadence, optional
+        Grouping for logarithmic ratio-amplitude draws. The default is one
+        realization per track.
+    phase_cadence : RealizationCadence, optional
+        Grouping for unwrapped ratio-phase draws. The default is one
+        realization per track.
     """
 
     feed_a: str
