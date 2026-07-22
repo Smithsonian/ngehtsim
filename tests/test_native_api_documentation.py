@@ -32,11 +32,19 @@ from ngehtsim.obs.source_models import (
 from ngehtsim.obs.station_observation import (
     station_metadata_for_dataset,
     station_terms_for_dataset,
+    template_station_terms_for_dataset,
 )
 from ngehtsim.obs.station_effects import (
     GainModel,
+    GainRatioModel,
     LeakageModel,
+    RealizationCadence,
     StationCorruptionModel,
+)
+from ngehtsim.obs.observation_template import (
+    ObservationTemplate,
+    read_observation_template,
+    simulate_observation_template,
 )
 from ngehtsim.obs.uvfits import read_uvfits, write_uvfits
 from ngehtsim.obs.visibility_dataset import (
@@ -77,7 +85,13 @@ DOCUMENTED_NATIVE_API = {
     "apply_visibility_dataset_elevation_limits": apply_visibility_dataset_elevation_limits,
     "station_metadata_for_dataset": station_metadata_for_dataset,
     "station_terms_for_dataset": station_terms_for_dataset,
+    "template_station_terms_for_dataset": template_station_terms_for_dataset,
+    "ObservationTemplate": ObservationTemplate,
+    "read_observation_template": read_observation_template,
+    "simulate_observation_template": simulate_observation_template,
+    "RealizationCadence": RealizationCadence,
     "GainModel": GainModel,
+    "GainRatioModel": GainRatioModel,
     "LeakageModel": LeakageModel,
     "StationCorruptionModel": StationCorruptionModel,
     "apply_circular_leakage": apply_circular_leakage,

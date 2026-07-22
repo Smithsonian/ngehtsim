@@ -39,7 +39,7 @@ obs = obsgen.make_obs()
 def with_vs_without(obsgen):
     effects = StationCorruptionModel(
         thermal_noise=False,
-        common_gain=None,
+        station_gain=None,
         flag_wind=False,
         flag_daylight=False,
         flag_sun=False,

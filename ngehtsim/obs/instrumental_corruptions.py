@@ -258,7 +258,8 @@ def apply_circular_corruptions(dataset, station_terms, stations, rng, addnoise=T
 
 
 def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
-                               receptor_configuration, effects, rng):
+                               receptor_configuration, effects, rng,
+                               uncertainty_mode="sefd"):
     """Apply a one-channel Jones RIME to arbitrary station-feed products.
 
     ``sky_coherency`` is sampled in the common circular sky basis and has one
@@ -277,6 +278,11 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
     station_terms, stations, receptor_configuration, effects, rng
         Native station-term realization, updated station table, resolved
         receptor paths, station-effect model, and random generator.
+    uncertainty_mode : {"sefd", "template"}, optional
+        ``"sefd"`` calculates product uncertainty from the simulated station
+        SEFD terms. ``"template"`` retains the supplied native
+        ``dataset.sigma_jy`` values, which is used when re-simulating an
+        imported observation with its reported uncertainty budget.
 
     Returns
     -------
@@ -290,6 +296,8 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
         raise TypeError("stations must be a StationTable instance.")
     if not isinstance(effects, StationCorruptionModel):
         raise TypeError("effects must be a StationCorruptionModel instance.")
+    if uncertainty_mode not in ("sefd", "template"):
+        raise ValueError("uncertainty_mode must be either 'sefd' or 'template'.")
     if dataset.channel_count != 1:
         raise ValueError("Native receptor corruption requires exactly one channel.")
     sky_coherency = np.asarray(sky_coherency, dtype=complex)
@@ -322,21 +330,28 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
     output_coherency = jones1 @ sky_coherency @ np.swapaxes(np.conj(jones2), -1, -2)
     if not effects.opacity_calibrated:
         output_coherency *= np.sqrt(np.exp(-tau1 - tau2))[:, np.newaxis, np.newaxis]
-    path_gains = _path_gain_array(station_terms, count, dataset.receptors.count)
+    gain_ratio_factors = _gain_ratio_factor_array(
+        station_terms,
+        count,
+        dataset.receptors.count,
+    )
 
     visibilities = np.array(dataset.visibilities, copy=True)
     sigma_jy = np.array(dataset.sigma_jy, copy=True)
     flags = np.array(dataset.flags, copy=True)
     products = dataset.correlation_products
-    base_sigma = _baseline_sigmas(
-        terms["SEFD1"],
-        terms["SEFD2"],
-        np.minimum(terms["bw1"], terms["bw2"]),
-        dataset.integration_time_s,
-        tau1,
-        tau2,
-        effects.opacity_calibrated,
-    )[:, 0]
+    if uncertainty_mode == "sefd":
+        base_sigma = _baseline_sigmas(
+            terms["SEFD1"],
+            terms["SEFD2"],
+            np.minimum(terms["bw1"], terms["bw2"]),
+            dataset.integration_time_s,
+            tau1,
+            tau2,
+            effects.opacity_calibrated,
+        )[:, 0]
+    else:
+        base_sigma = None
     flagged_sites = set(station_terms["flagsites"])
     row_available = (
         ~np.isin(terms["t1"], tuple(flagged_sites))
@@ -349,20 +364,34 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
                 continue
             receptor1 = products.receptor1_id[product_id]
             receptor2 = products.receptor2_id[product_id]
-            first = path_gains[row, receptor1] * gain_scale[receptor1] * response[receptor1]
-            second = path_gains[row, receptor2] * gain_scale[receptor2] * response[receptor2]
+            first = (
+                gain_ratio_factors[row, receptor1]
+                * gain_scale[receptor1]
+                * response[receptor1]
+            )
+            second = (
+                gain_ratio_factors[row, receptor2]
+                * gain_scale[receptor2]
+                * response[receptor2]
+            )
             value = first @ output_coherency[row] @ np.conj(second)
-            gain_magnitude = (
-                np.abs(station_terms["common_gain1"][row])
-                * np.abs(path_gains[row, receptor1] * gain_scale[receptor1])
-                * np.abs(station_terms["common_gain2"][row])
-                * np.abs(path_gains[row, receptor2] * gain_scale[receptor2])
-            )
-            sigma = (
-                base_sigma[row]
-                * np.sqrt(sefd_scale[receptor1] * sefd_scale[receptor2])
-                * gain_magnitude
-            )
+            if uncertainty_mode == "sefd":
+                gain_magnitude = (
+                    np.abs(station_terms["common_gain1"][row])
+                    * np.abs(gain_ratio_factors[row, receptor1] * gain_scale[receptor1])
+                    * np.abs(station_terms["common_gain2"][row])
+                    * np.abs(gain_ratio_factors[row, receptor2] * gain_scale[receptor2])
+                )
+                sigma = (
+                    base_sigma[row]
+                    * np.sqrt(sefd_scale[receptor1] * sefd_scale[receptor2])
+                    * gain_magnitude
+                )
+            else:
+                sigma = sigma_jy[row, 0, slot]
+                if not np.isfinite(sigma) or sigma <= 0.0:
+                    flags[row, 0, slot] = True
+                    continue
             if effects.thermal_noise:
                 value += sigma * (rng.normal() + 1.0j * rng.normal())
             visibilities[row, 0, slot] = value
@@ -377,8 +406,8 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
         visibilities=visibilities,
         sigma_jy=sigma_jy,
         flags=flags,
-        ampcal=effects.common_gain is None and not effects.path_gain_overrides,
-        phasecal=effects.common_gain is None and not effects.path_gain_overrides,
+        ampcal=effects.station_gain is None and not effects.gain_ratio_overrides,
+        phasecal=effects.station_gain is None and not effects.gain_ratio_overrides,
         opacitycal=effects.opacity_calibrated,
         dcal=effects.leakage is None,
         frcal=not effects.feed_rotation,
@@ -429,15 +458,15 @@ def _matrix_term(station_terms, name, count):
     return values
 
 
-def _path_gain_array(station_terms, count, receptor_count):
-    """Return validated row/receptor gains for all native signal paths."""
+def _gain_ratio_factor_array(station_terms, count, receptor_count):
+    """Return validated row/receptor factors derived from gain ratios."""
 
     try:
-        values = np.asarray(station_terms["path_gains"], dtype=complex)
+        values = np.asarray(station_terms["gain_ratio_factors"], dtype=complex)
     except KeyError as exc:
-        raise ValueError("Missing station term: path_gains.") from exc
+        raise ValueError("Missing station term: gain_ratio_factors.") from exc
     if values.shape != (count, receptor_count):
-        raise ValueError("path_gains must have shape (row, receptor).")
+        raise ValueError("gain_ratio_factors must have shape (row, receptor).")
     return values
 
 
@@ -480,7 +509,11 @@ def receptor_rows_for_station_terms(dataset, station_terms, receptor_configurati
     )
     terms = {name: _term_array(station_terms, name, count) for name in required}
     jones1, jones2 = _native_station_jones(terms, count, station_terms, effects)
-    path_gains = _path_gain_array(station_terms, count, dataset.receptors.count)
+    gain_ratio_factors = _gain_ratio_factor_array(
+        station_terms,
+        count,
+        dataset.receptors.count,
+    )
     left = np.zeros((dataset.row_count, dataset.visibilities.shape[2], 2), dtype=complex)
     right = np.zeros_like(left)
     products = dataset.correlation_products
@@ -491,12 +524,12 @@ def receptor_rows_for_station_terms(dataset, station_terms, receptor_configurati
             receptor1 = products.receptor1_id[product_id]
             receptor2 = products.receptor2_id[product_id]
             left[row, slot] = (
-                path_gains[row, receptor1]
+                gain_ratio_factors[row, receptor1]
                 * gain_scale[receptor1]
                 * (response[receptor1] @ jones1[row])
             )
             right[row, slot] = (
-                path_gains[row, receptor2]
+                gain_ratio_factors[row, receptor2]
                 * gain_scale[receptor2]
                 * (response[receptor2] @ jones2[row])
             )

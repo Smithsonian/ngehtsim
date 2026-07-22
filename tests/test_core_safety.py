@@ -32,7 +32,7 @@ def _compact_model():
 def _observe_without_corruptions(obsgen, input_model, **kwargs):
     effects = StationCorruptionModel(
         thermal_noise=False,
-        common_gain=None,
+        station_gain=None,
         feed_rotation=False,
         flag_wind=False,
         flag_daylight=False,

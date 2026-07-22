@@ -141,7 +141,7 @@ def test_obs_generator_uses_native_weather_for_observation_terms(external_store)
         model,
         effects=StationCorruptionModel(
             thermal_noise=False,
-            common_gain=None,
+            station_gain=None,
             flag_wind=False,
             flag_sun=False,
         ),

@@ -30,13 +30,13 @@ mod = mod.add_circ_gauss(0.5, 30.*eh.RADPERUAS, x0=-20.0*eh.RADPERUAS, y0=20.0*e
 # generate an observation with no noise
 obs_nonoise = obsgen.make_obs(
     input_model=mod,
-    effects=StationCorruptionModel(thermal_noise=False, common_gain=None),
+    effects=StationCorruptionModel(thermal_noise=False, station_gain=None),
 )
 
 # generate an observation with only thermal noise
 obs_thnoise = obsgen.make_obs(
     input_model=mod,
-    effects=StationCorruptionModel(thermal_noise=True, common_gain=None),
+    effects=StationCorruptionModel(thermal_noise=True, station_gain=None),
 )
 
 # generate an observation with thermal noise and station gains
@@ -44,7 +44,7 @@ obs_thgains = obsgen.make_obs(
     input_model=mod,
     effects=StationCorruptionModel(
         thermal_noise=True,
-        common_gain=GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform"),
+        station_gain=GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform"),
     ),
 )
 
@@ -53,7 +53,7 @@ obs_thleak = obsgen.make_obs(
     input_model=mod,
     effects=StationCorruptionModel(
         thermal_noise=True,
-        common_gain=None,
+        station_gain=None,
         leakage=LeakageModel(component_sigma=0.1),
     ),
 )
@@ -63,7 +63,7 @@ obs_full = obsgen.make_obs(
     input_model=mod,
     effects=StationCorruptionModel(
         thermal_noise=True,
-        common_gain=GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform"),
+        station_gain=GainModel(amplitude_sigma_dex=0.04, phase_distribution="uniform"),
         leakage=LeakageModel(component_sigma=0.1),
     ),
 )

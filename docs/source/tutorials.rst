@@ -2,6 +2,11 @@
 Tutorials
 ===============================
 
+.. toctree::
+   :maxdepth: 1
+
+   ./template_observations
+
 Generating an EHT-like dataset
 ===============================
 

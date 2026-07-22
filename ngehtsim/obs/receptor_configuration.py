@@ -39,9 +39,9 @@ class ReceptorConfiguration:
         Positive per-receptor multiplier applied to weather-derived station
         SEFD values when calculating thermal uncertainty.
     gain_scale : numpy.ndarray, shape (receptor,)
-        Fixed complex per-receptor gain. This is applied in addition to the
-        common station and optional independent path gains declared by
-        :class:`ngehtsim.obs.station_effects.StationCorruptionModel`.
+        Fixed complex per-receptor response scale. This is applied in addition
+        to the station-common gain and optional two-feed gain ratio declared
+        by :class:`ngehtsim.obs.station_effects.StationCorruptionModel`.
 
     Notes
     -----
