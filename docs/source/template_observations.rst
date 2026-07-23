@@ -24,10 +24,21 @@ not assume that a label such as ``AA`` means ALMA.  This prevents a simulation
 from applying a station-specific convention merely because a file happened to
 use a familiar two-letter code.
 
-The stored rows may include scan metadata through a UVFITS NX table.  A
-per-scan gain model requires that metadata.  When a file lacks it, provide
-the scan intervals from the observing schedule explicitly; do not infer them
-from timestamp gaps::
+The stored rows may include scan metadata through a UVFITS NX table. A
+per-scan gain model requires that metadata. When a file lacks it, infer a
+convenient timestamp-gap scan model directly from the template::
+
+   template = template.detect_scans()
+
+The default starts a new scan after a gap longer than 59.4 seconds, matching
+the historical ehtim ``add_scans()`` fallback. Change the threshold when the
+observing cadence calls for it::
+
+   template = template.detect_scans(gap_seconds=120.0)
+
+This is a pragmatic heuristic, not a recovered observing schedule. When exact
+schedule-defined scan boundaries are available, provide them manually with
+``with_scans()`` instead::
 
    import numpy as np
 
@@ -36,10 +47,9 @@ from timestamp gaps::
        scan_stop_mjd=np.array([57849.0950, 57849.1500]),
    )
 
-The interval values above are illustrative only.  Supply the actual scan
-boundaries for the imported observation.  A manual fixed-time cadence is also
-available through ``RealizationCadence.interval(seconds)`` when that is the
-intended physical model.
+The interval values above are illustrative only. A manual fixed-time cadence
+is also available through ``RealizationCadence.interval(seconds)`` when that
+is the intended physical model.
 
 Replacing the source structure
 ------------------------------
