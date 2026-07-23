@@ -199,16 +199,18 @@ class GainModel:
 class GainRatioModel:
     """Stochastic two-feed complex gain ratio ``R = G_A / G_B``.
 
-    ``feed_a`` and ``feed_b`` are ordered explicitly. The native RIME applies
-    the symmetric factors ``sqrt(R)`` and ``1/sqrt(R)`` to them, respectively;
-    no calibration reference feed or reference station is introduced.
+    Feed ordering can be declared explicitly or inherited from each station's
+    local receptor declaration. The native RIME applies the symmetric factors
+    ``sqrt(R)`` and ``1/sqrt(R)`` to the ordered feeds, respectively; no
+    calibration reference feed or reference station is introduced.
 
     Parameters
     ----------
-    feed_a : str
-        Feed ID defining the numerator of ``R = G_A / G_B``.
-    feed_b : str
-        Feed ID defining the denominator of ``R = G_A / G_B``.
+    feed_a, feed_b : str or None, optional
+        Ordered feed IDs defining the numerator and denominator of
+        ``R = G_A / G_B``. Omit both to use the declared receptor order at
+        every two-feed station where this model applies. Supplying one feed
+        requires supplying the other.
     amplitude_sigma_dex : float, optional
         Standard deviation of ``log10(abs(R))``.
     amplitude_mean_dex : float, optional
@@ -227,8 +229,8 @@ class GainRatioModel:
         realization per track.
     """
 
-    feed_a: str
-    feed_b: str
+    feed_a: str | None = None
+    feed_b: str | None = None
     amplitude_sigma_dex: float = 0.0
     phase_distribution: str = "none"
     amplitude_mean_dex: float = 0.0
@@ -238,8 +240,17 @@ class GainRatioModel:
     phase_cadence: RealizationCadence = field(default_factory=RealizationCadence.track)
 
     def __post_init__(self):
-        if not self.feed_a or not self.feed_b or self.feed_a == self.feed_b:
-            raise ValueError("feed_a and feed_b must be distinct non-empty feed IDs.")
+        if (self.feed_a is None) != (self.feed_b is None):
+            raise ValueError("feed_a and feed_b must either both be supplied or both be None.")
+        if self.feed_a is not None:
+            if (
+                not isinstance(self.feed_a, str)
+                or not isinstance(self.feed_b, str)
+                or not self.feed_a
+                or not self.feed_b
+                or self.feed_a == self.feed_b
+            ):
+                raise ValueError("feed_a and feed_b must be distinct non-empty feed IDs.")
         _validate_gain_fields(self)
         _validate_cadences(self)
 
@@ -297,11 +308,26 @@ class StationCorruptionModel:
     station_gain : GainModel or None, optional
         Common complex station voltage-gain process ``G``. ``None`` disables
         station-common gain corruption.
-    gain_ratio_overrides : mapping, optional
-        Mapping ``{station: GainRatioModel}`` for two-feed station gain ratios.
-        The model's ordered ``feed_a`` and ``feed_b`` define ``R = G_A / G_B``.
+    station_gain_overrides : mapping, optional
+        Mapping ``{station: GainModel or None}`` that replaces the default
+        station-common gain model at named stations. ``None`` disables the
+        default common gain at that station.
     leakage : LeakageModel or None, optional
-        Circular station-frame leakage realization.
+        Default circular station-frame leakage realization for every station.
+        ``None`` disables leakage by default.
+    leakage_overrides : mapping, optional
+        Mapping ``{station: LeakageModel or None}`` that replaces the default
+        leakage model at named stations. ``None`` disables default leakage at
+        that station.
+    gain_ratio : GainRatioModel or None, optional
+        Default two-feed gain-ratio process. It applies to every two-feed
+        station and is skipped for single-feed stations. A model with omitted
+        ``feed_a`` and ``feed_b`` uses each station's declared receptor order.
+        ``None`` disables gain ratios by default.
+    gain_ratio_overrides : mapping, optional
+        Mapping ``{station: GainRatioModel or None}`` that replaces the
+        default gain-ratio model at named stations. ``None`` disables the
+        default ratio at that station.
     flag_wind, flag_daylight, flag_sun : bool, optional
         Enable weather, daytime, and solar-avoidance availability masks.
     """
@@ -310,8 +336,11 @@ class StationCorruptionModel:
     opacity_calibrated: bool = True
     feed_rotation: bool = True
     station_gain: GainModel | None = field(default_factory=GainModel)
-    gain_ratio_overrides: Mapping[str, GainRatioModel] = field(default_factory=dict)
+    station_gain_overrides: Mapping[str, GainModel | None] = field(default_factory=dict)
     leakage: LeakageModel | None = None
+    leakage_overrides: Mapping[str, LeakageModel | None] = field(default_factory=dict)
+    gain_ratio: GainRatioModel | None = None
+    gain_ratio_overrides: Mapping[str, GainRatioModel | None] = field(default_factory=dict)
     flag_wind: bool = True
     flag_daylight: bool = False
     flag_sun: bool = True
@@ -331,61 +360,133 @@ class StationCorruptionModel:
             raise TypeError("station_gain must be a GainModel or None.")
         if self.leakage is not None and not isinstance(self.leakage, LeakageModel):
             raise TypeError("leakage must be a LeakageModel or None.")
-        if not isinstance(self.gain_ratio_overrides, Mapping):
-            raise TypeError("gain_ratio_overrides must be a mapping.")
-        normalized = {}
-        for station, model in self.gain_ratio_overrides.items():
-            if not isinstance(model, GainRatioModel):
-                raise TypeError("Each gain-ratio override must be a GainRatioModel.")
-            normalized[str(station)] = model
-        object.__setattr__(
-            self,
-            "gain_ratio_overrides",
-            MappingProxyType(normalized),
-        )
+        if self.gain_ratio is not None and not isinstance(self.gain_ratio, GainRatioModel):
+            raise TypeError("gain_ratio must be a GainRatioModel or None.")
+        for name, model_type in (
+            ("station_gain_overrides", GainModel),
+            ("leakage_overrides", LeakageModel),
+            ("gain_ratio_overrides", GainRatioModel),
+        ):
+            normalized = _normalize_overrides(getattr(self, name), model_type, name)
+            object.__setattr__(self, name, MappingProxyType(normalized))
 
     def validate_receptors(self, station_names, receptors):
         """Validate declared gain ratios against a resolved receptor inventory.
 
-        Gain ratios are valid only for a station containing exactly the two
-        declared feeds. A single-feed station uses only ``station_gain``;
-        datasets with more than two feeds remain usable without a ratio model
-        but reject a requested ratio until a general multi-feed parameterization
-        is introduced.
+        Gain ratios are valid only for a station containing exactly two feeds.
+        A default ratio is skipped for a single-feed station, which uses only
+        its station-common gain. A ratio explicitly configured as an override
+        for a single-feed station is rejected. Datasets with more than two
+        feeds remain usable without a ratio model but reject a requested ratio
+        until a general multi-feed parameterization is introduced.
         """
 
         names = tuple(str(name) for name in station_names)
-        unknown_stations = set(self.gain_ratio_overrides) - set(names)
+        unknown_stations = (
+            set(self.station_gain_overrides)
+            | set(self.leakage_overrides)
+            | set(self.gain_ratio_overrides)
+        ) - set(names)
         if unknown_stations:
             raise ValueError(
-                "Gain-ratio overrides reference unknown stations: {0}.".format(
+                "Station-corruption overrides reference unknown stations: {0}.".format(
                     ", ".join(sorted(unknown_stations))
                 )
             )
-        for station, model in self.gain_ratio_overrides.items():
+        for station in names:
+            model = self.gain_ratio_model(station)
+            if model is None:
+                continue
             station_index = names.index(station)
             feed_ids = tuple(
                 receptors.feed_id[index]
                 for index in np.flatnonzero(receptors.station_index == station_index)
             )
             if len(feed_ids) == 1:
-                raise ValueError(
-                    "Station {0} has one feed and cannot define a gain ratio.".format(station)
-                )
+                if self.gain_ratio_overrides.get(station) is not None:
+                    raise ValueError(
+                        "Station {0} has one feed and cannot define a gain ratio.".format(
+                            station
+                        )
+                    )
+                continue
             if len(feed_ids) != 2:
                 raise NotImplementedError(
                     "Gain ratios currently support exactly two feeds per station; "
                     "{0} has {1}.".format(station, len(feed_ids))
                 )
-            if set(feed_ids) != {model.feed_a, model.feed_b}:
+            feed_a, feed_b = self.gain_ratio_feed_pair(station, feed_ids)
+            if set(feed_ids) != {feed_a, feed_b}:
                 raise ValueError(
                     "Gain-ratio feeds for {0} must match its two configured feeds.".format(station)
                 )
 
-    def gain_ratio_model(self, station):
-        """Return the optional two-feed gain-ratio model for ``station``."""
+    def station_gain_model(self, station):
+        """Return the effective station-common gain model for ``station``."""
 
-        return self.gain_ratio_overrides.get(str(station))
+        return self.station_gain_overrides.get(str(station), self.station_gain)
+
+    def leakage_model(self, station):
+        """Return the effective station-frame leakage model for ``station``."""
+
+        return self.leakage_overrides.get(str(station), self.leakage)
+
+    def gain_ratio_model(self, station):
+        """Return the effective optional two-feed gain-ratio model for ``station``."""
+
+        return self.gain_ratio_overrides.get(str(station), self.gain_ratio)
+
+    def gain_ratio_feed_pair(self, station, feed_ids):
+        """Return the effective ordered gain-ratio feeds for ``station``.
+
+        A generic model with omitted feed names follows the station-local
+        receptor declaration order. Explicit model feed IDs are returned
+        unchanged. Call :meth:`validate_receptors` before using this method.
+        """
+
+        model = self.gain_ratio_model(station)
+        if model is None:
+            return None
+        if model.feed_a is None:
+            return tuple(feed_ids)
+        return model.feed_a, model.feed_b
+
+    @property
+    def has_gain_corruption(self):
+        """Whether any common-gain or gain-ratio process is configured."""
+
+        return (
+            self.station_gain is not None
+            or any(model is not None for model in self.station_gain_overrides.values())
+            or self.gain_ratio is not None
+            or any(model is not None for model in self.gain_ratio_overrides.values())
+        )
+
+    @property
+    def has_leakage_corruption(self):
+        """Whether any station-frame leakage process is configured."""
+
+        return self.leakage is not None or any(
+            model is not None for model in self.leakage_overrides.values()
+        )
+
+
+def _normalize_overrides(mapping, model_type, name):
+    """Validate and copy one immutable station-override mapping."""
+
+    if not isinstance(mapping, Mapping):
+        raise TypeError("{0} must be a mapping.".format(name))
+    normalized = {}
+    for station, model in mapping.items():
+        if model is not None and not isinstance(model, model_type):
+            raise TypeError(
+                "Each {0} value must be a {1} or None.".format(
+                    name.replace("_overrides", " override"),
+                    model_type.__name__,
+                )
+            )
+        normalized[str(station)] = model
+    return normalized
 
 
 def _validate_gain_fields(model):

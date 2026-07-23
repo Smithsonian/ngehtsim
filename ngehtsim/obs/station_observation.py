@@ -10,7 +10,6 @@ from astropy.coordinates import EarthLocation, AltAz, get_sun
 import ngehtsim.const_def as const
 import ngehtsim.obs.observation_geometry as observation_geometry
 from ngehtsim.obs.station_effects import (
-    LeakageModel,
     StationCorruptionModel,
     realization_group_ids,
 )
@@ -695,13 +694,13 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, effects,
         dataset,
         metadata["_rows"],
         metadata["sites_obs"],
-        effects.station_gain,
+        effects,
         rng,
     )
     terms["leakage_matrix1"], terms["leakage_matrix2"] = _sample_leakage_matrices(
         dataset,
         metadata,
-        effects.leakage,
+        effects,
         rng,
     )
     terms["gain_ratio_factors"] = _sample_gain_ratio_factors(
@@ -860,13 +859,13 @@ def template_station_terms_for_dataset(dataset, rng, effects, *,
         dataset,
         rows,
         metadata["sites_obs"],
-        effects.station_gain,
+        effects,
         rng,
     )
     leakage_matrix1, leakage_matrix2 = _sample_leakage_matrices(
         dataset,
         metadata,
-        effects.leakage,
+        effects,
         rng,
     )
     return {
@@ -919,49 +918,60 @@ def _template_station_mapping(mapping, station_names, name):
     return normalized
 
 
-def _sample_common_gains(dataset, rows, sites, gain_model, rng):
-    """Return common gains with independently grouped amplitude and phase."""
+def _sample_common_gains(dataset, rows, sites, effects, rng):
+    """Return station-specific common gains with independent grouped processes."""
 
     count = len(rows.times)
     gain1 = np.ones(count, dtype=complex)
     gain2 = np.ones(count, dtype=complex)
-    if gain_model is None:
-        return gain1, gain2
-    amplitude = _station_group_values(
-        dataset,
-        rows,
-        sites,
-        gain_model.amplitude_cadence,
-        gain_model.sample_amplitude,
-        rng,
-        1.0,
-    )
-    phase = _station_group_values(
-        dataset,
-        rows,
-        sites,
-        gain_model.phase_cadence,
-        gain_model.sample_phase,
-        rng,
-        0.0,
-    )
-    gain1 = amplitude[0] * np.exp(1.0j * phase[0])
-    gain2 = amplitude[1] * np.exp(1.0j * phase[1])
+    group_cache = {}
+    for site in sites:
+        gain_model = effects.station_gain_model(site)
+        if gain_model is None:
+            continue
+        first = rows.t1 == site
+        second = rows.t2 == site
+        amplitude1, amplitude2 = _endpoint_group_values(
+            first,
+            second,
+            _cached_group_ids(dataset, gain_model.amplitude_cadence, group_cache),
+            gain_model.sample_amplitude,
+            rng,
+            1.0,
+        )
+        phase1, phase2 = _endpoint_group_values(
+            first,
+            second,
+            _cached_group_ids(dataset, gain_model.phase_cadence, group_cache),
+            gain_model.sample_phase,
+            rng,
+            0.0,
+        )
+        gain1[first] = amplitude1[first] * np.exp(1.0j * phase1[first])
+        gain2[second] = amplitude2[second] * np.exp(1.0j * phase2[second])
     return gain1, gain2
 
 
-def _station_group_values(dataset, rows, sites, cadence, sampler, rng, default):
+def _endpoint_group_values(first, second, group_ids, sampler, rng, default):
     """Draw one scalar per station/cadence group for both row endpoints."""
 
-    group_ids = realization_group_ids(dataset, cadence)
-    first = np.full(dataset.row_count, default, dtype=float)
-    second = np.full(dataset.row_count, default, dtype=float)
-    for site in sites:
-        for group_id in np.unique(group_ids):
-            value = sampler(rng)
-            first[(rows.t1 == site) & (group_ids == group_id)] = value
-            second[(rows.t2 == site) & (group_ids == group_id)] = value
-    return first, second
+    first_values = np.full(len(group_ids), default, dtype=float)
+    second_values = np.full(len(group_ids), default, dtype=float)
+    for group_id in np.unique(group_ids):
+        value = sampler(rng)
+        first_values[first & (group_ids == group_id)] = value
+        second_values[second & (group_ids == group_id)] = value
+    return first_values, second_values
+
+
+def _cached_group_ids(dataset, cadence, cache):
+    """Return a cached row-group array for one immutable cadence configuration."""
+
+    group_ids = cache.get(cadence)
+    if group_ids is None:
+        group_ids = realization_group_ids(dataset, cadence)
+        cache[cadence] = group_ids
+    return group_ids
 
 
 def _sample_gain_ratio_factors(dataset, effects, rng):
@@ -976,15 +986,28 @@ def _sample_gain_ratio_factors(dataset, effects, rng):
     count = dataset.row_count
     factors = np.ones((count, dataset.receptors.count), dtype=complex)
     names = dataset.stations.names
-    for station, model in effects.gain_ratio_overrides.items():
-        station_index = names.index(station)
+    group_cache = {}
+    for station_index, station in enumerate(names):
+        model = effects.gain_ratio_model(station)
+        if model is None:
+            continue
         receptor_indices = np.flatnonzero(dataset.receptors.station_index == station_index)
+        if len(receptor_indices) == 1:
+            continue
         feed_index = {
             dataset.receptors.feed_id[index]: index
             for index in receptor_indices
         }
-        amplitude_groups = realization_group_ids(dataset, model.amplitude_cadence)
-        phase_groups = realization_group_ids(dataset, model.phase_cadence)
+        feed_a, feed_b = effects.gain_ratio_feed_pair(
+            station,
+            tuple(feed_index),
+        )
+        amplitude_groups = _cached_group_ids(
+            dataset,
+            model.amplitude_cadence,
+            group_cache,
+        )
+        phase_groups = _cached_group_ids(dataset, model.phase_cadence, group_cache)
         log_amplitude = _row_group_values(
             amplitude_groups,
             model.sample_log_amplitude,
@@ -993,8 +1016,8 @@ def _sample_gain_ratio_factors(dataset, effects, rng):
         phase = _row_group_values(phase_groups, model.sample_phase, rng)
         factor_a = 10.0 ** (0.5 * log_amplitude) * np.exp(0.5j * phase)
         factor_b = 10.0 ** (-0.5 * log_amplitude) * np.exp(-0.5j * phase)
-        factors[:, feed_index[model.feed_a]] = factor_a
-        factors[:, feed_index[model.feed_b]] = factor_b
+        factors[:, feed_index[feed_a]] = factor_a
+        factors[:, feed_index[feed_b]] = factor_b
     return factors
 
 
@@ -1007,19 +1030,19 @@ def _row_group_values(group_ids, sampler, rng):
     return values
 
 
-def _sample_leakage_matrices(dataset, metadata, leakage_model, rng):
-    """Return cadence-aware station-frame circular leakage matrices."""
+def _sample_leakage_matrices(dataset, metadata, effects, rng):
+    """Return cadence-aware station-frame leakage matrices with overrides."""
 
     count = dataset.row_count
     matrix1 = np.broadcast_to(np.eye(2, dtype=complex), (count, 2, 2)).copy()
     matrix2 = np.array(matrix1, copy=True)
-    if leakage_model is None:
-        return matrix1, matrix2
-    if not isinstance(leakage_model, LeakageModel):
-        raise TypeError("leakage_model must be a LeakageModel or None.")
-    group_ids = realization_group_ids(dataset, leakage_model.cadence)
     rows = metadata["_rows"]
+    group_cache = {}
     for site in metadata["sites_obs"]:
+        leakage_model = effects.leakage_model(site)
+        if leakage_model is None:
+            continue
+        group_ids = _cached_group_ids(dataset, leakage_model.cadence, group_cache)
         first = rows.t1 == site
         second = rows.t2 == site
         for group_id in np.unique(group_ids):

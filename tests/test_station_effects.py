@@ -92,13 +92,16 @@ def test_gain_model_draws_declared_amplitude_and_phase_distribution():
     assert gain.phase_cadence == RealizationCadence.scan()
 
 
-def test_gain_ratio_defaults_to_track_and_declares_ordered_feed_pair():
-    ratio = GainRatioModel("X", "Y", amplitude_sigma_dex=0.2)
+def test_gain_ratio_defaults_to_track_and_can_use_station_local_feed_order():
+    ratio = GainRatioModel(amplitude_sigma_dex=0.2)
+    named_ratio = GainRatioModel("X", "Y")
 
     assert ratio.amplitude_cadence == RealizationCadence.track()
     assert ratio.phase_cadence == RealizationCadence.track()
-    assert ratio.feed_a == "X"
-    assert ratio.feed_b == "Y"
+    assert ratio.feed_a is None
+    assert ratio.feed_b is None
+    assert named_ratio.feed_a == "X"
+    assert named_ratio.feed_b == "Y"
 
 
 def test_realization_cadences_group_rows_without_guessing_scans():
@@ -124,12 +127,39 @@ def test_realization_cadences_group_rows_without_guessing_scans():
         realization_group_ids(_dataset(scans=False), RealizationCadence.scan())
 
 
-def test_station_corruption_model_normalizes_immutable_ratio_overrides():
-    ratio = GainRatioModel("X", "Y", amplitude_sigma_dex=0.02)
-    effects = StationCorruptionModel(gain_ratio_overrides={"ALMA": ratio})
+def test_station_corruption_model_resolves_immutable_default_and_override_models():
+    gain = GainModel(amplitude_sigma_dex=0.01)
+    gain_override = GainModel(amplitude_sigma_dex=0.02)
+    leakage = LeakageModel(component_sigma=0.01)
+    leakage_override = LeakageModel(component_sigma=0.02)
+    ratio = GainRatioModel(amplitude_sigma_dex=0.01)
+    ratio_override = GainRatioModel("X", "Y", amplitude_sigma_dex=0.02)
+    effects = StationCorruptionModel(
+        station_gain=gain,
+        station_gain_overrides={"ALMA": gain_override, "APEX": None},
+        leakage=leakage,
+        leakage_overrides={"ALMA": leakage_override, "APEX": None},
+        gain_ratio=ratio,
+        gain_ratio_overrides={"ALMA": ratio_override, "APEX": None},
+    )
 
-    assert effects.gain_ratio_model("ALMA") == ratio
+    assert effects.station_gain_model("ALMA") == gain_override
+    assert effects.station_gain_model("LMT") == gain
+    assert effects.station_gain_model("APEX") is None
+    assert effects.leakage_model("ALMA") == leakage_override
+    assert effects.leakage_model("LMT") == leakage
+    assert effects.leakage_model("APEX") is None
+    assert effects.gain_ratio_model("ALMA") == ratio_override
+    assert effects.gain_ratio_model("LMT") == ratio
     assert effects.gain_ratio_model("APEX") is None
+    assert effects.gain_ratio_feed_pair("LMT", ("R", "L")) == ("R", "L")
+    assert effects.gain_ratio_feed_pair("ALMA", ("X", "Y")) == ("X", "Y")
+    assert effects.has_gain_corruption
+    assert effects.has_leakage_corruption
+    with pytest.raises(TypeError):
+        effects.station_gain_overrides["ALMA"] = gain
+    with pytest.raises(TypeError):
+        effects.leakage_overrides["ALMA"] = leakage
     with pytest.raises(TypeError):
         effects.gain_ratio_overrides["ALMA"] = ratio
 
@@ -143,6 +173,16 @@ def test_station_corruption_model_rejects_invalid_configuration():
         LeakageModel(component_sigma=-0.01)
     with pytest.raises(ValueError, match="distinct"):
         GainRatioModel("X", "X")
+    with pytest.raises(ValueError, match="both be supplied"):
+        GainRatioModel("X")
+    with pytest.raises(TypeError, match="station_gain_overrides"):
+        StationCorruptionModel(station_gain_overrides=("ALMA",))
+    with pytest.raises(TypeError, match="GainModel"):
+        StationCorruptionModel(station_gain_overrides={"ALMA": 0.02})
+    with pytest.raises(TypeError, match="leakage_overrides"):
+        StationCorruptionModel(leakage_overrides=("ALMA",))
+    with pytest.raises(TypeError, match="LeakageModel"):
+        StationCorruptionModel(leakage_overrides={"ALMA": 0.02})
     with pytest.raises(TypeError, match="gain_ratio_overrides"):
         StationCorruptionModel(gain_ratio_overrides=("ALMA",))
     with pytest.raises(TypeError, match="GainRatioModel"):
@@ -156,16 +196,30 @@ def test_station_corruption_model_validates_two_feed_ratio_layouts():
         polarization_label=("X", "Y", "R"),
         basis=("LINEAR", "LINEAR", "CIRCULAR"),
     )
-    effects = StationCorruptionModel(
-        gain_ratio_overrides={"ALMA": GainRatioModel("X", "Y")},
-    )
+    effects = StationCorruptionModel(gain_ratio=GainRatioModel())
     effects.validate_receptors(("ALMA", "APEX"), receptors)
 
     with pytest.raises(ValueError, match="unknown stations"):
         StationCorruptionModel(
-            gain_ratio_overrides={"LMT": GainRatioModel("X", "Y")},
+            station_gain_overrides={"LMT": GainModel()},
         ).validate_receptors(("ALMA", "APEX"), receptors)
     with pytest.raises(ValueError, match="one feed"):
         StationCorruptionModel(
             gain_ratio_overrides={"APEX": GainRatioModel("R", "L")},
         ).validate_receptors(("ALMA", "APEX"), receptors)
+    with pytest.raises(ValueError, match="must match"):
+        StationCorruptionModel(
+            gain_ratio=GainRatioModel("R", "L"),
+        ).validate_receptors(("ALMA", "APEX"), receptors)
+
+    three_feed_receptors = ReceptorTable(
+        station_index=np.array((0, 0, 0), dtype=int),
+        feed_id=("R", "L", "X"),
+        polarization_label=("R", "L", "X"),
+        basis=("CIRCULAR", "CIRCULAR", "LINEAR"),
+    )
+    with pytest.raises(NotImplementedError, match="exactly two feeds"):
+        StationCorruptionModel(gain_ratio=GainRatioModel()).validate_receptors(
+            ("ALMA",),
+            three_feed_receptors,
+        )
