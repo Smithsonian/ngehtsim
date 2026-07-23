@@ -10,6 +10,7 @@ from ngehtsim.obs.observation_template import ObservationTemplate
 from ngehtsim.obs.station_effects import (
     GainModel,
     GainRatioModel,
+    LeakageModel,
     RealizationCadence,
     StationCorruptionModel,
 )
@@ -126,17 +127,30 @@ def test_template_substitution_preserves_sampling_uncertainty_and_flags():
     assert np.any(np.abs(output.visibilities) > 0.0)
 
 
-def test_template_station_gain_and_ratio_follow_symmetric_two_feed_model():
-    """The recorded feed factors implement G_A=G sqrt(R), G_B=G/sqrt(R)."""
+def test_template_station_effect_defaults_and_overrides_follow_two_feed_model():
+    """Per-station overrides replace default G, R, and leakage processes."""
 
     template = ObservationTemplate.from_dataset(_template_dataset())
     effects = _clean_effects(
         station_gain=GainModel(
             amplitude_mean_dex=0.1,
             phase_mean_rad=0.4,
-            phase_distribution="uniform",
             amplitude_cadence=RealizationCadence.scan(),
             phase_cadence=RealizationCadence.scan(),
+        ),
+        station_gain_overrides={
+            "AA": GainModel(
+                amplitude_mean_dex=0.3,
+                phase_mean_rad=0.8,
+                amplitude_cadence=RealizationCadence.scan(),
+                phase_cadence=RealizationCadence.scan(),
+            ),
+        },
+        gain_ratio=GainRatioModel(
+            amplitude_mean_dex=0.1,
+            phase_mean_rad=0.2,
+            amplitude_cadence=RealizationCadence.track(),
+            phase_cadence=RealizationCadence.track(),
         ),
         gain_ratio_overrides={
             "AA": GainRatioModel(
@@ -148,6 +162,8 @@ def test_template_station_gain_and_ratio_follow_symmetric_two_feed_model():
                 phase_cadence=RealizationCadence.track(),
             ),
         },
+        leakage=LeakageModel(component_sigma=0.0),
+        leakage_overrides={"AA": LeakageModel(component_sigma=0.1)},
     )
     result = template.simulate(
         _model(),
@@ -169,11 +185,39 @@ def test_template_station_gain_and_ratio_follow_symmetric_two_feed_model():
             receptors.feed_id,
         )) if result.dataset.stations.names[station] == "AA" and feed == "L"
     )
+    bb_r_index = next(
+        index for index, (station, feed) in enumerate(zip(
+            receptors.station_index,
+            receptors.feed_id,
+        )) if result.dataset.stations.names[station] == "BB" and feed == "R"
+    )
+    bb_l_index = next(
+        index for index, (station, feed) in enumerate(zip(
+            receptors.station_index,
+            receptors.feed_id,
+        )) if result.dataset.stations.names[station] == "BB" and feed == "L"
+    )
     factors = result.station_terms["gain_ratio_factors"]
     assert np.allclose(factors[:, r_index] * factors[:, l_index], 1.0)
     assert np.allclose(factors[:, r_index] / factors[:, l_index], 10.0 ** 0.2 * np.exp(0.6j))
-    assert np.allclose(result.station_terms["common_gain1"][:2], result.station_terms["common_gain1"][0])
-    assert not np.allclose(result.station_terms["common_gain1"][:2], result.station_terms["common_gain1"][2:])
+    assert np.allclose(factors[:, bb_r_index] * factors[:, bb_l_index], 1.0)
+    assert np.allclose(
+        factors[:, bb_r_index] / factors[:, bb_l_index],
+        10.0 ** 0.1 * np.exp(0.2j),
+    )
+    assert np.allclose(
+        result.station_terms["common_gain1"],
+        10.0 ** 0.3 * np.exp(0.8j),
+    )
+    assert np.allclose(
+        result.station_terms["common_gain2"],
+        10.0 ** 0.1 * np.exp(0.4j),
+    )
+    assert np.any(np.abs(result.station_terms["leakage_matrix1"][:, 0, 1]) > 0.0)
+    assert np.allclose(
+        result.station_terms["leakage_matrix2"],
+        np.eye(2, dtype=complex),
+    )
 
 
 def test_template_relayout_supports_mixed_feeds_and_fitseht_round_trip(tmp_path):

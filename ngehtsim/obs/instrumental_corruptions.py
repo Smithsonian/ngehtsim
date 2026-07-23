@@ -406,10 +406,10 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
         visibilities=visibilities,
         sigma_jy=sigma_jy,
         flags=flags,
-        ampcal=effects.station_gain is None and not effects.gain_ratio_overrides,
-        phasecal=effects.station_gain is None and not effects.gain_ratio_overrides,
+        ampcal=not effects.has_gain_corruption,
+        phasecal=not effects.has_gain_corruption,
         opacitycal=effects.opacity_calibrated,
-        dcal=effects.leakage is None,
+        dcal=not effects.has_leakage_corruption,
         frcal=not effects.feed_rotation,
     )
 

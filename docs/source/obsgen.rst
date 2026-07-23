@@ -140,14 +140,20 @@ amplitude and unwrapped-phase cadences:
            phase_distribution="uniform",
        ),
        leakage=LeakageModel(component_sigma=0.1),
+       gain_ratio=GainRatioModel(amplitude_sigma_dex=0.01),
        gain_ratio_overrides={
            "ALMA": GainRatioModel("X", "Y", amplitude_sigma_dex=0.02),
        },
    )
    result = obsgen.make_dataset(model, effects=effects)
 
-``feed_id`` values refer to the local identifiers configured in
-``station_receptors``, rather than assuming a global polarization basis.
+The base ``station_gain``, ``leakage``, and ``gain_ratio`` models apply to all
+stations. Their corresponding ``*_overrides`` mappings replace a base model
+for selected stations; use an override value of ``None`` to disable a base
+corruption at one station. A default ``GainRatioModel()`` follows each
+two-feed station's local receptor order, while explicit ``feed_a`` and
+``feed_b`` values refer to the local identifiers configured in
+``station_receptors`` rather than assuming a global polarization basis.
 ``StationCorruptionModel()`` retains the native default realization: thermal
 noise, opacity calibration, feed rotation, weather/solar flagging, and a
 station-common 0.04-dex amplitude gain with uniform phase.  Leakage and gain

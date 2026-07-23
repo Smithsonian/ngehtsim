@@ -104,12 +104,17 @@ the usual wrapped phase naturally::
            amplitude_cadence=RealizationCadence.scan(),
            phase_cadence=RealizationCadence.scan(),
        ),
+       gain_ratio=GainRatioModel(
+           amplitude_sigma_dex=0.02,
+           phase_distribution="normal",
+           phase_sigma_rad=0.10,
+       ),
        gain_ratio_overrides={
            "AA": GainRatioModel(
                "R", "L",
-               amplitude_sigma_dex=0.02,
+               amplitude_sigma_dex=0.04,
                phase_distribution="normal",
-               phase_sigma_rad=0.10,
+               phase_sigma_rad=0.20,
            ),
        },
        leakage=LeakageModel(component_sigma=0.02),
@@ -135,6 +140,13 @@ the usual wrapped phase naturally::
        station_resolver=station_resolver,
        random_seed=18,
    )
+
+The non-override models apply at every station. The station-specific mappings
+replace those defaults; an override value of ``None`` disables that corruption
+at one station. A default ``GainRatioModel()`` applies to every two-feed
+station using its declared local feed order, so it works across mixed R/L and
+X/Y arrays. Single-feed stations have no gain ratio. Supply ``feed_a`` and
+``feed_b`` only when a particular ratio model must name its feed ordering.
 
 The resolver is entirely caller supplied and only looks up mount/feed-angle
 metadata.  It does not rename output stations.  Alternatively, set
