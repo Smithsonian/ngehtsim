@@ -19,5 +19,13 @@ cannot losslessly store arbitrary per-baseline mixed-feed layouts.  Such
 datasets remain native ``VisibilityDataset`` objects until an explicit output
 basis conversion is selected.
 
+For compatibility testing with software that cannot read mixed-feed data,
+``to_uvfits(..., force_circular_labels=True)`` provides a deliberately unsafe
+escape hatch. It writes a global circular UVFITS axis and labels X as R and Y
+as L, but does not change any visibility, uncertainty, or flag values. The
+result is therefore **not** a polarization-basis conversion and should never
+be treated as physically circular data. The file contains a corresponding
+HISTORY warning.
+
 .. automodule:: ngehtsim.obs.uvfits
    :members:

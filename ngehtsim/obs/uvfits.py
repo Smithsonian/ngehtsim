@@ -3,8 +3,8 @@
 The UVFITS random-groups format has one global polarization axis.  It can
 therefore represent a uniformly circular or uniformly linear dataset, but not
 arbitrary per-baseline mixed-feed correlation layouts.  Mixed data remains
-lossless in ``VisibilityDataset`` and is rejected here rather than silently
-rewritten into an incorrect polarization basis.
+lossless in ``VisibilityDataset`` and is rejected here unless callers
+explicitly request the unsafe X/Y-as-R/L compatibility export.
 """
 
 from __future__ import annotations
@@ -158,7 +158,7 @@ def read_uvfits(path):
         )
 
 
-def write_uvfits(dataset, path, overwrite=False):
+def write_uvfits(dataset, path, overwrite=False, force_circular_labels=False):
     """Write a uniformly circular or linear ``VisibilityDataset`` as UVFITS.
 
     The output uses a standard global STOKES axis, a regular frequency axis,
@@ -173,6 +173,12 @@ def write_uvfits(dataset, path, overwrite=False):
         Destination UVFITS file.
     overwrite : bool, optional
         Replace an existing file when ``True``.
+    force_circular_labels : bool, optional
+        Unsafe compatibility mode for a two-feed mixed R/L and X/Y dataset.
+        It writes a circular global STOKES axis and labels every X feed as R
+        and every Y feed as L, without transforming any visibility,
+        uncertainty, or flag values.  This exists solely for software that
+        cannot ingest mixed-feed data and is disabled by default.
 
     Raises
     ------
@@ -183,19 +189,33 @@ def write_uvfits(dataset, path, overwrite=False):
     Notes
     -----
     Native ``sigma_jy`` is converted to UVFITS inverse variance only while
-    writing the random-groups payload. Mixed-receptor datasets must use
-    FITS-EHT instead.
+    writing the random-groups payload. Mixed-receptor datasets should use
+    FITS-EHT instead. When ``force_circular_labels=True`` is used, the output
+    contains a HISTORY warning and is intentionally not physically labelled
+    correctly for the linear-feed stations.
     """
 
     if not isinstance(dataset, VisibilityDataset):
         raise TypeError("dataset must be a VisibilityDataset instance.")
     if not dataset.row_count:
         raise UvfitsError("UVFITS output requires at least one visibility row.")
+    if not isinstance(force_circular_labels, bool):
+        raise TypeError("force_circular_labels must be a bool.")
 
-    layout, product_slots = _uvfits_layout(dataset)
+    layout, product_slots = _uvfits_layout(
+        dataset,
+        force_circular_labels=force_circular_labels,
+    )
     frequency_grid = _frequency_grid(dataset)
     row_order = np.lexsort((dataset.antenna2, dataset.antenna1, dataset.time_mjd))
-    primary = _primary_hdu(dataset, layout, product_slots, frequency_grid, row_order)
+    primary = _primary_hdu(
+        dataset,
+        layout,
+        product_slots,
+        frequency_grid,
+        row_order,
+        force_circular_labels=force_circular_labels,
+    )
     antenna = _antenna_hdu(
         dataset,
         layout,
@@ -463,7 +483,9 @@ def _table_vector(values, count, name):
     return values
 
 
-def _uvfits_layout(dataset):
+def _uvfits_layout(dataset, force_circular_labels=False):
+    if force_circular_labels:
+        return CIRCULAR_PRODUCT_LABELS, _forced_circular_product_slots(dataset)
     try:
         return CIRCULAR_PRODUCT_LABELS, dataset.circular_product_slots()
     except ValueError:
@@ -475,6 +497,51 @@ def _uvfits_layout(dataset):
             "UVFITS output requires exactly the same circular RR, LL, RL, LR or "
             "linear XX, YY, XY, YX products for every row."
         ) from exc
+
+
+def _forced_circular_product_slots(dataset):
+    """Map complete R/L or X/Y station products onto an unsafe R/L layout."""
+
+    labels = np.asarray(dataset.receptors.polarization_label, dtype=object)
+    circular_label = {}
+    for station_index, station in enumerate(dataset.stations.names):
+        receptors = np.flatnonzero(dataset.receptors.station_index == station_index)
+        station_labels = tuple(labels[receptors])
+        if len(receptors) != 2 or set(station_labels) not in ({"R", "L"}, {"X", "Y"}):
+            raise UvfitsError(
+                "force_circular_labels requires every station to have exactly "
+                "R/L or X/Y receptor labels; {0!r} has {1}.".format(
+                    station,
+                    ", ".join(station_labels),
+                )
+            )
+        for receptor in receptors:
+            label = str(labels[receptor])
+            circular_label[receptor] = {"R": "R", "L": "L", "X": "R", "Y": "L"}[label]
+
+    product_labels = np.asarray(
+        tuple(
+            circular_label[first] + circular_label[second]
+            for first, second in zip(
+                dataset.correlation_products.receptor1_id,
+                dataset.correlation_products.receptor2_id,
+            )
+        ),
+        dtype=object,
+    )
+    slots = np.empty((dataset.row_count, len(CIRCULAR_PRODUCT_LABELS)), dtype=np.intp)
+    expected = set(CIRCULAR_PRODUCT_LABELS)
+    for row, product_ids in enumerate(dataset.row_product_id):
+        populated_slots = np.flatnonzero(product_ids >= 0)
+        row_labels = tuple(product_labels[product_ids[populated_slots]])
+        if len(row_labels) != len(CIRCULAR_PRODUCT_LABELS) or set(row_labels) != expected:
+            raise UvfitsError(
+                "force_circular_labels requires complete RR, LL, RL, LR-equivalent "
+                "products after X-to-R and Y-to-L relabelling."
+            )
+        for destination, label in enumerate(CIRCULAR_PRODUCT_LABELS):
+            slots[row, destination] = populated_slots[row_labels.index(label)]
+    return slots
 
 
 def _frequency_grid(dataset):
@@ -520,7 +587,8 @@ def _frequency_grid(dataset):
     }
 
 
-def _primary_hdu(dataset, layout, product_slots, frequency_grid, row_order):
+def _primary_hdu(dataset, layout, product_slots, frequency_grid, row_order,
+                 force_circular_labels=False):
     channel_indices = frequency_grid["channel_indices"]
     if_count = len(channel_indices)
     frequency_count = len(channel_indices[0])
@@ -562,6 +630,10 @@ def _primary_hdu(dataset, layout, product_slots, frequency_grid, row_order):
     primary = fits.GroupsHDU(group_data)
     header = primary.header
     _set_common_header(header, dataset, layout, frequency_grid, reference_mjd)
+    if force_circular_labels:
+        header["HISTORY"] = (
+            "WARNING: X/Y feeds were relabelled as R/L without a basis conversion."
+        )
     return primary
 
 

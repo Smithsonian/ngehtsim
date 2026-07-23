@@ -1094,7 +1094,7 @@ class VisibilityDataset:
 
         return read_uvfits(path)
 
-    def to_uvfits(self, path, overwrite=False):
+    def to_uvfits(self, path, overwrite=False, force_circular_labels=False):
         """Write this dataset through the native UVFITS adapter.
 
         Parameters
@@ -1103,6 +1103,11 @@ class VisibilityDataset:
             Destination UVFITS filename.
         overwrite : bool, optional
             Replace an existing file when ``True``.
+        force_circular_labels : bool, optional
+            Write a mixed two-feed R/L and X/Y layout as globally circular by
+            relabelling X as R and Y as L without a basis conversion. This is
+            unsafe compatibility output for external software and is disabled
+            by default.
 
         Raises
         ------
@@ -1113,7 +1118,12 @@ class VisibilityDataset:
 
         from ngehtsim.obs.uvfits import write_uvfits
 
-        return write_uvfits(self, path, overwrite=overwrite)
+        return write_uvfits(
+            self,
+            path,
+            overwrite=overwrite,
+            force_circular_labels=force_circular_labels,
+        )
 
     @classmethod
     def from_ehtfits(cls, path):
