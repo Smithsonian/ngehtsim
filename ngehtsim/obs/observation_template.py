@@ -116,6 +116,49 @@ class ObservationTemplate:
             scan_stop_mjd=scan_stop_mjd,
         ))
 
+    def detect_scans(self, gap_seconds=59.4, padding_seconds=0.36):
+        """Infer scan intervals from gaps between distinct integration times.
+
+        Parameters
+        ----------
+        gap_seconds : float, optional
+            A gap strictly longer than this duration starts a new scan. The
+            default is 59.4 seconds, matching the historical ehtim
+            ``Obsdata.add_scans()`` timestamp-gap heuristic.
+        padding_seconds : float, optional
+            Non-negative interval padding added before the first and after the
+            last integration centre in each inferred scan. The default is
+            0.36 seconds, matching the historical ehtim heuristic. Padding is
+            reduced automatically where necessary to prevent adjacent inferred
+            intervals from overlapping.
+
+        Returns
+        -------
+        ObservationTemplate
+            Copy with inferred ``scan_start_mjd`` and ``scan_stop_mjd``
+            metadata.
+
+        Raises
+        ------
+        ValueError
+            If the template has no rows or either duration is invalid.
+
+        Notes
+        -----
+        This is a timestamp-gap heuristic, not a reconstruction of the
+        observing schedule. Use :meth:`with_scans` when schedule-defined scan
+        boundaries are available or scientifically required. The method does
+        not split scans merely because an antenna or baseline is absent at one
+        integration.
+        """
+
+        starts, stops = _detected_scan_intervals(
+            self.dataset.time_mjd,
+            gap_seconds=gap_seconds,
+            padding_seconds=padding_seconds,
+        )
+        return self.with_scans(starts, stops)
+
     def simulate(self, input_model, **kwargs):
         """Sample ``input_model`` on this template and apply native effects.
 
@@ -315,6 +358,40 @@ def _template_dataset(template):
     if isinstance(template, VisibilityDataset):
         return template
     raise TypeError("template must be an ObservationTemplate or VisibilityDataset.")
+
+
+def _detected_scan_intervals(time_mjd, *, gap_seconds, padding_seconds):
+    """Build non-overlapping timestamp-gap scan intervals in UTC MJD."""
+
+    try:
+        gap_seconds = float(gap_seconds)
+        padding_seconds = float(padding_seconds)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("gap_seconds and padding_seconds must be finite numbers.") from exc
+    if not np.isfinite(gap_seconds) or gap_seconds <= 0.0:
+        raise ValueError("gap_seconds must be finite and positive.")
+    if not np.isfinite(padding_seconds) or padding_seconds < 0.0:
+        raise ValueError("padding_seconds must be finite and non-negative.")
+
+    times = np.unique(np.asarray(time_mjd, dtype=float))
+    if not len(times):
+        raise ValueError("Cannot detect scans from a template with no visibility rows.")
+    gap_mjd = gap_seconds / 86400.0
+    padding_mjd = padding_seconds / 86400.0
+    starts_at = np.concatenate((
+        np.array((0,), dtype=np.intp),
+        np.flatnonzero(np.diff(times) > gap_mjd) + 1,
+    ))
+    stops_at = np.concatenate((starts_at[1:] - 1, np.array((len(times) - 1,), dtype=np.intp)))
+    starts = times[starts_at] - padding_mjd
+    stops = times[stops_at] + padding_mjd
+
+    # Retain the requested padding when possible, but leave an empty midpoint
+    # gap between adjacent scans if a caller selected an unusually large value.
+    boundaries = 0.5 * (times[stops_at[:-1]] + times[starts_at[1:]])
+    stops[:-1] = np.minimum(stops[:-1], np.nextafter(boundaries, -np.inf))
+    starts[1:] = np.maximum(starts[1:], np.nextafter(boundaries, np.inf))
+    return starts, stops
 
 
 def _default_template_effects():

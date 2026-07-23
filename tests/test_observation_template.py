@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pytest
 import ehtim as eh
@@ -13,6 +15,7 @@ from ngehtsim.obs.station_effects import (
     LeakageModel,
     RealizationCadence,
     StationCorruptionModel,
+    realization_group_ids,
 )
 from ngehtsim.obs.receptor_configuration import resolve_receptor_configuration
 from ngehtsim.obs.visibility_dataset import (
@@ -97,6 +100,16 @@ def _clean_effects(**overrides):
     }
     values.update(overrides)
     return StationCorruptionModel(**values)
+
+
+def _template_without_scans():
+    """Return the compact template after removing its stored scan metadata."""
+
+    return ObservationTemplate.from_dataset(replace(
+        _template_dataset(),
+        scan_start_mjd=None,
+        scan_stop_mjd=None,
+    ))
 
 
 def test_template_substitution_preserves_sampling_uncertainty_and_flags():
@@ -261,22 +274,63 @@ def test_template_feed_rotation_requires_explicit_mount_metadata():
     assert np.any(np.abs(result.station_terms["par1"]) > 0.0)
 
 
-def test_template_scan_cadence_requires_stored_scan_intervals():
-    """A gain process cannot silently invent scans from timestamp gaps."""
+def test_template_detect_scans_infers_cadence_metadata_without_mutating_input():
+    """Timestamp-gap scan detection returns a new template with valid intervals."""
 
-    template = ObservationTemplate.from_dataset(_template_dataset())
-    without_scans = ObservationTemplate.from_dataset(
-        VisibilityDataset(
-            **{
-                name: getattr(template.dataset, name)
-                for name in template.dataset.__dataclass_fields__
-                if name not in ("scan_start_mjd", "scan_stop_mjd")
-            },
-        )
+    without_scans = _template_without_scans()
+    detected = without_scans.detect_scans(gap_seconds=60.0, padding_seconds=0.5)
+    time_mjd = without_scans.dataset.time_mjd
+
+    assert without_scans.dataset.scan_start_mjd is None
+    assert np.allclose(
+        detected.dataset.scan_start_mjd,
+        (time_mjd[[0, 2]] - (0.5 / 86400.0)),
     )
+    assert np.allclose(
+        detected.dataset.scan_stop_mjd,
+        (time_mjd[[1, 3]] + (0.5 / 86400.0)),
+    )
+    assert np.array_equal(
+        realization_group_ids(detected.dataset, RealizationCadence.scan()),
+        np.array((0, 0, 1, 1)),
+    )
+
+    wide_padding = without_scans.detect_scans(gap_seconds=60.0, padding_seconds=2000.0)
+    assert wide_padding.dataset.scan_stop_mjd[0] < wide_padding.dataset.scan_start_mjd[1]
+    assert np.array_equal(
+        realization_group_ids(wide_padding.dataset, RealizationCadence.scan()),
+        np.array((0, 0, 1, 1)),
+    )
+
+
+def test_template_scan_cadence_requires_explicit_or_detected_intervals():
+    """A scan-cadence process requires manual or detected scan metadata."""
+
+    without_scans = _template_without_scans()
     with pytest.raises(ValueError, match="scan cadence requires dataset scan metadata"):
         without_scans.simulate(
             _model(),
             effects=_clean_effects(station_gain=GainModel()),
             transform_backend="direct",
         )
+
+    result = without_scans.detect_scans(gap_seconds=60.0).simulate(
+        _model(),
+        effects=_clean_effects(station_gain=GainModel()),
+        transform_backend="direct",
+    )
+    assert result.dataset.scan_start_mjd is not None
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    (
+        ({"gap_seconds": 0.0}, "gap_seconds"),
+        ({"padding_seconds": -1.0}, "padding_seconds"),
+    ),
+)
+def test_template_detect_scans_rejects_invalid_durations(kwargs, message):
+    """Automatic scan detection validates its public duration arguments."""
+
+    with pytest.raises(ValueError, match=message):
+        _template_without_scans().detect_scans(**kwargs)
