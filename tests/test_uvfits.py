@@ -158,7 +158,9 @@ def test_native_uvfits_module_does_not_import_ehtim():
     assert result.returncode == 0, result.stderr
 
 
-def test_native_uvfits_writer_rejects_mixed_receptor_products(tmp_path):
+def _mixed_dataset():
+    """Create a complete two-feed circular/linear mixed-layout dataset."""
+
     original = _dataset()
     receptors = ReceptorTable(
         station_index=np.array((0, 0, 1, 1, 2, 2)),
@@ -170,7 +172,7 @@ def test_native_uvfits_writer_rejects_mixed_receptor_products(tmp_path):
         receptor1_id=np.array((0, 0, 1, 1, 2, 2, 3, 3)),
         receptor2_id=np.array((2, 3, 2, 3, 4, 5, 4, 5)),
     )
-    mixed = VisibilityDataset(
+    return VisibilityDataset(
         stations=original.stations,
         receptors=receptors,
         correlation_products=products,
@@ -193,5 +195,31 @@ def test_native_uvfits_writer_rejects_mixed_receptor_products(tmp_path):
         dec_degrees=original.dec_degrees,
     )
 
+def test_native_uvfits_writer_rejects_mixed_receptor_products(tmp_path):
+    mixed = _mixed_dataset()
+
     with pytest.raises(UvfitsError, match="requires exactly"):
         write_uvfits(mixed, tmp_path / "mixed.uvfits")
+
+
+def test_native_uvfits_force_circular_labels_relabels_mixed_two_feed_layout(tmp_path):
+    """Unsafe X/Y-to-R/L export must preserve payloads while changing labels only."""
+
+    mixed = _mixed_dataset()
+    path = tmp_path / "mixed-as-circular.uvfits"
+    write_uvfits(mixed, path, force_circular_labels=True)
+
+    with fits.open(path, memmap=False) as hdul:
+        assert hdul[0].header["CRVAL3"] == -1.0
+        assert tuple(hdul["AIPS AN"].data["POLTYA"]) == ("R", "R", "R")
+        assert tuple(hdul["AIPS AN"].data["POLTYB"]) == ("L", "L", "L")
+        assert any("without a basis conversion" in entry for entry in hdul[0].header["HISTORY"])
+
+    restored = read_uvfits(path)
+    forced_slots = np.array(((0, 3, 1, 2), (0, 3, 1, 2)))
+    row = np.arange(mixed.row_count)[:, np.newaxis, np.newaxis]
+    channel = np.arange(mixed.channel_count)[np.newaxis, :, np.newaxis]
+    slot = forced_slots[:, np.newaxis, :]
+    assert np.allclose(restored.visibilities, mixed.visibilities[row, channel, slot])
+    assert np.allclose(restored.sigma_jy, mixed.sigma_jy[row, channel, slot], equal_nan=True)
+    assert np.array_equal(restored.flags, mixed.flags[row, channel, slot])
