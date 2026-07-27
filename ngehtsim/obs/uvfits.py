@@ -158,7 +158,13 @@ def read_uvfits(path):
         )
 
 
-def write_uvfits(dataset, path, overwrite=False, force_circular_labels=False):
+def write_uvfits(
+    dataset,
+    path,
+    overwrite=False,
+    force_circular_labels=False,
+    array_name="NGEHTSIM",
+):
     """Write a uniformly circular or linear ``VisibilityDataset`` as UVFITS.
 
     The output uses a standard global STOKES axis, a regular frequency axis,
@@ -179,6 +185,10 @@ def write_uvfits(dataset, path, overwrite=False, force_circular_labels=False):
         and every Y feed as L, without transforming any visibility,
         uncertainty, or flag values.  This exists solely for software that
         cannot ingest mixed-feed data and is disabled by default.
+    array_name : str, optional
+        AIPS array name written as the ``ARRNAM`` keyword in the ``AIPS AN``
+        table. It must be non-empty ASCII text of at most eight characters.
+        The default identifies a generic ngehtsim-generated array.
 
     Raises
     ------
@@ -201,6 +211,7 @@ def write_uvfits(dataset, path, overwrite=False, force_circular_labels=False):
         raise UvfitsError("UVFITS output requires at least one visibility row.")
     if not isinstance(force_circular_labels, bool):
         raise TypeError("force_circular_labels must be a bool.")
+    array_name = _aips_array_name(array_name)
 
     layout, product_slots = _uvfits_layout(
         dataset,
@@ -221,6 +232,8 @@ def write_uvfits(dataset, path, overwrite=False, force_circular_labels=False):
         layout,
         frequency_grid["reference_frequency_hz"],
         len(frequency_grid["channel_indices"]),
+        reference_mjd=float(np.floor(np.min(dataset.time_mjd))),
+        array_name=array_name,
     )
     frequency = _frequency_hdu(frequency_grid)
     hdus = [primary, antenna, frequency]
@@ -673,34 +686,98 @@ def _set_common_header(header, dataset, layout, frequency_grid, reference_mjd):
     header["HISTORY"] = "AIPS SORT ORDER='TB'"
 
 
-def _antenna_hdu(dataset, layout, reference_frequency_hz, if_count):
-    if any(len(name.encode("ascii")) > 8 for name in dataset.stations.names):
-        raise UvfitsError("UVFITS AIPS AN output supports station names up to eight ASCII characters.")
+def _antenna_hdu(
+    dataset,
+    layout,
+    reference_frequency_hz,
+    if_count,
+    *,
+    reference_mjd,
+    array_name,
+):
+    """Build a complete AIPS AN table for the native UVFITS writer.
+
+    Global VLBI station positions are expressed in ITRF relative to a
+    geocentric array origin. The mandatory orbit and polarization-calibration
+    columns have zero repeat counts because ngehtsim does not write those
+    optional per-antenna payloads.
+    """
+
+    try:
+        station_name_lengths = [len(name.encode("ascii")) for name in dataset.stations.names]
+    except UnicodeEncodeError as exc:
+        raise UvfitsError("UVFITS AIPS AN output requires ASCII station names.") from exc
+    if any(length > 8 for length in station_name_lengths):
+        raise UvfitsError(
+            "UVFITS AIPS AN output supports station names up to eight ASCII characters."
+        )
     names = np.asarray(dataset.stations.names, dtype="S8")
     count = len(names)
     first_feed, second_feed = ("R", "L") if layout == CIRCULAR_PRODUCT_LABELS else ("X", "Y")
     columns = fits.ColDefs((
         fits.Column(name="ANNAME", format="8A", array=names),
         fits.Column(name="STABXYZ", format="3D", unit="METERS", array=dataset.stations.position_itrs_m),
+        fits.Column(name="ORBPARM", format="0D", array=np.empty((count, 0), dtype=float)),
         fits.Column(name="NOSTA", format="1J", array=np.arange(1, count + 1)),
         fits.Column(name="MNTSTA", format="1J", array=np.zeros(count, dtype=np.int32)),
         fits.Column(name="STAXOF", format="1E", unit="METERS", array=np.zeros(count)),
         fits.Column(name="POLTYA", format="1A", array=np.full(count, first_feed, dtype="S1")),
         fits.Column(name="POLAA", format="1E", unit="DEGREES", array=np.zeros(count)),
-        fits.Column(name="POLCALA", format="3E", array=np.zeros((count, 3))),
+        fits.Column(name="POLCALA", format="0E", array=np.empty((count, 0), dtype=np.float32)),
         fits.Column(name="POLTYB", format="1A", array=np.full(count, second_feed, dtype="S1")),
         fits.Column(name="POLAB", format="1E", unit="DEGREES", array=np.full(count, 90.0)),
-        fits.Column(name="POLCALB", format="3E", array=np.zeros((count, 3))),
+        fits.Column(name="POLCALB", format="0E", array=np.empty((count, 0), dtype=np.float32)),
         fits.Column(name="SEFD", format="1D", array=dataset.stations.sefd_r_jy),
     ))
     antenna = fits.BinTableHDU.from_columns(columns, name="AIPS AN")
     header = antenna.header
+    reference_date = _aips_reference_date(reference_mjd)
     header["EXTVER"] = 1
+    header["ARRAYX"] = 0.0
+    header["ARRAYY"] = 0.0
+    header["ARRAYZ"] = 0.0
+    header["GSTIA0"] = reference_date.sidereal_time("mean", "greenwich").degree
+    header["DEGPDY"] = 360.98564736629
     header["FREQ"] = reference_frequency_hz
+    header["RDATE"] = reference_date.to_value("iso", subfmt="date")
+    header["POLARX"] = 0.0
+    header["POLARY"] = 0.0
+    header["UT1UTC"] = float(reference_date.delta_ut1_utc)
+    header["DATUTC"] = 0.0
     header["NO_IF"] = if_count
     header["TIMESYS"] = "UTC"
+    header["ARRNAM"] = array_name
+    header["XYZHAND"] = "RIGHT"
+    header["FRAME"] = "ITRF"
+    header["NUMORB"] = 0
+    header["NOPCAL"] = 0
     header["POLTYPE"] = "VLBI"
+    header["FREQID"] = 1
     return antenna
+
+
+def _aips_array_name(array_name):
+    """Validate an AIPS AN ``ARRNAM`` value and return its stripped form."""
+
+    if not isinstance(array_name, str):
+        raise TypeError("array_name must be a str.")
+    array_name = array_name.strip()
+    if not array_name:
+        raise UvfitsError("UVFITS AIPS AN ARRNAM must be non-empty.")
+    try:
+        encoded = array_name.encode("ascii")
+    except UnicodeEncodeError as exc:
+        raise UvfitsError("UVFITS AIPS AN ARRNAM must contain only ASCII characters.") from exc
+    if len(encoded) > 8:
+        raise UvfitsError("UVFITS AIPS AN ARRNAM supports at most eight ASCII characters.")
+    return array_name
+
+
+def _aips_reference_date(reference_mjd):
+    """Return the UTC midnight reference date for AIPS AN metadata."""
+
+    timestamp = Time(reference_mjd, format="mjd", scale="utc")
+    return Time(timestamp.to_value("iso", subfmt="date"), format="iso", scale="utc")
 
 
 def _frequency_hdu(frequency_grid):

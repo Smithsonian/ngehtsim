@@ -87,7 +87,7 @@ def test_native_uvfits_round_trip_preserves_multichannel_data(tmp_path, kind):
     original = _dataset(kind)
     path = tmp_path / "native.uvfits"
 
-    original.to_uvfits(path)
+    original.to_uvfits(path, array_name="SYNTH")
     with fits.open(path, memmap=False) as hdul:
         assert hdul[0].header["NAXIS4"] == 2
         assert hdul[0].header["NAXIS5"] == 2
@@ -96,6 +96,24 @@ def test_native_uvfits_round_trip_preserves_multichannel_data(tmp_path, kind):
         expected_feeds = ("R", "L") if kind == "circular" else ("X", "Y")
         assert tuple(hdul["AIPS AN"].data["POLTYA"][:1]) == (expected_feeds[0],)
         assert tuple(hdul["AIPS AN"].data["POLTYB"][:1]) == (expected_feeds[1],)
+        antenna = hdul["AIPS AN"]
+        mandatory = {
+            "EXTNAME", "EXTVER", "ARRAYX", "ARRAYY", "ARRAYZ", "GSTIA0", "DEGPDY",
+            "FREQ", "RDATE", "POLARX", "POLARY", "UT1UTC", "DATUTC", "TIMESYS",
+            "ARRNAM", "XYZHAND", "FRAME", "NUMORB", "NO_IF", "NOPCAL", "POLTYPE",
+            "FREQID",
+        }
+        assert mandatory <= set(antenna.header)
+        assert antenna.header["ARRNAM"] == "SYNTH"
+        assert [antenna.header[name] for name in ("ARRAYX", "ARRAYY", "ARRAYZ")] == [0.0] * 3
+        assert antenna.header["FRAME"] == "ITRF"
+        assert antenna.header["XYZHAND"] == "RIGHT"
+        assert antenna.header["NUMORB"] == 0
+        assert antenna.header["NOPCAL"] == 0
+        assert antenna.header["FREQID"] == 1
+        assert antenna.data["ORBPARM"].shape == (3, 0)
+        assert antenna.data["POLCALA"].shape == (3, 0)
+        assert antenna.data["POLCALB"].shape == (3, 0)
         assert np.allclose(hdul["AIPS FQ"].data["TOTAL BANDWIDTH"][0], [2.0e6, 2.0e6])
 
     restored = VisibilityDataset.from_uvfits(path)
@@ -114,6 +132,25 @@ def test_native_uvfits_round_trip_preserves_multichannel_data(tmp_path, kind):
     assert np.allclose(restored.scan_stop_mjd, original.scan_stop_mjd)
     slots = restored.circular_product_slots() if kind == "circular" else restored.linear_product_slots()
     assert slots.shape == (2, 4)
+
+
+@pytest.mark.parametrize(
+    ("array_name", "exception", "message"),
+    (
+        (None, TypeError, "must be a str"),
+        ("", UvfitsError, "must be non-empty"),
+        ("NINECHARS", UvfitsError, "at most eight ASCII characters"),
+        ("ng" + chr(0x00C9) + "HTsim", UvfitsError, "only ASCII characters"),
+    ),
+)
+def test_native_uvfits_writer_validates_aips_array_name(
+    tmp_path,
+    array_name,
+    exception,
+    message,
+):
+    with pytest.raises(exception, match=message):
+        _dataset().to_uvfits(tmp_path / "native.uvfits", array_name=array_name)
 
 
 def test_native_uvfits_reader_loads_checked_in_eht_2017_file_without_ehtim():
