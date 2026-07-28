@@ -1094,7 +1094,13 @@ class VisibilityDataset:
 
         return read_uvfits(path)
 
-    def to_uvfits(self, path, overwrite=False, force_circular_labels=False):
+    def to_uvfits(
+        self,
+        path,
+        overwrite=False,
+        force_circular_labels=False,
+        array_name="NGEHTSIM",
+    ):
         """Write this dataset through the native UVFITS adapter.
 
         Parameters
@@ -1108,6 +1114,9 @@ class VisibilityDataset:
             relabelling X as R and Y as L without a basis conversion. This is
             unsafe compatibility output for external software and is disabled
             by default.
+        array_name : str, optional
+            AIPS array name for the mandatory ``ARRNAM`` antenna-table
+            keyword. It must contain at most eight ASCII characters.
 
         Raises
         ------
@@ -1123,6 +1132,7 @@ class VisibilityDataset:
             path,
             overwrite=overwrite,
             force_circular_labels=force_circular_labels,
+            array_name=array_name,
         )
 
     @classmethod

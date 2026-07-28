@@ -19,6 +19,11 @@ cannot losslessly store arbitrary per-baseline mixed-feed layouts.  Such
 datasets remain native ``VisibilityDataset`` objects until an explicit output
 basis conversion is selected.
 
+Native output includes the mandatory AIPS AN table metadata used by standard
+UVFITS readers.  By default its array name is ``NGEHTSIM``; set
+``array_name="EHT2017"`` or another non-empty ASCII name of at most eight
+characters when a specific array identity is useful to downstream software.
+
 For compatibility testing with software that cannot read mixed-feed data,
 ``to_uvfits(..., force_circular_labels=True)`` provides a deliberately unsafe
 escape hatch. It writes a global circular UVFITS axis and labels X as R and Y
