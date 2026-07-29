@@ -163,14 +163,14 @@ def test_circular_generator_matches_composed_station_jones_matrices():
 
     jones1 = _station_jones(
         terms["common_gain1"],
-        terms["leakage_matrix1"],
+        terms["leakage_feed_matrix1"],
         (terms["f_par1"] * terms["par1"])
         + (terms["f_el1"] * terms["el1"])
         + ((np.pi / 180.0) * terms["phi_off1"]),
     )
     jones2 = _station_jones(
         terms["common_gain2"],
-        terms["leakage_matrix2"],
+        terms["leakage_feed_matrix2"],
         (terms["f_par2"] * terms["par2"])
         + (terms["f_el2"] * terms["el2"])
         + ((np.pi / 180.0) * terms["phi_off2"]),

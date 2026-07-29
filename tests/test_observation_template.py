@@ -226,9 +226,9 @@ def test_template_station_effect_defaults_and_overrides_follow_two_feed_model():
         result.station_terms["common_gain2"],
         10.0 ** 0.1 * np.exp(0.4j),
     )
-    assert np.any(np.abs(result.station_terms["leakage_matrix1"][:, 0, 1]) > 0.0)
+    assert np.any(np.abs(result.station_terms["leakage_feed_matrix1"][:, 0, 1]) > 0.0)
     assert np.allclose(
-        result.station_terms["leakage_matrix2"],
+        result.station_terms["leakage_feed_matrix2"],
         np.eye(2, dtype=complex),
     )
 
@@ -255,6 +255,41 @@ def test_template_relayout_supports_mixed_feeds_and_fitseht_round_trip(tmp_path)
     assert restored.receptors.polarization_label == output.receptors.polarization_label
     assert np.array_equal(restored.row_product_id, output.row_product_id)
     assert np.allclose(restored.visibilities, output.visibilities)
+
+
+def test_template_relayout_realizes_leakage_in_local_feed_order():
+    """Template source substitution retains local X/Y and R/L D-term truth."""
+
+    template = ObservationTemplate.from_dataset(_template_dataset())
+    d_aa = np.array(((1.0, 0.02 + 0.03j), (-0.04 + 0.01j, 1.0)), dtype=complex)
+    d_bb = np.array(((1.0, -0.05 + 0.02j), (0.06 - 0.01j, 1.0)), dtype=complex)
+    effects = _clean_effects(
+        leakage_overrides={
+            "AA": LeakageModel(
+                "X",
+                "Y",
+                leakage_a_mean=d_aa[0, 1],
+                leakage_b_mean=d_aa[1, 0],
+            ),
+            "BB": LeakageModel(
+                "R",
+                "L",
+                leakage_a_mean=d_bb[0, 1],
+                leakage_b_mean=d_bb[1, 0],
+            ),
+        },
+    )
+    result = template.simulate(
+        _model(),
+        effects=effects,
+        station_receptors={"AA": ("X", "Y")},
+        transform_backend="direct",
+        random_seed=7,
+    )
+
+    assert result.dataset.receptors.polarization_label == ("X", "Y", "R", "L")
+    assert np.allclose(result.station_terms["leakage_feed_matrix1"], d_aa)
+    assert np.allclose(result.station_terms["leakage_feed_matrix2"], d_bb)
 
 
 def test_template_feed_rotation_requires_explicit_mount_metadata():

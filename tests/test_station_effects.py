@@ -104,6 +104,23 @@ def test_gain_ratio_defaults_to_track_and_can_use_station_local_feed_order():
     assert named_ratio.feed_b == "Y"
 
 
+def test_leakage_model_draws_local_feed_terms_with_explicit_means():
+    leakage = LeakageModel(
+        "X",
+        "Y",
+        leakage_a_mean=0.02 + 0.03j,
+        leakage_b_mean=-0.04 + 0.01j,
+        component_sigma=0.1,
+    )
+
+    assert leakage.feed_a == "X"
+    assert leakage.feed_b == "Y"
+    assert leakage.cadence == RealizationCadence.track()
+    assert leakage.sample(FixedRng()) == pytest.approx(
+        (0.12 + 0.13j, 0.06 + 0.11j)
+    )
+
+
 def test_realization_cadences_group_rows_without_guessing_scans():
     dataset = _dataset()
 
@@ -154,6 +171,8 @@ def test_station_corruption_model_resolves_immutable_default_and_override_models
     assert effects.gain_ratio_model("APEX") is None
     assert effects.gain_ratio_feed_pair("LMT", ("R", "L")) == ("R", "L")
     assert effects.gain_ratio_feed_pair("ALMA", ("X", "Y")) == ("X", "Y")
+    assert effects.leakage_feed_pair("LMT", ("R", "L")) == ("R", "L")
+    assert effects.leakage_feed_pair("ALMA", ("X", "Y")) == ("X", "Y")
     assert effects.has_gain_corruption
     assert effects.has_leakage_corruption
     with pytest.raises(TypeError):
@@ -171,6 +190,10 @@ def test_station_corruption_model_rejects_invalid_configuration():
         GainModel(phase_distribution="gaussian")
     with pytest.raises(ValueError, match="non-negative"):
         LeakageModel(component_sigma=-0.01)
+    with pytest.raises(ValueError, match="both be supplied"):
+        LeakageModel("X")
+    with pytest.raises(ValueError, match="finite"):
+        LeakageModel(leakage_a_mean=np.inf)
     with pytest.raises(ValueError, match="distinct"):
         GainRatioModel("X", "X")
     with pytest.raises(ValueError, match="both be supplied"):
@@ -220,6 +243,11 @@ def test_station_corruption_model_validates_two_feed_ratio_layouts():
     )
     with pytest.raises(NotImplementedError, match="exactly two feeds"):
         StationCorruptionModel(gain_ratio=GainRatioModel()).validate_receptors(
+            ("ALMA",),
+            three_feed_receptors,
+        )
+    with pytest.raises(NotImplementedError, match="Local-feed leakage"):
+        StationCorruptionModel(leakage=LeakageModel()).validate_receptors(
             ("ALMA",),
             three_feed_receptors,
         )

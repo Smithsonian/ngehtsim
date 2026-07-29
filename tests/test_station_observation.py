@@ -426,8 +426,8 @@ def test_native_station_terms_preserve_weather_and_use_generic_corruption_fields
     assert {
         "common_gain1",
         "common_gain2",
-        "leakage_matrix1",
-        "leakage_matrix2",
+        "leakage_feed_matrix1",
+        "leakage_feed_matrix2",
         "gain_ratio_factors",
     } <= set(native)
     assert not any(name.startswith(("gainamp", "gainphase", "leak1", "leak2")) for name in native)

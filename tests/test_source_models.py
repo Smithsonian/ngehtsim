@@ -784,8 +784,8 @@ def test_native_simulation_keeps_terms_in_the_result_not_the_generator():
         "SEFD2",
         "common_gain1",
         "common_gain2",
-        "leakage_matrix1",
-        "leakage_matrix2",
+        "leakage_feed_matrix1",
+        "leakage_feed_matrix2",
     ):
         assert name in result.station_terms
         assert result.station_terms[name].shape[0] == result.dataset.row_count

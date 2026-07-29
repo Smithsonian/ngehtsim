@@ -150,10 +150,14 @@ amplitude and unwrapped-phase cadences:
 The base ``station_gain``, ``leakage``, and ``gain_ratio`` models apply to all
 stations. Their corresponding ``*_overrides`` mappings replace a base model
 for selected stations; use an override value of ``None`` to disable a base
-corruption at one station. A default ``GainRatioModel()`` follows each
-two-feed station's local receptor order, while explicit ``feed_a`` and
-``feed_b`` values refer to the local identifiers configured in
-``station_receptors`` rather than assuming a global polarization basis.
+corruption at one station. A default ``GainRatioModel()`` or
+``LeakageModel()`` follows each two-feed station's local receptor order, while
+explicit ``feed_a`` and ``feed_b`` values refer to the local identifiers
+configured in ``station_receptors`` rather than assuming a global
+polarization basis. ``LeakageModel`` represents the ordinary local matrix
+``[[1, D_A], [D_B, 1]]``: use ``D_R,D_L`` at R/L stations and ``D_X,D_Y`` at
+X/Y stations. ``leakage_a_mean`` and ``leakage_b_mean`` can specify fixed
+complex D-terms in addition to stochastic ``component_sigma`` draws.
 ``StationCorruptionModel()`` retains the native default realization: thermal
 noise, opacity calibration, feed rotation, weather/solar flagging, and a
 station-common 0.04-dex amplitude gain with uniform phase.  Leakage and gain

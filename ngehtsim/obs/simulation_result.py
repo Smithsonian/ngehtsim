@@ -29,6 +29,14 @@ class SimulationResult:
         opacity, SEFD, gains, leakage, and availability information. Arrays
         are copied and made read-only; this mapping is simulation provenance,
         not yet a stable archive schema.
+
+        Native two-feed simulations provide ``common_gain1`` and
+        ``common_gain2`` for the baseline endpoints, per-receptor
+        ``gain_ratio_factors``, and ``leakage_feed_matrix1`` and
+        ``leakage_feed_matrix2``. Leakage matrices use each endpoint
+        station's declared local receptor order; the corresponding station
+        names are in ``t1`` and ``t2`` and the order is defined by
+        ``dataset.receptors``.
     """
 
     dataset: VisibilityDataset

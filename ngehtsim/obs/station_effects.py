@@ -267,26 +267,76 @@ class GainRatioModel:
 
 @dataclass(frozen=True)
 class LeakageModel:
-    """Station-frame circular leakage distribution.
+    r"""Stochastic two-feed leakage distribution in the local feed frame.
+
+    For the ordered local feeds A and B, the native RIME applies
+
+    .. math::
+
+       D_{\rm feed} =
+       \begin{pmatrix}1 & D_A \\ D_B & 1\end{pmatrix}.
+
+    ``D_A`` is the leakage from feed B into feed A and ``D_B`` is the reverse
+    coupling.  Consequently, R/L stations use ordinary ``D_R`` and ``D_L``
+    terms, while X/Y stations use ordinary ``D_X`` and ``D_Y`` terms.  The
+    common circular sky basis is used only for source coherency and feed
+    rotation; it does not define the leakage parameters.
 
     Parameters
     ----------
+    feed_a, feed_b : str or None, optional
+        Ordered local feed IDs defining the rows and columns of the leakage
+        matrix. Omit both to use a station's declared two-feed order. Supplying
+        one feed requires supplying the other.
+    leakage_a_mean, leakage_b_mean : complex, optional
+        Deterministic complex means of ``D_A`` and ``D_B``. Together with
+        ``component_sigma=0`` these define an exact local-feed leakage model.
     component_sigma : float, optional
         Standard deviation assigned independently to the real and imaginary
-        parts of each off-diagonal circular-basis leakage term.
+        parts of each off-diagonal local-feed leakage term.
     cadence : RealizationCadence, optional
         Realization grouping for the complete complex leakage matrix. The
         default is one stable D-term realization per track.
     """
 
+    feed_a: str | None = None
+    feed_b: str | None = None
+    leakage_a_mean: complex = 0.0j
+    leakage_b_mean: complex = 0.0j
     component_sigma: float = 0.0
     cadence: RealizationCadence = field(default_factory=RealizationCadence.track)
 
     def __post_init__(self):
+        if (self.feed_a is None) != (self.feed_b is None):
+            raise ValueError("feed_a and feed_b must either both be supplied or both be None.")
+        if self.feed_a is not None:
+            if (
+                not isinstance(self.feed_a, str)
+                or not isinstance(self.feed_b, str)
+                or not self.feed_a
+                or not self.feed_b
+                or self.feed_a == self.feed_b
+            ):
+                raise ValueError("feed_a and feed_b must be distinct non-empty feed IDs.")
+        for name in ("leakage_a_mean", "leakage_b_mean"):
+            try:
+                value = complex(getattr(self, name))
+            except (TypeError, ValueError) as exc:
+                raise TypeError("{0} must be a complex scalar.".format(name)) from exc
+            if not np.isfinite(value.real) or not np.isfinite(value.imag):
+                raise ValueError("{0} must have finite real and imaginary parts.".format(name))
+            object.__setattr__(self, name, value)
         if not np.isfinite(self.component_sigma) or self.component_sigma < 0.0:
             raise ValueError("component_sigma must be finite and non-negative.")
         if not isinstance(self.cadence, RealizationCadence):
             raise TypeError("cadence must be a RealizationCadence instance.")
+
+    def sample(self, rng):
+        """Draw the two local-feed complex leakage terms."""
+
+        draw_a = self.component_sigma * (rng.normal(0.0, 1.0) + 1.0j * rng.normal(0.0, 1.0))
+        draw_b = self.component_sigma * (rng.normal(0.0, 1.0) + 1.0j * rng.normal(0.0, 1.0))
+        return self.leakage_a_mean + draw_a, self.leakage_b_mean + draw_b
 
 
 @dataclass(frozen=True)
@@ -313,8 +363,10 @@ class StationCorruptionModel:
         station-common gain model at named stations. ``None`` disables the
         default common gain at that station.
     leakage : LeakageModel or None, optional
-        Default circular station-frame leakage realization for every station.
-        ``None`` disables leakage by default.
+        Default local-feed leakage realization for every two-feed station.
+        ``None`` disables leakage by default. A default model is skipped for
+        single-feed stations; stations with more than two feeds require a
+        future general leakage parameterization.
     leakage_overrides : mapping, optional
         Mapping ``{station: LeakageModel or None}`` that replaces the default
         leakage model at named stations. ``None`` disables default leakage at
@@ -371,14 +423,16 @@ class StationCorruptionModel:
             object.__setattr__(self, name, MappingProxyType(normalized))
 
     def validate_receptors(self, station_names, receptors):
-        """Validate declared gain ratios against a resolved receptor inventory.
+        """Validate gain-ratio and local-leakage models against receptor inventory.
 
         Gain ratios are valid only for a station containing exactly two feeds.
         A default ratio is skipped for a single-feed station, which uses only
         its station-common gain. A ratio explicitly configured as an override
         for a single-feed station is rejected. Datasets with more than two
         feeds remain usable without a ratio model but reject a requested ratio
-        until a general multi-feed parameterization is introduced.
+        until a general multi-feed parameterization is introduced. Local-feed
+        leakage follows the same two-feed rule; a default leakage model is
+        skipped for a single-feed station.
         """
 
         names = tuple(str(name) for name in station_names)
@@ -420,6 +474,33 @@ class StationCorruptionModel:
                 raise ValueError(
                     "Gain-ratio feeds for {0} must match its two configured feeds.".format(station)
                 )
+        for station in names:
+            model = self.leakage_model(station)
+            if model is None:
+                continue
+            station_index = names.index(station)
+            feed_ids = tuple(
+                receptors.feed_id[index]
+                for index in np.flatnonzero(receptors.station_index == station_index)
+            )
+            if len(feed_ids) == 1:
+                if self.leakage_overrides.get(station) is not None:
+                    raise ValueError(
+                        "Station {0} has one feed and cannot define a two-feed leakage matrix.".format(
+                            station
+                        )
+                    )
+                continue
+            if len(feed_ids) != 2:
+                raise NotImplementedError(
+                    "Local-feed leakage currently supports exactly two feeds per station; "
+                    "{0} has {1}.".format(station, len(feed_ids))
+                )
+            feed_a, feed_b = self.leakage_feed_pair(station, feed_ids)
+            if set(feed_ids) != {feed_a, feed_b}:
+                raise ValueError(
+                    "Leakage feeds for {0} must match its two configured feeds.".format(station)
+                )
 
     def station_gain_model(self, station):
         """Return the effective station-common gain model for ``station``."""
@@ -445,6 +526,16 @@ class StationCorruptionModel:
         """
 
         model = self.gain_ratio_model(station)
+        if model is None:
+            return None
+        if model.feed_a is None:
+            return tuple(feed_ids)
+        return model.feed_a, model.feed_b
+
+    def leakage_feed_pair(self, station, feed_ids):
+        """Return the effective ordered local-feed pair for leakage at ``station``."""
+
+        model = self.leakage_model(station)
         if model is None:
             return None
         if model.feed_a is None:

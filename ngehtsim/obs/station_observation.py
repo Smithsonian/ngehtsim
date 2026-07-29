@@ -653,10 +653,11 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, effects,
 
     Notes
     -----
-    The terms are evaluated in the common circular sky frame and are projected
-    into configured native receptor paths by the one-channel corruption RIME.
-    They are retained in :class:`SimulationResult` as provenance, not yet as a
-    stable archive interchange format.
+    Sky coherency and feed rotation use the common circular sky frame. Leakage
+    matrices instead use each station's declared local feed frame and are
+    applied after the receptor response by the one-channel corruption RIME.
+    The terms are retained in :class:`SimulationResult` as provenance, not yet
+    as a stable archive interchange format.
     """
 
     if not isinstance(effects, StationCorruptionModel):
@@ -697,7 +698,7 @@ def station_terms_for_dataset(dataset, F0, station_context, rng, effects,
         effects,
         rng,
     )
-    terms["leakage_matrix1"], terms["leakage_matrix2"] = _sample_leakage_matrices(
+    terms["leakage_feed_matrix1"], terms["leakage_feed_matrix2"] = _sample_local_leakage_matrices(
         dataset,
         metadata,
         effects,
@@ -862,7 +863,7 @@ def template_station_terms_for_dataset(dataset, rng, effects, *,
         effects,
         rng,
     )
-    leakage_matrix1, leakage_matrix2 = _sample_leakage_matrices(
+    leakage_feed_matrix1, leakage_feed_matrix2 = _sample_local_leakage_matrices(
         dataset,
         metadata,
         effects,
@@ -892,8 +893,8 @@ def template_station_terms_for_dataset(dataset, rng, effects, *,
         "uptime_mask": np.ones(count, dtype=bool),
         "common_gain1": common_gain1,
         "common_gain2": common_gain2,
-        "leakage_matrix1": leakage_matrix1,
-        "leakage_matrix2": leakage_matrix2,
+        "leakage_feed_matrix1": leakage_feed_matrix1,
+        "leakage_feed_matrix2": leakage_feed_matrix2,
         "gain_ratio_factors": _sample_gain_ratio_factors(dataset, effects, rng),
     }, dataset.stations
 
@@ -1030,32 +1031,44 @@ def _row_group_values(group_ids, sampler, rng):
     return values
 
 
-def _sample_leakage_matrices(dataset, metadata, effects, rng):
-    """Return cadence-aware station-frame leakage matrices with overrides."""
+def _sample_local_leakage_matrices(dataset, metadata, effects, rng):
+    """Return cadence-aware local-feed leakage matrices with overrides.
+
+    Matrix rows and columns follow the declared receptor order at each
+    two-feed endpoint station. The matrices are intentionally local: the
+    receptor RIME applies them after the local feed-response matrix rather
+    than treating them as circular-sky Jones terms.
+    """
 
     count = dataset.row_count
     matrix1 = np.broadcast_to(np.eye(2, dtype=complex), (count, 2, 2)).copy()
     matrix2 = np.array(matrix1, copy=True)
     rows = metadata["_rows"]
     group_cache = {}
+    station_indices = {station: index for index, station in enumerate(dataset.stations.names)}
     for site in metadata["sites_obs"]:
         leakage_model = effects.leakage_model(site)
         if leakage_model is None:
             continue
+        receptor_indices = np.flatnonzero(
+            dataset.receptors.station_index == station_indices[site]
+        )
+        if len(receptor_indices) == 1:
+            continue
+        feed_ids = tuple(dataset.receptors.feed_id[index] for index in receptor_indices)
+        feed_a, feed_b = effects.leakage_feed_pair(site, feed_ids)
+        local_index = {feed_id: index for index, feed_id in enumerate(feed_ids)}
+        index_a = local_index[feed_a]
+        index_b = local_index[feed_b]
         group_ids = _cached_group_ids(dataset, leakage_model.cadence, group_cache)
         first = rows.t1 == site
         second = rows.t2 == site
         for group_id in np.unique(group_ids):
-            d_a = leakage_model.component_sigma * (
-                rng.normal(0.0, 1.0) + 1.0j * rng.normal(0.0, 1.0)
-            )
-            d_b = leakage_model.component_sigma * (
-                rng.normal(0.0, 1.0) + 1.0j * rng.normal(0.0, 1.0)
-            )
+            d_a, d_b = leakage_model.sample(rng)
             first_group = first & (group_ids == group_id)
             second_group = second & (group_ids == group_id)
-            matrix1[first_group, 0, 1] = d_a
-            matrix1[first_group, 1, 0] = d_b
-            matrix2[second_group, 0, 1] = d_a
-            matrix2[second_group, 1, 0] = d_b
+            matrix1[first_group, index_a, index_b] = d_a
+            matrix1[first_group, index_b, index_a] = d_b
+            matrix2[second_group, index_a, index_b] = d_a
+            matrix2[second_group, index_b, index_a] = d_b
     return matrix1, matrix2
