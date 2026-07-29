@@ -128,8 +128,8 @@ def test_standard_circular_rime_uses_generic_station_terms():
     assert {
         "common_gain1",
         "common_gain2",
-        "leakage_matrix1",
-        "leakage_matrix2",
+        "leakage_feed_matrix1",
+        "leakage_feed_matrix2",
         "gain_ratio_factors",
     } <= set(result.station_terms)
     assert not any(name.startswith(("gainamp", "gainphase", "leak1", "leak2")) for name in result.station_terms)
@@ -147,7 +147,10 @@ def test_mixed_receptor_rime_matches_explicit_effective_jones_rows():
             phase_distribution="uniform",
         ),
         feed_rotation=True,
-        leakage=LeakageModel(component_sigma=0.1),
+        leakage_overrides={
+            "ALMA": LeakageModel(component_sigma=0.1),
+            "APEX": LeakageModel(component_sigma=0.1),
+        },
         gain_ratio_overrides={
             "ALMA": GainRatioModel("X", "Y", amplitude_sigma_dex=0.02),
         },
@@ -205,6 +208,86 @@ def test_mixed_receptor_rime_matches_explicit_effective_jones_rows():
     gain_ratios = result.station_terms["gain_ratio_factors"]
     assert not np.allclose(gain_ratios[:, alma_x], 1.0)
     assert np.allclose(gain_ratios[:, alma_x] * gain_ratios[:, alma_y], 1.0)
+
+
+def test_local_feed_leakage_matches_explicit_mixed_basis_jones_matrices():
+    """X/Y and R/L stations must receive independent local-feed D-terms."""
+
+    settings = dict(SETTINGS)
+    settings["sites"] = ["ALMA", "APEX"]
+    receptor_layout = {"ALMA": ("X", "Y"), "APEX": ("R", "L")}
+    d_alma = np.array(((1.0, 0.02 + 0.03j), (-0.04 + 0.01j, 1.0)), dtype=complex)
+    d_apex = np.array(((1.0, -0.05 + 0.02j), (0.06 - 0.01j, 1.0)), dtype=complex)
+    effects = StationCorruptionModel(
+        thermal_noise=False,
+        station_gain=None,
+        feed_rotation=False,
+        leakage_overrides={
+            "ALMA": LeakageModel(
+                "X",
+                "Y",
+                leakage_a_mean=d_alma[0, 1],
+                leakage_b_mean=d_alma[1, 0],
+            ),
+            "APEX": LeakageModel(
+                "R",
+                "L",
+                leakage_a_mean=d_apex[0, 1],
+                leakage_b_mean=d_apex[1, 0],
+            ),
+        },
+        flag_wind=False,
+        flag_daylight=False,
+        flag_sun=False,
+    )
+    generator = og.obs_generator(settings=settings, station_receptors=receptor_layout)
+    result = generator.simulate(_polarized_model(), effects=effects)
+    dataset = result.dataset
+    configuration = resolve_receptor_configuration(dataset.stations.names, receptor_layout)
+    _, _, sky_coherency = source_models.observe_source_dataset(
+        _polarized_model(),
+        dataset,
+        generator.source_context(),
+        return_coherency=True,
+    )
+    response = configuration.response_circular
+    station_receptors = {
+        station: np.flatnonzero(dataset.receptors.station_index == station_index)
+        for station_index, station in enumerate(dataset.stations.names)
+    }
+    local_index = {
+        receptor: index
+        for indices in station_receptors.values()
+        for index, receptor in enumerate(indices)
+    }
+    local_d = {"ALMA": d_alma, "APEX": d_apex}
+    expected = np.zeros_like(dataset.visibilities[:, 0])
+    products = dataset.correlation_products
+    for row, product_ids in enumerate(dataset.row_product_id):
+        first_station = dataset.stations.names[dataset.antenna1[row]]
+        second_station = dataset.stations.names[dataset.antenna2[row]]
+        first_indices = station_receptors[first_station]
+        second_indices = station_receptors[second_station]
+        first_rows = local_d[first_station] @ response[first_indices]
+        second_rows = local_d[second_station] @ response[second_indices]
+        for slot, product_id in enumerate(product_ids):
+            if product_id < 0:
+                continue
+            receptor1 = products.receptor1_id[product_id]
+            receptor2 = products.receptor2_id[product_id]
+            expected[row, slot] = (
+                first_rows[local_index[receptor1]]
+                @ sky_coherency[row]
+                @ np.conj(second_rows[local_index[receptor2]])
+            )
+
+    for endpoint, matrix_name in (("t1", "leakage_feed_matrix1"), ("t2", "leakage_feed_matrix2")):
+        endpoint_stations = np.asarray(result.station_terms[endpoint])
+        for station, leakage_matrix in local_d.items():
+            mask = endpoint_stations == station
+            if np.any(mask):
+                assert np.allclose(result.station_terms[matrix_name][mask], leakage_matrix)
+    assert np.allclose(dataset.visibilities[:, 0], expected, atol=1.0e-12)
 
 
 def test_mixed_receptor_fringegroups_uses_generic_stokes_i_evidence():

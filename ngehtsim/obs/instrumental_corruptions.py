@@ -263,11 +263,11 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
     """Apply a one-channel Jones RIME to arbitrary station-feed products.
 
     ``sky_coherency`` is sampled in the common circular sky basis and has one
-    ``2 x 2`` matrix per visibility row.  Every stored product is then formed
-    as ``e_p J_1 B J_2^H e_q^H``, where ``e`` is the configured receptor row
-    and ``J`` contains the simulated station gain, leakage, and feed-rotation
-    terms. This formulation supports circular, linear, mixed, single-feed,
-    and over-complete receptor inventories without relabelling products.
+    ``2 x 2`` matrix per visibility row. Every stored product is then formed
+    from local station-feed Jones rows. Feed rotation remains a circular-sky
+    operation, while leakage is applied in the declared local feed frame.
+    This formulation supports circular, linear, mixed, single-feed, and
+    over-complete receptor inventories without relabelling products.
 
     Parameters
     ----------
@@ -303,7 +303,7 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
     sky_coherency = np.asarray(sky_coherency, dtype=complex)
     if sky_coherency.shape != (dataset.row_count, 2, 2):
         raise ValueError("sky_coherency must have shape (row, 2, 2).")
-    response, sefd_scale, gain_scale = response_rows_for_dataset(
+    _, sefd_scale, gain_scale = response_rows_for_dataset(
         dataset,
         receptor_configuration,
     )
@@ -326,14 +326,16 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
     if np.any(tau1 < 0.0) or np.any(tau2 < 0.0):
         raise ValueError("Station opacity terms must be non-negative.")
 
-    jones1, jones2 = _native_station_jones(terms, count, station_terms, effects)
-    output_coherency = jones1 @ sky_coherency @ np.swapaxes(np.conj(jones2), -1, -2)
-    if not effects.opacity_calibrated:
-        output_coherency *= np.sqrt(np.exp(-tau1 - tau2))[:, np.newaxis, np.newaxis]
     gain_ratio_factors = _gain_ratio_factor_array(
         station_terms,
         count,
         dataset.receptors.count,
+    )
+    left_rows, right_rows = receptor_rows_for_station_terms(
+        dataset,
+        station_terms,
+        receptor_configuration,
+        effects,
     )
 
     visibilities = np.array(dataset.visibilities, copy=True)
@@ -364,17 +366,9 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
                 continue
             receptor1 = products.receptor1_id[product_id]
             receptor2 = products.receptor2_id[product_id]
-            first = (
-                gain_ratio_factors[row, receptor1]
-                * gain_scale[receptor1]
-                * response[receptor1]
-            )
-            second = (
-                gain_ratio_factors[row, receptor2]
-                * gain_scale[receptor2]
-                * response[receptor2]
-            )
-            value = first @ output_coherency[row] @ np.conj(second)
+            value = left_rows[row, slot] @ sky_coherency[row] @ np.conj(right_rows[row, slot])
+            if not effects.opacity_calibrated:
+                value *= np.sqrt(np.exp(-tau1[row] - tau2[row]))
             if uncertainty_mode == "sefd":
                 gain_magnitude = (
                     np.abs(station_terms["common_gain1"][row])
@@ -415,7 +409,11 @@ def apply_receptor_corruptions(dataset, sky_coherency, station_terms, stations,
 
 
 def _native_station_jones(terms, count, station_terms, effects):
-    """Build native common-frame station Jones matrices from generic terms."""
+    """Build common-gain and circular feed-rotation Jones matrices.
+
+    Local leakage is intentionally excluded here. It is applied to the local
+    feed-response rows by :func:`receptor_rows_for_station_terms`.
+    """
 
     identity = np.broadcast_to(np.eye(2, dtype=complex), (count, 2, 2)).copy()
     jones1 = np.array(identity, copy=True)
@@ -439,15 +437,13 @@ def _native_station_jones(terms, count, station_terms, effects):
         jones1[:, 1, 1] = np.exp(1.0j * rotation1)
         jones2[:, 0, 0] = np.exp(-1.0j * rotation2)
         jones2[:, 1, 1] = np.exp(1.0j * rotation2)
-    jones1 = _matrix_term(station_terms, "leakage_matrix1", count) @ jones1
-    jones2 = _matrix_term(station_terms, "leakage_matrix2", count) @ jones2
     gain1 = _term_array(station_terms, "common_gain1", count)
     gain2 = _term_array(station_terms, "common_gain2", count)
     return gain1[:, np.newaxis, np.newaxis] * jones1, gain2[:, np.newaxis, np.newaxis] * jones2
 
 
 def _matrix_term(station_terms, name, count):
-    """Return one validated row-aligned two-by-two station matrix term."""
+    """Return one validated row-aligned two-by-two local-feed matrix term."""
 
     try:
         values = np.asarray(station_terms[name], dtype=complex)
@@ -473,8 +469,8 @@ def _gain_ratio_factor_array(station_terms, count, receptor_count):
 def receptor_rows_for_station_terms(dataset, station_terms, receptor_configuration, effects):
     """Return effective receptor Jones rows for generic fringe selection.
 
-    The rows include the same simulated station gain, leakage, and feed
-    rotation applied by :func:`apply_receptor_corruptions`.  They permit a
+    The rows include the same simulated station gain, local-feed leakage, and
+    feed rotation applied by :func:`apply_receptor_corruptions`. They permit a
     fringe-evidence estimator to reconstruct Stokes I in a common sky basis
     rather than treating a particular recorded feed basis as special.
 
@@ -509,11 +505,14 @@ def receptor_rows_for_station_terms(dataset, station_terms, receptor_configurati
     )
     terms = {name: _term_array(station_terms, name, count) for name in required}
     jones1, jones2 = _native_station_jones(terms, count, station_terms, effects)
+    leakage1 = _matrix_term(station_terms, "leakage_feed_matrix1", count)
+    leakage2 = _matrix_term(station_terms, "leakage_feed_matrix2", count)
     gain_ratio_factors = _gain_ratio_factor_array(
         station_terms,
         count,
         dataset.receptors.count,
     )
+    station_receptors, local_receptor_index = _station_receptor_indices(dataset)
     left = np.zeros((dataset.row_count, dataset.visibilities.shape[2], 2), dtype=complex)
     right = np.zeros_like(left)
     products = dataset.correlation_products
@@ -523,17 +522,64 @@ def receptor_rows_for_station_terms(dataset, station_terms, receptor_configurati
                 continue
             receptor1 = products.receptor1_id[product_id]
             receptor2 = products.receptor2_id[product_id]
+            response1 = _local_feed_response(
+                response,
+                leakage1[row],
+                receptor1,
+                dataset.antenna1[row],
+                station_receptors,
+                local_receptor_index,
+            )
+            response2 = _local_feed_response(
+                response,
+                leakage2[row],
+                receptor2,
+                dataset.antenna2[row],
+                station_receptors,
+                local_receptor_index,
+            )
             left[row, slot] = (
                 gain_ratio_factors[row, receptor1]
                 * gain_scale[receptor1]
-                * (response[receptor1] @ jones1[row])
+                * (response1 @ jones1[row])
             )
             right[row, slot] = (
                 gain_ratio_factors[row, receptor2]
                 * gain_scale[receptor2]
-                * (response[receptor2] @ jones2[row])
+                * (response2 @ jones2[row])
             )
     return left, right
+
+
+def _station_receptor_indices(dataset):
+    """Return local receptor ordering for every station in ``dataset``."""
+
+    receptor_count = dataset.receptors.count
+    local_index = np.empty(receptor_count, dtype=np.intp)
+    station_receptors = []
+    for station_index in range(len(dataset.stations.names)):
+        indices = np.flatnonzero(dataset.receptors.station_index == station_index)
+        station_receptors.append(indices)
+        local_index[indices] = np.arange(len(indices), dtype=np.intp)
+    return tuple(station_receptors), local_index
+
+
+def _local_feed_response(
+    response,
+    leakage_matrix,
+    receptor_index,
+    station_index,
+    station_receptors,
+    local_receptor_index,
+):
+    """Return one local-feed response row after its local leakage matrix."""
+
+    indices = station_receptors[station_index]
+    if receptor_index not in indices:
+        raise ValueError("Correlation product receptor does not match its baseline station.")
+    if len(indices) != 2:
+        return response[receptor_index]
+    return leakage_matrix[local_receptor_index[receptor_index]] @ response[indices]
 
 
 def _term_array(station_terms, name, count):

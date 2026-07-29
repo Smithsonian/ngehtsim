@@ -20,11 +20,12 @@ selection masks, and a circular visibility template without constructing an
 ``ehtim.Obsdata`` object. Spacecraft stations retain the legacy geometry path.
 The station-term kernel evaluates weather, SEFD, uptime, and station geometry
 on those rows. ``StationCorruptionModel`` separately declares a station-common
-gain ``G`` and optional two-feed gain ratios ``R = G_A / G_B``. The one-channel
-corruption kernel uses a circular-sky Jones RIME and projects the result into
-every configured station-local receptor path. This supports circular, linear,
-mixed, single-feed, and over-complete feed inventories without converting the
-archived data to an assumed global basis.
+gain ``G``, optional two-feed gain ratios ``R = G_A / G_B``, and local-feed
+leakage matrices. The one-channel corruption kernel uses a circular-sky Jones
+RIME for source coherency and feed rotation, then applies each leakage matrix
+in its station's declared feed frame before projecting to recorded products.
+This supports circular, linear, and mixed two-feed leakage models without
+converting archived data to an assumed global basis.
 
 .. currentmodule:: ngehtsim.obs.observation_geometry
 
