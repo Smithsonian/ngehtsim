@@ -174,6 +174,65 @@ Mixed-receptor datasets can be written to FITS-EHT. UVFITS and
 ``ehtim.Obsdata`` export remain intentionally limited to their representable
 uniform-polarization layouts.
 
+Native Multi-Frequency FPT
+--------------------------
+
+Use :meth:`obs_generator.make_dataset_mf` for a native multi-frequency
+simulation. It samples each source model exactly once, retains a
+``SimulationResult`` for every requested band, and evaluates every ordered
+target/reference FPT pair before unioning the target-row masks. This matches
+the selection behavior of the historical ``make_obs_mf()`` method without
+constructing ``ehtim.Obsdata`` objects. In particular, it permits a 230 GHz
+dataset to benefit from both 86 and 345 GHz reference fringes when the
+scattered 86 GHz source is not the best reference on a given baseline.
+
+The default considers all ordered pairs and reproduces the historical pair
+rule: an inverse-frequency coherence time normalized to 10 seconds at 230 GHz
+and an SNR threshold chosen to retain a target-frequency threshold of at least
+5. Supply the models in the same order as their frequencies::
+
+   import ehtim as eh
+   from ngehtsim.obs.obs_generator import obs_generator
+   from ngehtsim.obs.station_effects import StationCorruptionModel
+
+   frequencies_ghz = (86.0, 230.0, 345.0)
+   models = [
+       eh.image.load_fits("SgrA_86GHz.fits"),
+       eh.image.load_fits("SgrA_230GHz.fits"),
+       eh.image.load_fits("SgrA_345GHz.fits"),
+   ]
+   generator = obs_generator(settings={
+       "source": "SgrA*",
+       "frequency": 230.0,  # Base settings; each requested band overrides it.
+       "sites": ["ALMA", "APEX", "LMT", "SMT"],
+   })
+   results = generator.make_dataset_mf(
+       frequencies_ghz,
+       models,
+       effects=StationCorruptionModel(),
+   )
+
+An explicit ``fpt_pairs`` mapping chooses a subset of ordered pairs or sets a
+specific ``(reference_snr_threshold, reference_integration_s)`` for a pair.
+Every target band must retain at least one reference. A value of ``None`` uses
+the default historical pair rule::
+
+   results = generator.make_dataset_mf(
+       frequencies_ghz,
+       models,
+       fpt_pairs={
+           (86.0, 230.0): None,
+           (230.0, 86.0): (13.4, 10.0),
+           (230.0, 345.0): None,
+           (345.0, 86.0): None,
+       },
+   )
+
+This example retains one 230 GHz and one 86 GHz reference for the 345 GHz
+target while applying a custom threshold to the 230/86 GHz pair. FPT remains a
+fringe detectability proxy: it selects rows but never writes phase-transfer
+corrections into their visibilities.
+
 Raster Source Transform Backend
 -------------------------------
 

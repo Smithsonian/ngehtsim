@@ -5,6 +5,7 @@ import numpy as np
 import ehtim as eh
 from dataclasses import replace
 from collections import defaultdict
+from collections.abc import Mapping
 from astropy.time import Time
 from astropy import units as astrounits
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz, get_sun
@@ -1369,9 +1370,30 @@ class obs_generator(object):
         # return observation object
         return obs
 
-    def _native_selection_mask(self, dataset, station_terms, effects, input_model=None,
-                               simulation_kwargs=None):
-        """Return the native row-selection mask for availability and fringe finding."""
+    def _native_availability_mask(self, dataset, unready_sites=None):
+        """Return native row availability before fringe selection.
+
+        Parameters
+        ----------
+        dataset : VisibilityDataset
+            Native simulated dataset whose intrinsic station, weather, and
+            elevation flags are retained in the starting mask.
+        unready_sites : iterable of str, optional
+            Track-wide technical-readiness failures. Omitting this argument
+            realizes one readiness draw from this generator's random stream.
+            Supplying it permits a multi-frequency simulation to share one
+            physical readiness realization across every band.
+
+        Returns
+        -------
+        numpy.ndarray of bool
+            Rows available before fringe-group or FPT selection.
+        tuple of str
+            Sites available at this generator's frequency after readiness
+            filtering.
+        tuple of str
+            Realized technically unready sites.
+        """
 
         mask = ~np.any(dataset.flags & dataset.sample_present, axis=(1, 2))
         names = np.asarray(dataset.stations.names)
@@ -1385,20 +1407,37 @@ class obs_generator(object):
                     print(site + " cannot observe at " + str(self.freq / 1.0e9) + " GHz.")
             mask &= ~np.isin(t1, unavailable) & ~np.isin(t2, unavailable)
 
-        unready = get_unready_sites(
-            np.asarray(dataset.stations.names),
-            self.settings["tech_readiness"],
-            rng=self.rng,
-        )
-        if len(unready):
+        if unready_sites is None:
+            unready = tuple(get_unready_sites(
+                np.asarray(dataset.stations.names),
+                self.settings["tech_readiness"],
+                rng=self.rng,
+            ))
+        else:
+            unready = tuple(str(site) for site in unready_sites)
+            unknown = set(unready) - set(dataset.stations.names)
+            if unknown:
+                raise ValueError(
+                    "unready_sites contains stations absent from the dataset: {0}.".format(
+                        ", ".join(sorted(unknown))
+                    )
+                )
+        if unready:
             if self.verbosity > 0:
                 print("Dropping {0} due to technical (un)readiness.".format(unready))
             mask &= ~np.isin(t1, unready) & ~np.isin(t2, unready)
 
-        available_sites = [
+        available_sites = tuple(
             site for site in dataset.stations.names
             if self.bands[site] is not None and site not in unready
-        ]
+        )
+        return mask, available_sites, unready
+
+    def _native_selection_mask(self, dataset, station_terms, effects, input_model=None,
+                               simulation_kwargs=None):
+        """Return the native row-selection mask for availability and fringe finding."""
+
+        mask, available_sites, unready = self._native_availability_mask(dataset)
 
         snr_algorithm, snr_args = self.settings["fringe_finder"]
         snr_algorithm = snr_algorithm.lower()
@@ -1566,6 +1605,161 @@ class obs_generator(object):
                 )
             )
         return SimulationResult(replace(result.dataset, flags=flags), result.station_terms)
+
+    def make_dataset_mf(self, frequencies_ghz, input_models, *, effects=None,
+                        fpt_pairs=None, fpt_snr_threshold=5.0,
+                        coherence_time_230_s=10.0, el_min=const.el_min,
+                        el_max=const.el_max):
+        """Generate native multi-frequency datasets with pairwise FPT selection.
+
+        Every requested band is sampled exactly once through the native
+        ground-array RIME.  For each target band, the FPT eligibility masks
+        from its configured reference bands are then unioned.  This preserves
+        the historical :meth:`make_obs_mf` detection rule without constructing
+        an ``ehtim.Obsdata`` object or discarding native mixed-feed products.
+
+        Parameters
+        ----------
+        frequencies_ghz : sequence of float
+            Distinct positive observing frequencies in GHz. The return order
+            matches this sequence.
+        input_models : sequence of ehtim.Image, ehtim.Model, or ehtim.Movie
+            One native source model for every requested frequency. Model
+            metadata is treated as input-only; the generator's source
+            coordinates and frequency define each simulation.
+        effects : StationCorruptionModel, optional
+            Native thermal-noise, corruption, and availability model shared
+            by all bands. It defaults to :class:`StationCorruptionModel`.
+        fpt_pairs : mapping, optional
+            Mapping ``{(target_ghz, reference_ghz): (snr_ref, tint_ref_s)}``
+            that specifies the ordered FPT references to try. Values may be
+            ``None`` to use the historical pair default. When omitted, every
+            ordered pair of distinct requested frequencies is evaluated. An
+            explicit mapping must provide at least one reference for every
+            target frequency.
+        fpt_snr_threshold : float, optional
+            Target fringe SNR used in the historical default pair rule. For a
+            target/reference pair, the reference threshold is
+            ``max(value, value * target_ghz / reference_ghz)``.
+        coherence_time_230_s : float, optional
+            Coherence time at 230 GHz used in the historical inverse-frequency
+            default pair rule. The pair reference integration is the shorter
+            of the two scaled coherence times.
+        el_min, el_max : float, optional
+            Inclusive ground-station elevation limits in degrees.
+
+        Returns
+        -------
+        list of SimulationResult
+            One native result per requested frequency, in input order. Each
+            dataset retains all rows; unavailable or FPT-rejected samples are
+            represented by flags.
+
+        Raises
+        ------
+        ValueError
+            If frequencies, models, or FPT-pair settings are invalid.
+        TypeError
+            If ``effects`` is not a :class:`StationCorruptionModel`.
+
+        Notes
+        -----
+        Technical readiness is realized once for the entire multi-frequency
+        track. Random/exact weather selections are also inherited from this
+        parent generator by every child band. FPT remains a detectability
+        proxy and does not transfer phase corrections to visibilities.
+        """
+
+        frequencies = _multifrequency_frequencies(frequencies_ghz)
+        models = _multifrequency_models(input_models, len(frequencies))
+        effects = StationCorruptionModel() if effects is None else effects
+        if not isinstance(effects, StationCorruptionModel):
+            raise TypeError("effects must be a StationCorruptionModel instance.")
+        pair_settings = _multifrequency_fpt_pairs(
+            frequencies,
+            fpt_pairs,
+            fpt_snr_threshold,
+            coherence_time_230_s,
+        )
+
+        # One readiness realization belongs to the track, not to a band or
+        # target/reference pair. Child generators receive this fixed outcome.
+        # A child band starts its own random stream from ``self.seed``. Draw
+        # readiness from the same seed, rather than mutating the parent stream,
+        # so every band shares the legacy multi-frequency realization even when
+        # random weather consumed values during parent initialization.
+        readiness_rng = np.random.default_rng(seed=self.seed)
+        unready_sites = tuple(get_unready_sites(
+            np.asarray(self.sites),
+            self.settings["tech_readiness"],
+            rng=readiness_rng,
+        ))
+        generators = {}
+        raw_results = {}
+        for frequency_ghz, model in zip(frequencies, models):
+            generator = _multifrequency_generator(self, frequency_ghz)
+            generators[frequency_ghz] = generator
+            raw_results[frequency_ghz] = generator.simulate(
+                input_model=model,
+                effects=effects,
+                el_min=el_min,
+                el_max=el_max,
+            )
+
+        availability = {}
+        fringe_rows = {}
+        for frequency_ghz in frequencies:
+            result = raw_results[frequency_ghz]
+            generator = generators[frequency_ghz]
+            row_mask, available_sites, _ = generator._native_availability_mask(
+                result.dataset,
+                unready_sites=unready_sites,
+            )
+            availability[frequency_ghz] = (row_mask, available_sites)
+            fringe_rows[frequency_ghz] = _fringe_rows_from_dataset(
+                result.dataset,
+                station_terms=result.station_terms,
+                receptor_configuration=resolve_receptor_configuration(
+                    result.dataset.stations.names,
+                    generator.station_receptors,
+                    generator.station_signal_paths,
+                ),
+                effects=effects,
+            )
+
+        results = []
+        for target_frequency in frequencies:
+            result = raw_results[target_frequency]
+            target_mask, target_sites = availability[target_frequency]
+            selected = np.zeros(result.dataset.row_count, dtype=bool)
+            for reference_frequency, snr_ref, tint_ref_s in pair_settings[target_frequency]:
+                reference_mask, reference_sites = availability[reference_frequency]
+                selected |= fringe_selection.fpt_fringe_group_mask(
+                    fringe_rows[target_frequency],
+                    fringe_rows[reference_frequency],
+                    snr_ref,
+                    tint_ref_s,
+                    reference_frequency / target_frequency,
+                    target_available_sites=target_sites,
+                    reference_available_sites=reference_sites,
+                    target_row_available=target_mask,
+                    reference_row_available=reference_mask,
+                )
+            selected &= target_mask
+            flags = np.array(result.dataset.flags, copy=True)
+            flags[~selected] = True
+            if self.verbosity > 0:
+                print(
+                    "Flagged {0} of {1} data points during multi-frequency fringe-finding emulation at {2} GHz.".format(
+                        len(selected) - np.count_nonzero(selected),
+                        len(selected),
+                        target_frequency,
+                    )
+                )
+            results.append(
+                SimulationResult(replace(result.dataset, flags=flags), result.station_terms)
+            )
+        return results
 
     def observe(self, input_model=None, effects=None, el_min=const.el_min,
                 el_max=const.el_max, backend="native", **legacy_kwargs):
@@ -2252,6 +2446,189 @@ def fringegroups(obsgen, obs, snr_ref, tint_ref):
         snr_ref,
         tint_ref,
         available_sites=available_sites,
+    )
+
+
+def _multifrequency_frequencies(frequencies_ghz):
+    """Normalize and validate the public native multi-frequency axis."""
+
+    try:
+        frequencies = tuple(float(value) for value in frequencies_ghz)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("frequencies_ghz must be an iterable of finite positive numbers.") from exc
+    if len(frequencies) < 2:
+        raise ValueError("Native multi-frequency simulation requires at least two frequencies.")
+    if any(not np.isfinite(value) or value <= 0.0 for value in frequencies):
+        raise ValueError("frequencies_ghz must contain finite positive values.")
+    if len(set(frequencies)) != len(frequencies):
+        raise ValueError("frequencies_ghz must not repeat a frequency.")
+    return frequencies
+
+
+def _multifrequency_models(input_models, count):
+    """Validate one required source object per native multi-frequency band."""
+
+    try:
+        models = tuple(input_models)
+    except TypeError as exc:
+        raise TypeError("input_models must be an iterable of native source models.") from exc
+    if len(models) != count:
+        raise ValueError("input_models must contain one model for every requested frequency.")
+    if any(model is None for model in models):
+        raise ValueError("Native multi-frequency simulation requires an explicit model at every frequency.")
+    return models
+
+
+def _configured_multifrequency_frequency(value, frequencies, name):
+    """Match a pair-setting frequency to one requested frequency exactly."""
+
+    try:
+        value = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("{0} must be a numeric frequency in GHz.".format(name)) from exc
+    matches = [frequency for frequency in frequencies if frequency == value]
+    if not matches:
+        raise ValueError(
+            "{0}={1!r} is not one of the requested frequencies.".format(name, value)
+        )
+    return matches[0]
+
+
+def _default_multifrequency_pair(target_frequency, reference_frequency,
+                                 fpt_snr_threshold, coherence_time_230_s):
+    """Return the historical ``make_obs_mf`` threshold rule for one pair."""
+
+    reference_snr = max(
+        fpt_snr_threshold,
+        fpt_snr_threshold * (target_frequency / reference_frequency),
+    )
+    target_coherence = coherence_time_230_s * (230.0 / target_frequency)
+    reference_coherence = coherence_time_230_s * (230.0 / reference_frequency)
+    return reference_snr, min(target_coherence, reference_coherence)
+
+
+def _validated_fpt_pair_values(values, pair):
+    """Normalize one explicit ``(snr_ref, tint_ref_s)`` FPT pair setting."""
+
+    try:
+        snr_ref, tint_ref_s = values
+        snr_ref = float(snr_ref)
+        tint_ref_s = float(tint_ref_s)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "FPT pair {0!r} must map to (snr_ref, tint_ref_s) or None.".format(pair)
+        ) from exc
+    if not np.isfinite(snr_ref) or snr_ref <= 0.0:
+        raise ValueError("FPT reference SNR thresholds must be finite and positive.")
+    if not np.isfinite(tint_ref_s) or tint_ref_s <= 0.0:
+        raise ValueError("FPT reference integration times must be finite and positive.")
+    return snr_ref, tint_ref_s
+
+
+def _multifrequency_fpt_pairs(frequencies, fpt_pairs, fpt_snr_threshold,
+                              coherence_time_230_s):
+    """Resolve the native target/reference FPT masks to union at each band."""
+
+    try:
+        fpt_snr_threshold = float(fpt_snr_threshold)
+        coherence_time_230_s = float(coherence_time_230_s)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            "fpt_snr_threshold and coherence_time_230_s must be finite positive numbers."
+        ) from exc
+    if not np.isfinite(fpt_snr_threshold) or fpt_snr_threshold <= 0.0:
+        raise ValueError("fpt_snr_threshold must be finite and positive.")
+    if not np.isfinite(coherence_time_230_s) or coherence_time_230_s <= 0.0:
+        raise ValueError("coherence_time_230_s must be finite and positive.")
+
+    if fpt_pairs is None:
+        return {
+            target: tuple(
+                (reference, *_default_multifrequency_pair(
+                    target,
+                    reference,
+                    fpt_snr_threshold,
+                    coherence_time_230_s,
+                ))
+                for reference in frequencies
+                if reference != target
+            )
+            for target in frequencies
+        }
+
+    if not isinstance(fpt_pairs, Mapping):
+        raise TypeError("fpt_pairs must be a mapping keyed by (target_ghz, reference_ghz).")
+    resolved = {frequency: [] for frequency in frequencies}
+    for pair, values in fpt_pairs.items():
+        if not isinstance(pair, tuple) or len(pair) != 2:
+            raise ValueError("Each fpt_pairs key must be a (target_ghz, reference_ghz) tuple.")
+        target = _configured_multifrequency_frequency(pair[0], frequencies, "target frequency")
+        reference = _configured_multifrequency_frequency(pair[1], frequencies, "reference frequency")
+        if target == reference:
+            raise ValueError("An FPT target frequency cannot also be its reference frequency.")
+        if any(existing[0] == reference for existing in resolved[target]):
+            raise ValueError("fpt_pairs repeats the {0!r} target/reference pair.".format(pair))
+        if values is None:
+            snr_ref, tint_ref_s = _default_multifrequency_pair(
+                target,
+                reference,
+                fpt_snr_threshold,
+                coherence_time_230_s,
+            )
+        else:
+            snr_ref, tint_ref_s = _validated_fpt_pair_values(values, pair)
+        resolved[target].append((reference, snr_ref, tint_ref_s))
+
+    missing = [frequency for frequency, values in resolved.items() if not values]
+    if missing:
+        raise ValueError(
+            "fpt_pairs must provide at least one reference for every target frequency; missing {0}.".format(
+                ", ".join(str(value) for value in missing)
+            )
+        )
+    return {target: tuple(values) for target, values in resolved.items()}
+
+
+def _multifrequency_generator(parent, frequency_ghz):
+    """Clone a generator for one raw native multi-frequency band.
+
+    Random or exact weather is frozen to the parent-selected historical day,
+    matching the established multi-frequency workflow. Fringe selection is
+    delayed until every native band is available for pairwise FPT selection.
+    """
+
+    settings = copy.deepcopy(parent.settings)
+    settings["frequency"] = float(frequency_ghz)
+    settings["model_file"] = None
+    settings["fringe_finder"] = ["naive", 0.0]
+    settings["random_seed"] = parent.seed
+    if parent.weather in ("random", "exact"):
+        settings["weather"] = "exact"
+        settings["weather_year"] = str(parent.weather_year)
+        settings["weather_day"] = str(parent.weather_day)
+
+    return obs_generator(
+        settings=settings,
+        verbosity=parent.verbosity,
+        weight=parent.weight,
+        D_overrides=copy.deepcopy(parent.D_overrides),
+        surf_rms_overrides=copy.deepcopy(parent.surf_rms_overrides),
+        receiver_configuration_overrides=copy.deepcopy(parent.receiver_configuration_overrides),
+        bandwidth_overrides=copy.deepcopy(parent.bandwidth_overrides),
+        T_R_overrides=copy.deepcopy(parent.T_R_overrides),
+        sideband_ratio_overrides=copy.deepcopy(parent.sideband_ratio_overrides),
+        lo_freq_overrides=copy.deepcopy(parent.lo_freq_overrides),
+        hi_freq_overrides=copy.deepcopy(parent.hi_freq_overrides),
+        ap_eff_overrides=copy.deepcopy(parent.ap_eff_overrides),
+        wind_loading_overrides=copy.deepcopy(parent.wind_loading_overrides),
+        custom_receivers=copy.deepcopy(parent.custom_receivers),
+        station_uptimes=copy.deepcopy(parent.station_uptimes),
+        station_receptors=copy.deepcopy(parent.station_receptors),
+        station_signal_paths=copy.deepcopy(parent.station_signal_paths),
+        array=parent.array,
+        ephem=parent.ephem,
+        weather_store=parent.weather_store,
+        weather_cadence=parent.weather_cadence,
     )
 
 

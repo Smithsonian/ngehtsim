@@ -60,6 +60,7 @@ from ngehtsim.obs.receptor_configuration import (
     configuration_for_dataset,
     resolve_receptor_configuration,
 )
+from ngehtsim.obs.obs_generator import obs_generator
 
 
 DOCUMENTED_NATIVE_API = {
@@ -108,6 +109,7 @@ DOCUMENTED_NATIVE_API = {
     "adapter_for": adapter_for,
     "observe_source": observe_source,
     "observe_source_dataset": observe_source_dataset,
+    "obs_generator.make_dataset_mf": obs_generator.make_dataset_mf,
 }
 
 

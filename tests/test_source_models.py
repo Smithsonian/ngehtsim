@@ -764,6 +764,105 @@ def test_native_fpt_make_obs_exports_only_after_selection():
     assert len(obs.data) > 0
 
 
+def test_native_make_dataset_mf_unions_all_ordered_fpt_pairs(monkeypatch):
+    readiness_calls = []
+    fpt_calls = []
+
+    def unready_sites(sites, tech_readiness, rng):
+        readiness_calls.append((tuple(sites), tech_readiness))
+        return np.array(["ALMA"])
+
+    def fpt_mask(target_rows, reference_rows, snr_ref, tint_ref, ratio, **kwargs):
+        fpt_calls.append((snr_ref, tint_ref, ratio, kwargs))
+        # The two references for each target retain complementary row sets.
+        # Their union must retain every target row still available pre-FPT.
+        index = len(fpt_calls) - 1
+        return (np.arange(target_rows.row_count) % 2) == (index % 2)
+
+    def unexpected_obsdata_conversion(*args, **kwargs):
+        raise AssertionError("Native multi-frequency simulation must not export Obsdata.")
+
+    monkeypatch.setattr(og, "get_unready_sites", unready_sites)
+    monkeypatch.setattr(og.fringe_selection, "fpt_fringe_group_mask", fpt_mask)
+    monkeypatch.setattr(VisibilityDataset, "to_ehtim_obsdata", unexpected_obsdata_conversion)
+
+    generator = og.obs_generator(settings=COMPACT_OBS_SETTINGS)
+    frequencies = (86.0, 230.0, 345.0)
+    results = generator.make_dataset_mf(
+        frequencies,
+        [_compact_model(), _compact_model(), _compact_model()],
+        effects=_effects(),
+    )
+
+    assert len(readiness_calls) == 1
+    assert len(fpt_calls) == 6
+    assert [result.dataset.channel_frequency_hz[0] / 1.0e9 for result in results] == list(frequencies)
+    assert {round(call[2], 12) for call in fpt_calls} == {
+        round(reference / target, 12)
+        for target in frequencies
+        for reference in frequencies
+        if target != reference
+    }
+    assert {(round(snr, 12), round(tint, 12), round(ratio, 12))
+            for snr, tint, ratio, _ in fpt_calls} == {
+        (
+            round(max(5.0, 5.0 * target / reference), 12),
+            round(min(10.0 * 230.0 / target, 10.0 * 230.0 / reference), 12),
+            round(reference / target, 12),
+        )
+        for target in frequencies
+        for reference in frequencies
+        if target != reference
+    }
+    for result in results:
+        names = np.asarray(result.dataset.stations.names)
+        touches_alma = (
+            (names[result.dataset.antenna1] == "ALMA")
+            | (names[result.dataset.antenna2] == "ALMA")
+        )
+        assert np.all(result.dataset.flags[touches_alma])
+        assert np.all(result.row_mask[~touches_alma])
+
+
+def test_native_make_dataset_mf_accepts_explicit_pair_settings(monkeypatch):
+    calls = []
+
+    def fpt_mask(target_rows, reference_rows, snr_ref, tint_ref, ratio, **kwargs):
+        calls.append((snr_ref, tint_ref, ratio))
+        return np.asarray(kwargs["target_row_available"], dtype=bool)
+
+    monkeypatch.setattr(og.fringe_selection, "fpt_fringe_group_mask", fpt_mask)
+    frequencies = (86.0, 230.0, 345.0)
+    pairs = {
+        (86.0, 230.0): (4.0, 25.0),
+        (230.0, 345.0): (5.0, 10.0),
+        (345.0, 86.0): (6.0, 5.0),
+    }
+    results = og.obs_generator(settings=COMPACT_OBS_SETTINGS).make_dataset_mf(
+        frequencies,
+        [_compact_model(), _compact_model(), _compact_model()],
+        effects=_effects(),
+        fpt_pairs=pairs,
+    )
+
+    assert len(results) == 3
+    assert calls == [
+        (4.0, 25.0, 230.0 / 86.0),
+        (5.0, 10.0, 345.0 / 230.0),
+        (6.0, 5.0, 86.0 / 345.0),
+    ]
+
+
+def test_native_make_dataset_mf_rejects_missing_target_pair():
+    with pytest.raises(ValueError, match="at least one reference"):
+        og.obs_generator(settings=COMPACT_OBS_SETTINGS).make_dataset_mf(
+            (86.0, 230.0),
+            [_compact_model(), _compact_model()],
+            effects=_effects(),
+            fpt_pairs={(86.0, 230.0): None},
+        )
+
+
 def test_native_simulation_keeps_terms_in_the_result_not_the_generator():
     settings = dict(COMPACT_OBS_SETTINGS)
     settings["fringe_finder"] = ["naive", 0.0]
