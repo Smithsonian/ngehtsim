@@ -180,6 +180,41 @@ def test_native_uvfits_writer_output_is_accepted_by_ehtim(tmp_path):
     assert observation.rf == pytest.approx(230.0e9)
 
 
+@pytest.mark.parametrize(
+    ("row_mask", "scan_index"),
+    (
+        (np.array((True, False)), 0),
+        (np.array((False, True)), 1),
+    ),
+)
+def test_native_uvfits_writer_omits_empty_scans_after_row_filter(
+    tmp_path,
+    row_mask,
+    scan_index,
+):
+    """NX metadata must follow rows retained for an export boundary subset."""
+
+    original = _dataset()
+    filtered = original.select_rows(row_mask)
+    path = tmp_path / "filtered.uvfits"
+
+    filtered.to_uvfits(path)
+
+    with fits.open(path, memmap=False) as hdul:
+        nx = hdul["AIPS NX"].data
+        assert len(nx) == 1
+        assert nx["START VIS"].tolist() == [1]
+        assert nx["END VIS"].tolist() == [1]
+        assert nx["TIME"][0] == pytest.approx(
+            0.5 * (original.scan_start_mjd[scan_index] + original.scan_stop_mjd[scan_index])
+            - np.floor(filtered.time_mjd.min())
+        )
+
+    restored = read_uvfits(path)
+    assert np.allclose(restored.scan_start_mjd, original.scan_start_mjd[scan_index:scan_index + 1])
+    assert np.allclose(restored.scan_stop_mjd, original.scan_stop_mjd[scan_index:scan_index + 1])
+
+
 def test_native_uvfits_module_does_not_import_ehtim():
     result = subprocess.run(
         [

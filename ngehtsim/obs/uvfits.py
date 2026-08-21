@@ -796,33 +796,49 @@ def _frequency_hdu(frequency_grid):
 
 
 def _scan_hdu(dataset, row_order):
+    """Build an AIPS NX table for scans represented in the output rows.
+
+    Row-filtered datasets retain their original schedule metadata. In
+    particular, native fringe selection can remove every visibility in an
+    otherwise valid scan. UVFITS ``START VIS`` and ``END VIS`` indices cannot
+    describe such an empty scan, so it is omitted from the exported NX table.
+    """
+
     if dataset.scan_start_mjd is None:
         return None
     ordered_time = dataset.time_mjd[row_order]
     reference_mjd = float(np.floor(np.min(ordered_time)))
     starts = dataset.scan_start_mjd
     stops = dataset.scan_stop_mjd
-    center = 0.5 * (starts + stops) - reference_mjd
-    interval = stops - starts
-    start_vis = np.empty(len(starts), dtype=np.int32)
-    stop_vis = np.empty(len(starts), dtype=np.int32)
+    retained_starts = []
+    retained_stops = []
+    start_vis = []
+    stop_vis = []
     tolerance = 1.0e-10
-    for index, (start, stop) in enumerate(zip(starts, stops)):
+    for start, stop in zip(starts, stops):
         rows = np.flatnonzero(
             (ordered_time >= start - tolerance) & (ordered_time <= stop + tolerance)
         )
         if not len(rows):
-            raise UvfitsError("Every native scan must contain at least one output visibility row.")
-        start_vis[index] = rows[0] + 1
-        stop_vis[index] = rows[-1] + 1
+            continue
+        retained_starts.append(start)
+        retained_stops.append(stop)
+        start_vis.append(rows[0] + 1)
+        stop_vis.append(rows[-1] + 1)
+    if not retained_starts:
+        return None
+    retained_starts = np.asarray(retained_starts, dtype=float)
+    retained_stops = np.asarray(retained_stops, dtype=float)
+    center = 0.5 * (retained_starts + retained_stops) - reference_mjd
+    interval = retained_stops - retained_starts
     columns = fits.ColDefs((
         fits.Column(name="TIME", format="1D", unit="DAYS", array=center),
         fits.Column(name="TIME INTERVAL", format="1E", unit="DAYS", array=interval),
-        fits.Column(name="SOURCE ID", format="1J", array=np.ones(len(starts), dtype=np.int32)),
-        fits.Column(name="SUBARRAY", format="1J", array=np.ones(len(starts), dtype=np.int32)),
-        fits.Column(name="FREQ ID", format="1J", array=np.ones(len(starts), dtype=np.int32)),
-        fits.Column(name="START VIS", format="1J", array=start_vis),
-        fits.Column(name="END VIS", format="1J", array=stop_vis),
+        fits.Column(name="SOURCE ID", format="1J", array=np.ones(len(retained_starts), dtype=np.int32)),
+        fits.Column(name="SUBARRAY", format="1J", array=np.ones(len(retained_starts), dtype=np.int32)),
+        fits.Column(name="FREQ ID", format="1J", array=np.ones(len(retained_starts), dtype=np.int32)),
+        fits.Column(name="START VIS", format="1J", array=np.asarray(start_vis, dtype=np.int32)),
+        fits.Column(name="END VIS", format="1J", array=np.asarray(stop_vis, dtype=np.int32)),
     ))
     scan = fits.BinTableHDU.from_columns(columns, name="AIPS NX")
     scan.header["EXTVER"] = 1
