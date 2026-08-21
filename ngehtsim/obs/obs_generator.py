@@ -2633,14 +2633,19 @@ def _multifrequency_generator(parent, frequency_ghz):
 
 
 def _take_station_terms(station_terms, row_indices):
-    """Return row-aligned station terms restricted to selected native rows."""
+    """Restrict every row-aligned station term to selected native rows.
+
+    Scalars and track-wide metadata are retained unchanged.  A term is
+    row-aligned when its leading dimension matches the number of native
+    visibility rows, including vector receptor gains and matrix Jones terms.
+    """
 
     row_indices = np.asarray(row_indices, dtype=np.intp)
     count = len(station_terms["t1"])
     selected = {}
     for name, values in station_terms.items():
         values_array = np.asarray(values)
-        if values_array.shape == (count,):
+        if values_array.ndim and values_array.shape[0] == count:
             selected[name] = values_array[row_indices]
         else:
             selected[name] = values

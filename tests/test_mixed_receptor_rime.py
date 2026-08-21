@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import ehtim as eh
 
@@ -302,6 +304,36 @@ def test_mixed_receptor_fringegroups_uses_generic_stokes_i_evidence():
 
     assert result.dataset.row_count > 0
     assert np.any(~result.dataset.flags)
+
+
+def test_mixed_receptor_fringegroups_subsets_row_aligned_jones_terms():
+    """Fringe selection must subset Jones matrices with unavailable rows."""
+
+    settings = dict(SETTINGS)
+    settings["sites"] = ["ALMA", "APEX", "LMT"]
+    generator = og.obs_generator(
+        settings=settings,
+        station_receptors={
+            "ALMA": ("X", "Y"),
+            "APEX": ("R", "L"),
+            "LMT": ("Y",),
+        },
+    )
+    effects = _effects(station_gain=True, feed_rotation=True, leakage=True)
+    raw = generator.simulate(_polarized_model(), effects=effects)
+
+    assert raw.dataset.row_count > 1
+    flags = np.array(raw.dataset.flags, copy=True)
+    flags[0] = True
+    selection = generator._native_selection_mask(
+        replace(raw.dataset, flags=flags),
+        raw.station_terms,
+        effects,
+    )
+
+    assert selection.shape == (raw.dataset.row_count,)
+    assert not selection[0]
+    assert np.any(selection[1:])
 
 
 def test_direct_mixed_fringegroups_dataset_infers_standard_feed_responses():
