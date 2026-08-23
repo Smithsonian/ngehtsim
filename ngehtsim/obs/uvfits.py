@@ -651,6 +651,14 @@ def _primary_hdu(dataset, layout, product_slots, frequency_grid, row_order,
 
 
 def _set_common_header(header, dataset, layout, frequency_grid, reference_mjd):
+    """Populate standard primary-HDU metadata for a UVFITS export.
+
+    Random-groups scaling keywords are written explicitly even where their
+    FITS defaults are unity and zero.  Several established AIPS-family
+    readers require those cards to decode random parameters, in particular
+    the two-component ``DATE`` timestamp, reliably.
+    """
+
     stokes_start = -1.0 if layout == CIRCULAR_PRODUCT_LABELS else -5.0
     header["OBSRA"] = dataset.ra_hours * 15.0
     header["OBSDEC"] = dataset.dec_degrees
@@ -658,7 +666,13 @@ def _set_common_header(header, dataset, layout, frequency_grid, reference_mjd):
     header["MJD"] = reference_mjd
     header["DATE-OBS"] = Time(reference_mjd, format="mjd", scale="utc").iso[:10]
     header["BUNIT"] = "JY"
-    header["EQUINOX"] = "J2000"
+    header["EQUINOX"] = 2000.0
+    header["TIMESYS"] = "UTC"
+    header["BSCALE"] = 1.0
+    header["BZERO"] = 0.0
+    for parameter_index in range(1, 10):
+        header[f"PSCAL{parameter_index}"] = 1.0
+        header[f"PZERO{parameter_index}"] = 0.0
     header["CTYPE2"] = "COMPLEX"
     header["CRVAL2"] = 1.0
     header["CDELT2"] = 1.0

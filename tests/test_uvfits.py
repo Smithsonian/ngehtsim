@@ -89,9 +89,20 @@ def test_native_uvfits_round_trip_preserves_multichannel_data(tmp_path, kind):
 
     original.to_uvfits(path, array_name="SYNTH")
     with fits.open(path, memmap=False) as hdul:
-        assert hdul[0].header["NAXIS4"] == 2
-        assert hdul[0].header["NAXIS5"] == 2
-        assert hdul[0].header["CRVAL3"] == (-1.0 if kind == "circular" else -5.0)
+        primary = hdul[0]
+        assert primary.header["NAXIS4"] == 2
+        assert primary.header["NAXIS5"] == 2
+        assert primary.header["CRVAL3"] == (-1.0 if kind == "circular" else -5.0)
+        assert primary.header["EQUINOX"] == 2000.0
+        assert primary.header["TIMESYS"] == "UTC"
+        assert primary.header["BSCALE"] == 1.0
+        assert primary.header["BZERO"] == 0.0
+        assert [primary.header[f"PSCAL{index}"] for index in range(1, 10)] == [1.0] * 9
+        assert [primary.header[f"PZERO{index}"] for index in range(1, 10)] == [0.0] * 9
+        assert np.allclose(
+            primary.data.par("DATE"),
+            original.time_mjd + 2400000.5,
+        )
         assert [hdu.name for hdu in hdul] == ["PRIMARY", "AIPS AN", "AIPS FQ", "AIPS NX"]
         expected_feeds = ("R", "L") if kind == "circular" else ("X", "Y")
         assert tuple(hdul["AIPS AN"].data["POLTYA"][:1]) == (expected_feeds[0],)
