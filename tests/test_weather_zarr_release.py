@@ -137,7 +137,7 @@ def test_obs_generator_uses_native_weather_for_observation_terms(external_store)
         weight=1,
     )
 
-    obs = obsgen.make_obs(
+    result = obsgen.make_dataset(
         model,
         effects=StationCorruptionModel(
             thermal_noise=False,
@@ -147,9 +147,11 @@ def test_obs_generator_uses_native_weather_for_observation_terms(external_store)
         ),
     )
 
-    assert len(obs.data) > 0
-    assert np.all(np.isfinite(obsgen.tau1))
-    assert np.all(np.isfinite(obsgen.SEFD1))
+    assert result.unflagged_dataset.row_count > 0
+    assert np.all(np.isfinite(result.station_terms["tau1"]))
+    assert np.all(np.isfinite(result.station_terms["tau2"]))
+    assert np.all(np.isfinite(result.station_terms["SEFD1"]))
+    assert np.all(np.isfinite(result.station_terms["SEFD2"]))
 
 
 @pytest.mark.external_weather
