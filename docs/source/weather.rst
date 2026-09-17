@@ -16,10 +16,11 @@ Python package. After downloading a release to a local directory, install the
 optional Zarr dependency and open it with an explicit path:
 
 The current release is
-`ngehtsim-weather-merra2-3hour-v0.2.0 <https://drive.google.com/drive/folders/18NOmRZrZytD4zmKuOFYsaHzB_e3O-Bk5?usp=drive_link>`_.
+`ngehtsim-weather-merra2-3hour-v0.2.2 <https://drive.google.com/drive/folders/1uVclhwkAPcvmRPJwQrVjjlazw16a3gOJ?usp=drive_link>`_.
 Download the complete ``.zarr`` directory without changing its internal
-layout. Its
-`release manifest <https://drive.google.com/file/d/1rSX4uMIEyW99Yj-BeVworYgg-7r_wPsi/view?usp=drive_link>`_
+layout. It contains all 141 registered sites, with January through July 2026
+coverage and complete August through December 2025 partitions. Its
+`release manifest <https://drive.google.com/file/d/1OxK8fwz2PfccSlqNSjxz8lKLKTXtfxcz/view?usp=drive_link>`_
 records the source inputs, builder revision, schema, and coverage validation.
 All published releases are available from the
 `weather release folder <https://drive.google.com/drive/folders/1ElKYZJPfFoJCKNxzLCAxFXyeNO5f6Jx6?usp=drive_link>`_.
@@ -28,7 +29,7 @@ All published releases are available from the
 
    from ngehtsim.weather.zarr_store import ZarrWeatherStore
 
-   store = ZarrWeatherStore("/path/to/ngehtsim-weather-merra2-3hour-v0.2.0.zarr")
+   store = ZarrWeatherStore("/path/to/ngehtsim-weather-merra2-3hour-v0.2.2.zarr")
    april_weather = store.read_partition("ALMA", "Apr", cadence="daily")
 
 The established weather functions can use that store directly. Without the
